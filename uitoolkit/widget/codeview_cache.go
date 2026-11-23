@@ -3,7 +3,8 @@ package widget
 // The CodeView lays out and measures every line it holds, and a 2 MiB body
 // is about 40k lines, so doing that on each Update and Draw cost 6-18 ms a
 // call with nothing changed. Two single-entry caches keep it to once per
-// change.
+// change. The texts cache also holds the digit count of the widest line
+// number, which Draw read on every geometry it built.
 //
 // Access pattern: read two or more times per frame (Update, Draw, and again
 // after a reveal), written when a response arrives, a fold is toggled, or
@@ -17,8 +18,8 @@ package widget
 // Invalidation: SetLines bumps gen. Lines and Folded are exported, so a
 // writer that bypasses SetLines is caught by what the key reads: the
 // length and first element of Lines, and a fingerprint of the folded
-// lines. Editing a line's spans in place without SetLines is not caught;
-// no caller does it.
+// lines. Editing a line's spans or Num in place without SetLines is not
+// caught; no caller does it.
 
 // linesKey says which content the cached texts and layout belong to.
 type linesKey struct {
@@ -47,11 +48,13 @@ func (v *CodeView) foldsKey() uint64 {
 	return sum
 }
 
-// textCache holds the runes of every line as it is written, folds ignored.
+// textCache holds the runes of every line as it is written, folds ignored,
+// and the digit count of the widest line number.
 type textCache struct {
-	key   linesKey
-	runes [][]rune
-	ok    bool
+	key    linesKey
+	runes  [][]rune
+	digits int
+	ok     bool
 }
 
 func (v *CodeView) runesOfLines() textCache {
@@ -59,7 +62,16 @@ func (v *CodeView) runesOfLines() textCache {
 	for i := range v.Lines {
 		runes[i] = []rune(v.rawText(i))
 	}
-	return textCache{key: v.linesKey(), runes: runes, ok: true}
+	return textCache{key: v.linesKey(), runes: runes, digits: v.scanNumberDigits(), ok: true}
+}
+
+// freshTexts is the texts cache, rebuilt when the lines are not the ones it
+// was built from.
+func (v *CodeView) freshTexts() *textCache {
+	if key := v.linesKey(); !v.texts.ok || v.texts.key != key {
+		v.texts = v.runesOfLines()
+	}
+	return &v.texts
 }
 
 // lineRunes is the text of line index as it is shown, as runes. A folded
@@ -68,10 +80,7 @@ func (v *CodeView) lineRunes(index int) []rune {
 	if v.folded(index) {
 		return []rune(v.lineText(index))
 	}
-	if key := v.linesKey(); !v.texts.ok || v.texts.key != key {
-		v.texts = v.runesOfLines()
-	}
-	return v.texts.runes[index]
+	return v.freshTexts().runes[index]
 }
 
 // layoutKey is everything a layout is built from.

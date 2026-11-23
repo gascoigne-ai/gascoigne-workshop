@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -64,6 +65,11 @@ type CodeView struct {
 	laid  layoutCache
 	// layoutBuilds counts the layouts built, for the tests of the cache.
 	layoutBuilds int
+	// digitScans counts the scans for the widest line number, for the same.
+	digitScans int
+	// rowBuf holds the pieces of the row being drawn; it is overwritten for
+	// each row and nothing keeps it after Draw returns.
+	rowBuf []Span
 }
 
 // noReveal is the reveal of a view with nothing to scroll to.
@@ -111,19 +117,35 @@ func (v *CodeView) keepTopLine(geometry codeGeometry, rect core.Rect) {
 	v.ScrollY = geometry.keepTop(v.ScrollY, before, v.layout(geometry, rect))
 }
 
-// cutSpans is the part of spans from rune from to rune to.
-func cutSpans(spans []Span, from, to int) []Span {
-	var out []Span
+// appendRowSpans appends the part of spans from rune from to rune to. The
+// pieces are substrings of the spans' texts, so a row costs no copy and,
+// with a reused dst, no allocation.
+func appendRowSpans(dst, spans []Span, from, to int) []Span {
 	pos := 0
 	for _, sp := range spans {
-		runes := []rune(sp.Text)
-		lo, hi := max(from-pos, 0), min(to-pos, len(runes))
+		count := utf8.RuneCountInString(sp.Text)
+		lo, hi := max(from-pos, 0), min(to-pos, count)
 		if lo < hi {
-			out = append(out, Span{Text: string(runes[lo:hi]), Style: sp.Style, Icon: sp.Icon})
+			start := runeOffset(sp.Text, lo)
+			end := start + runeOffset(sp.Text[start:], hi-lo)
+			dst = append(dst, Span{Text: sp.Text[start:end], Style: sp.Style, Icon: sp.Icon})
 		}
-		pos += len(runes)
+		pos += count
 	}
-	return out
+	return dst
+}
+
+// runeOffset is the byte offset of rune number index in text, len(text)
+// when the text has fewer runes. A byte that is not valid UTF-8 counts as
+// one rune, as []rune(text) counts it.
+func runeOffset(text string, index int) int {
+	for offset := range text {
+		if index == 0 {
+			return offset
+		}
+		index--
+	}
+	return len(text)
 }
 
 // SetLines replaces the content and resets folds and scroll.
@@ -261,8 +283,12 @@ func (v *CodeView) LineNumber(index int) int {
 	return index + 1
 }
 
-// numberDigits is how many digits the widest line number has.
-func (v *CodeView) numberDigits() int {
+// numberDigits is how many digits the widest line number has, from the
+// texts cache.
+func (v *CodeView) numberDigits() int { return v.freshTexts().digits }
+
+func (v *CodeView) scanNumberDigits() int {
+	v.digitScans++
 	widest := max(len(v.Lines), 1)
 	for i := range v.Lines {
 		widest = max(widest, v.LineNumber(i))
@@ -344,17 +370,18 @@ func (v *CodeView) Update(ctx *core.Ctx, rect core.Rect) {
 	v.keepTopLine(g, rect)
 	prevY := v.ScrollY
 	layout := v.layout(g, rect)
-	b := v.bars(ctx, rect, g, len(layout.rows))
-	v.updateBars(ctx, g, b, len(layout.rows))
+	contentW := v.contentWidthOf(g, rect)
+	b := v.bars(rect, g, contentW, len(layout.rows))
+	v.updateBars(ctx, g, b, contentW, len(layout.rows))
 	if v.reveal.line >= 0 {
 		v.applyReveal(rect, g, b, layout)
 		layout = v.layout(g, rect)
-		b = v.bars(ctx, rect, g, len(layout.rows))
+		b = v.bars(rect, g, contentW, len(layout.rows))
 	}
 	if len(layout.rows) > 0 && !v.drag.active() {
-		v.updatePointer(ctx, rect, g, b, layout, over)
+		v.updatePointer(ctx, rect, g, b, contentW, layout, over)
 	}
-	v.clampScroll(ctx, rect, g, b, len(layout.rows))
+	v.clampScroll(g, b, contentW, len(layout.rows))
 	if v.Focused {
 		v.updateKeys(ctx, g, b, layout)
 	}
@@ -373,14 +400,13 @@ func (v *CodeView) follow(prevY, contentH, viewH int) {
 	}
 }
 
-func (v *CodeView) clampScroll(ctx *core.Ctx, rect core.Rect, geometry codeGeometry, sizes bars, visible int) {
+func (v *CodeView) clampScroll(geometry codeGeometry, sizes bars, contentW, visible int) {
 	v.ScrollY = clampScroll(v.ScrollY, visible*geometry.lineH, sizes.viewH)
-	v.ScrollX = clampScroll(v.ScrollX, v.contentWidth(ctx, rect), sizes.viewW)
+	v.ScrollX = clampScroll(v.ScrollX, contentW, sizes.viewW)
 }
 
 // updateBars handles grabbing, dragging and page-clicking the scrollbars.
-func (v *CodeView) updateBars(ctx *core.Ctx, geometry codeGeometry, sizes bars, visible int) {
-	contentW := v.contentWidth(ctx, core.Rect{W: sizes.viewW}) // only the extent matters
+func (v *CodeView) updateBars(ctx *core.Ctx, geometry codeGeometry, sizes bars, contentW, visible int) {
 	v.drag.update(ctx, sizes, contentW, visible*geometry.lineH, &v.ScrollX, &v.ScrollY)
 }
 
@@ -411,7 +437,7 @@ func (v *CodeView) pressText(textPosValue textPos, clicks int) {
 	}
 }
 
-func (v *CodeView) updatePointer(ctx *core.Ctx, rect core.Rect, geometry codeGeometry, sizes bars, layout wrapLayout, over bool) {
+func (v *CodeView) updatePointer(ctx *core.Ctx, rect core.Rect, geometry codeGeometry, sizes bars, contentW int, layout wrapLayout, over bool) {
 	in := ctx.In
 	rowCount := len(layout.rows)
 	if v.dragging {
@@ -426,7 +452,7 @@ func (v *CodeView) updatePointer(ctx *core.Ctx, rect core.Rect, geometry codeGeo
 	}
 	if in.Wheel != 0 {
 		if in.Shift {
-			v.ScrollX = clampScroll(v.ScrollX+geometry.wheelDX(in.Wheel), v.contentWidth(ctx, rect), sizes.viewW)
+			v.ScrollX = clampScroll(v.ScrollX+geometry.wheelDX(in.Wheel), contentW, sizes.viewW)
 		} else {
 			v.ScrollBy(geometry.wheelDY(in.Wheel), rowCount*geometry.lineH, sizes.viewH)
 		}
@@ -483,8 +509,9 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 	g := v.geometry(ctx, rect)
 	layout := v.layout(g, rect)
 	rows := layout.rows
-	b := v.bars(ctx, rect, g, len(rows))
-	v.clampScroll(ctx, rect, g, b, len(rows))
+	contentW := v.contentWidthOf(g, rect)
+	b := v.bars(rect, g, contentW, len(rows))
+	v.clampScroll(g, b, contentW, len(rows))
 	muted := ctx.Color(core.Muted)
 	gutter := core.Rect{X: rect.X, Y: rect.Y, W: g.textX - rect.X - 4, H: b.viewH}
 	body := core.Rect{X: gutter.X + gutter.W, Y: rect.Y, W: b.viewW - gutter.W, H: b.viewH}
@@ -507,7 +534,8 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 
 		spans := v.shownSpans(idx)
 		if row.from > 0 || row.to < v.lineLen(idx) {
-			spans = cutSpans(spans, row.from, row.to)
+			v.rowBuf = appendRowSpans(v.rowBuf[:0], spans, row.from, row.to)
+			spans = v.rowBuf
 		}
 		g.drawSpans(ctx, text, v.ScrollX, cell, row, spans)
 
@@ -525,20 +553,20 @@ func (v *CodeView) Draw(ctx *core.Ctx, dst *ebiten.Image, rect core.Rect) {
 			drawIconAt(ctx, area, arrow, core.Rect{X: cx - foldColW/2, Y: y, W: foldColW, H: g.lineH}, core.Muted)
 		}
 	}
-	drawBars(ctx, dst, b, v.drag, v.contentWidth(ctx, core.Rect{W: b.viewW}), len(rows)*g.lineH, v.ScrollX, v.ScrollY)
+	drawBars(ctx, dst, b, v.drag, contentW, len(rows)*g.lineH, v.ScrollX, v.ScrollY)
 }
 
-// contentWidth is the width of the widest line plus the gutter.
-func (v *CodeView) contentWidth(ctx *core.Ctx, rect core.Rect) int {
+// contentWidthOf is the width of the widest line plus the gutter, by a
+// geometry built once for the call.
+func (v *CodeView) contentWidthOf(geometry codeGeometry, rect core.Rect) int {
 	if v.Wrap {
 		return 0 // wrapped text fits the width
 	}
-	g := v.geometry(ctx, rect)
-	return g.textX - rect.X + g.colX(v.maxCols) + core.Gutter
+	return geometry.textX - rect.X + geometry.colX(v.maxCols) + core.Gutter
 }
 
-func (v *CodeView) bars(ctx *core.Ctx, rect core.Rect, geometry codeGeometry, visible int) bars {
-	return layoutBars(rect, v.contentWidth(ctx, rect), visible*geometry.lineH)
+func (v *CodeView) bars(rect core.Rect, geometry codeGeometry, contentW, visible int) bars {
+	return layoutBars(rect, contentW, visible*geometry.lineH)
 }
 
 // Selected reports whether any text is selected.

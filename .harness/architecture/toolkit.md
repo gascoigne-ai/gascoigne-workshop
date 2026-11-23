@@ -164,12 +164,18 @@ Each is also said in the doc comment of what breaks the rule; a new exception ad
 - **Width cache.** `Ctx.Width` remembers a measured string by font source, size and text (up to
   4096 entries, then the map is dropped); `SetScale`, `SetTheme` and `SetFonts` clear it. An
   element's own font makes a new face value each call, so the key is what the face is made of,
-  not its address. `DrawStats.Widths` counts real measurements only.
-- **CodeView layout cache.** The runes of every line and the wrap layout are kept between calls
+  not its address. `DrawStats.Widths` counts real measurements only. `Ctx.Advance` (the exact advance
+  of one mono character) is cached the same way by face (`faceKey`, cleared in the same three
+  places; `DrawStats.Advances` counts real measurements).
+- **CodeView layout cache.** The runes of every line, the digit count of the widest line number and
+  the wrap layout are kept between calls
   (`codeview_cache.go`), so an Update or Draw with nothing changed costs no allocation per line (a
   40k-line body went from 6-18 ms to under 0.1 ms per Update). The layout is rebuilt when the
   lines (`SetLines`, or `Lines` reassigned), the folded lines, the wrap width or the font advance
-  change. Spans edited in place without `SetLines` are not seen.
+  change. Spans or `Num` edited in place without `SetLines` are not seen. Update and Draw build
+  one geometry and one content width per call and pass them down. A Draw cuts the spans of a
+  wrapped row into substrings of the line's text in a buffer the view reuses, so a row costs no
+  allocation of its own; what a frame still allocates is inside Ebitengine's draw queue.
 - **Monospace columns.** `CodeView` and `TextArea` share `monoGrid`, which places columns by the
   exact advance so the caret, selection, matches and clicks stay on the text. A tab advances to
   the next stop of `core.TabStop` columns along its line (`core.ColumnAfter`); the wrap layout keeps

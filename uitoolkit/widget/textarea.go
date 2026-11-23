@@ -326,7 +326,7 @@ func (a *TextArea) lineSpans(line string) []Span {
 // drawRow draws the part of its line's spans that a row shows.
 func (a *TextArea) drawRow(ctx *core.Ctx, dst *ebiten.Image, geometry areaGeometry, row visualRow, cell core.Rect, spans []Span) {
 	if row.from > 0 || row.to < len([]rune(geometry.lines[row.line])) {
-		spans = cutSpans(spans, row.from, row.to)
+		spans = appendRowSpans(nil, spans, row.from, row.to)
 	}
 	geometry.drawSpans(ctx, dst, a.ScrollX, cell, row, spans)
 }

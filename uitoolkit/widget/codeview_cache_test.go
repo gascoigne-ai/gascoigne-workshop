@@ -1,6 +1,7 @@
 package widget
 
 import (
+	"github.com/hajimehoshi/ebiten/v2"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -53,5 +54,57 @@ func TestCodeViewLayoutIsRebuiltWhenItsInputsChange(t *testing.T) {
 				t.Fatal("the layout was served from the cache after its inputs changed")
 			}
 		})
+	}
+}
+
+func TestCodeViewNumberDigitsFollowsWidestNumber(t *testing.T) {
+	tests := []struct {
+		name  string
+		lines func() []Line
+		want  int
+	}{
+		{"by position", func() []Line { return make([]Line, 1204) }, 4},
+		{"by Num", func() []Line { return []Line{{Num: 7}, {Num: 99999}, {}} }, 5},
+		{"empty", func() []Line { return nil }, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := &CodeView{}
+			v.SetLines(tt.lines())
+			if got := v.numberDigits(); got != tt.want {
+				t.Fatalf("digits = %d, want %d", got, tt.want)
+			}
+		})
+	}
+	t.Run("lines assigned without SetLines", func(t *testing.T) {
+		v := &CodeView{}
+		v.SetLines(make([]Line, 5))
+		_ = v.numberDigits()
+		v.Lines = make([]Line, 12000)
+		if got := v.numberDigits(); got != 5 {
+			t.Fatalf("digits = %d, want 5", got)
+		}
+	})
+}
+
+// Draw built the geometry four times, and each build scanned every line
+// for the widest number.
+func TestCodeViewScansLineNumbersOncePerContent(t *testing.T) {
+	v, c, _, r := viewport(t)
+	screen := ebiten.NewImage(r.W, r.H)
+	for range 3 {
+		v.Update(c, r)
+		v.Draw(c, screen, r)
+	}
+	if v.digitScans != 1 {
+		t.Fatalf("scans = %d after three frames, want 1", v.digitScans)
+	}
+	v.SetLines(sampleLines())
+	for range 3 {
+		v.Update(c, r)
+		v.Draw(c, screen, r)
+	}
+	if v.digitScans != 2 {
+		t.Fatalf("scans = %d after SetLines, want 2", v.digitScans)
 	}
 }

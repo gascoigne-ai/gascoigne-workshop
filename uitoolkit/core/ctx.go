@@ -142,6 +142,8 @@ type Ctx struct {
 	// and is nil in the app (a test sets it to need no GPU).
 	// widths caches Width by face and text; see widthKey.
 	widths map[widthKey]int
+	// advances caches Advance by face; see faceKey. Cleared with widths.
+	advances map[faceKey]float64
 
 	masks     *cornerMasks
 	maskMaker func(radius int) *ebiten.Image
@@ -228,7 +230,7 @@ func (c *Ctx) SetScale(scale float64) error {
 		return err
 	}
 	c.F, c.Scale = fonts, scale
-	c.widths = nil
+	c.widths, c.advances = nil, nil
 	c.resetMasks()
 	return nil
 }
@@ -240,7 +242,7 @@ func (c *Ctx) SetTheme(th Theme) error {
 		return err
 	}
 	c.Th, c.F, c.Sizes = th, fonts, sizes
-	c.widths = nil
+	c.widths, c.advances = nil, nil
 	c.resetMasks()
 	return nil
 }
@@ -254,7 +256,7 @@ func (c *Ctx) SetFonts(ui, code FontData) error {
 		return err
 	}
 	c.Chosen, c.F, c.Sizes = chosen, fonts, sizes
-	c.widths = nil
+	c.widths, c.advances = nil, nil
 	return nil
 }
 
@@ -355,12 +357,34 @@ type widthKey struct {
 	content string
 }
 
+// faceKey is what a face's metrics depend on, like widthKey without the
+// text.
+type faceKey struct {
+	source *text.GoTextFaceSource
+	size   float64
+}
+
 // Advance is the exact logical width of one character of a monospace face,
 // not rounded: columns placed at whole multiples of the rounded Width drift
-// away from the text, which is drawn with the exact advance.
+// away from the text, which is drawn with the exact advance. It is measured
+// once per face and kept until the scale, theme or fonts change, because
+// every mono widget asks for it several times a frame. The map holds one
+// entry per face, so it needs no bound.
 func (c *Ctx) Advance(face *text.GoTextFace) float64 {
+	key := faceKey{source: face.Source, size: face.Size}
+	if advance, ok := c.advances[key]; ok {
+		return advance
+	}
+	if c.Stats != nil {
+		c.Stats.Advances++
+	}
 	w, _ := text.Measure("0", face, 0)
-	return w / c.Scale
+	advance := w / c.Scale
+	if c.advances == nil {
+		c.advances = map[faceKey]float64{}
+	}
+	c.advances[key] = advance
+	return advance
 }
 
 // LineH is the logical line height of face.
@@ -568,6 +592,7 @@ type DrawStats struct {
 	MaskFills int // rounded fills drawn from the corner mask, one DrawTriangles each
 	RingFills int // rounded outlines drawn from the ring mask, one DrawTriangles each
 	Widths    int // Ctx.Width measurements
+	Advances  int // Ctx.Advance measurements
 	Elements  int // elements the view runtime drew; one skipped outside its clip is not counted
 }
 

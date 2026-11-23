@@ -78,8 +78,7 @@ func (g monoGrid) selectionRect(scrollX, from, to, posY, height int) core.Rect {
 func (g monoGrid) drawSpans(ctx *core.Ctx, dst *ebiten.Image, scrollX int, cell core.Rect, row visualRow, spans []Span) {
 	col := row.col
 	for _, sp := range spans {
-		runes := []rune(sp.Text)
-		next := monoColumns(g.adv).span(runes, 0, len(runes), col)
+		next := monoColumns(g.adv).spanString(sp.Text, col)
 		spanX := g.textX - scrollX + g.colX(col-row.col)
 		if sp.Icon != "" {
 			drawIconAt(ctx, dst, sp.Icon, core.Rect{X: spanX, Y: cell.Y, W: g.colX(next-row.col) - g.colX(col-row.col), H: cell.H}, sp.Style)

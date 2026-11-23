@@ -42,6 +42,14 @@ func (cols columns) span(text []rune, from, to, col int) int {
 	return col
 }
 
+// spanString is span over all of text, without making its runes.
+func (cols columns) spanString(text string, col int) int {
+	for _, char := range text {
+		col = cols.next(col, char)
+	}
+	return col
+}
+
 // wrapLayout is the visual rows of a run of lines. It keeps the texts and
 // the columns that made the rows so that positions and pixels map back
 // through the same widths the rows were cut by.
