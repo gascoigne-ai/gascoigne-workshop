@@ -100,20 +100,27 @@ func (a *App) routeKeys(in core.Input) {
 	if !hadOverlay && !a.overlayOpen() && !wasRecording {
 		a.side.Keys(in, a.textFocused(), a.sidebarWidth())
 	}
+	urlKeys := !a.overlayOpen() && a.urlbar.Keys(in)
 	if wasRecording {
 		a.shortcutKeys.RecordKey(a, in)
 	} else if a.shortcutsPageShown() {
 		a.shortcutKeys.Navigate(in, a)
-	} else if !a.overlayOpen() {
+	} else if !a.overlayOpen() && !typedInURL(urlKeys, in) {
 		a.runShortcuts(in)
 	}
 	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
 		a.escape()
 	}
-	if !a.overlayOpen() {
+	if !a.overlayOpen() && !urlKeys {
 		a.kv.Keys(in, a.textFocused())
 	}
 }
+
+// typedInURL reports whether the URL field took the frame's keys as typing,
+// which no shortcut may take. A claim for Undo or Redo is not that: it keeps
+// the table's Undo from running, but a user binding on the same keys still
+// fires.
+func typedInURL(claimed bool, in core.Input) bool { return claimed && !in.Undo && !in.Redo }
 
 // endFrame builds the view once, lets it react and runs the per-frame
 // upkeep; moved is what beginFrame reported. Draw paints the tree built here
@@ -128,6 +135,7 @@ func (a *App) endFrame(moved bool) {
 	// what the view shows sets a.treeStale itself (commitEdit, the kv Tick,
 	// dragHover, saveCollection and the settings Poll do); the others only
 	// read state or touch the cursor, the clock or a write queue.
+	a.treeStale = a.urlbar.Tick() || a.treeStale
 	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
@@ -191,7 +199,7 @@ func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {
 	t := a.cur()
-	focused := a.side.Filter().Focused || t.url.Focused || t.find.Focused || t.timeout.Focused || t.body.Focused ||
+	focused := a.side.Filter().Focused || a.urlbar.Typing() || t.find.Focused || t.timeout.Focused || t.body.Focused ||
 		t.tests.Focused || t.gqlVars.Focused || t.file.Focused || t.msg.Focused || a.kv.Typing()
 	for _, in := range t.auth {
 		focused = focused || in.Focused

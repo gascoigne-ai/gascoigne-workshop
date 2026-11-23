@@ -36,15 +36,15 @@ const (
 type pane struct {
 	label          string
 	kind           paneKind
-	title          string                                   // caption above a table
-	rows           func(app *App, t *reqTab) *[]request.KV  // paneTable
-	editable       bool                                     // table rows can be toggled and deleted
-	changed        func(t *reqTab)                          // runs after an edit
-	flagDuplicates bool                                     // mark rows that repeat a name
-	note           func(t *reqTab) string                   // paneNote
-	empty          func(t *reqTab) (msg string, isErr bool) // shown instead of the content
-	caption        func(app *App) string                    // the caption when it depends on the app state
-	table          kvlogic.Kind                             // paneTable: which table of ui/editor/kvtable it shows
+	title          string                                             // caption above a table
+	rows           func(app *App, t *reqTab) *[]request.KV            // paneTable
+	editable       bool                                               // table rows can be toggled and deleted
+	changed        func(app *App, t *reqTab)                          // runs after an edit
+	flagDuplicates bool                                               // mark rows that repeat a name
+	note           func(t *reqTab) string                             // paneNote
+	empty          func(app *App, t *reqTab) (msg string, isErr bool) // shown instead of the content
+	caption        func(app *App) string                              // the caption when it depends on the app state
+	table          kvlogic.Kind                                       // paneTable: which table of ui/editor/kvtable it shows
 }
 
 // captionOf is the caption above the pane's table.
@@ -55,9 +55,9 @@ func (p pane) captionOf(app *App) string {
 	return p.title
 }
 
-func paramsChanged(tab *reqTab) {
+func paramsChanged(app *App, tab *reqTab) {
 	editRequest(tab, requestedit.ParamsChanged{})
-	tab.url = NewTextField(tab.Req.URL)
+	app.urlbar.Reload(tab.Tab)
 }
 
 var (
@@ -119,9 +119,9 @@ func viewOf(protocol request.Protocol) protocolView {
 	return protocolViews[0]
 }
 
-func noResponse(tab *reqTab) (string, bool) {
+func noResponse(app *App, tab *reqTab) (string, bool) {
 	switch {
-	case tab.Sending():
+	case app.sends.Sending(tab.Req):
 		return "Sending...", false
 	case tab.Resp == nil:
 		return "Send the request to see the response", false
@@ -183,11 +183,11 @@ func (a *App) tabItems(panes []pane, tab *reqTab) []TabItem {
 	return items
 }
 
-func paneEmpty(panel pane, tab *reqTab) (string, bool) {
+func paneEmpty(app *App, panel pane, tab *reqTab) (string, bool) {
 	if panel.empty == nil {
 		return "", false
 	}
-	return panel.empty(tab)
+	return panel.empty(app, tab)
 }
 
 // paneBuilders turns a pane into its view, by kind.
@@ -208,7 +208,7 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 
 // paneBody is what fills the area under a pane's tab strip.
 func (a *App) paneBody(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	if msg, isErr := paneEmpty(panel, tab); msg != "" {
+	if msg, isErr := paneEmpty(a, panel, tab); msg != "" {
 		return a.messagePane(panel, msg, isErr)
 	}
 	return paneBuilders[panel.kind](a, panel, tab, scroll)

@@ -16,7 +16,7 @@ func TestASendIsTracedWithItsOutcome(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	server := jsonServer(t)
-	pointTabAt(tab, server.URL)
+	a.pointTabAt(tab, server.URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 
@@ -31,7 +31,7 @@ func TestASendIsTracedWithItsOutcome(t *testing.T) {
 func TestAFailedSendIsTracedAsAnError(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, "http://127.0.0.1:1/")
+	a.pointTabAt(tab, "http://127.0.0.1:1/")
 	a.send(tab)
 	waitForResponse(t, a, tab)
 

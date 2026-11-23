@@ -12,6 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
@@ -334,7 +335,7 @@ func (host kvtableHost) Rows(table kvlogic.Table) *[]request.KV {
 // Changed runs the hook of the table's pane: the Params rewrite the URL.
 func (host kvtableHost) Changed(table kvlogic.Table) {
 	if changed := tablePanes[table.Kind].changed; changed != nil {
-		changed(host.tabOf(table))
+		changed(host.App, host.tabOf(table))
 	}
 }
 
@@ -408,3 +409,74 @@ func (host tabstripHost) NewRequest() { host.newRequest() }
 
 // Hint is label with the shortcut of action.
 func (host tabstripHost) Hint(label, action string) string { return host.hint(label, action) }
+
+// urlbarHost is what the URL bar asks of the App (urlbar.Deps).
+type urlbarHost struct{ *App }
+
+// Current is the tab shown.
+func (host urlbarHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host urlbarHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Send sends the request of tab; on a socket tab it opens or closes the connection.
+func (host urlbarHost) Send(tab *tabs.Tab) { host.send(host.widgets[tab]) }
+
+// Cancel stops the running request of tab.
+func (host urlbarHost) Cancel(tab *tabs.Tab) { host.cancelSend(host.widgets[tab]) }
+
+// Sending reports whether the request of tab is in flight.
+func (host urlbarHost) Sending(tab *tabs.Tab) bool { return host.sends.Sending(tab.Req) }
+
+// Socket reports whether tab keeps a connection open.
+func (host urlbarHost) Socket(tab *tabs.Tab) bool { return isSocket(host.widgets[tab]) }
+
+// ToggleConnection connects a disconnected socket tab and closes a connected one.
+func (host urlbarHost) ToggleConnection(tab *tabs.Tab) { host.toggleConnection(host.widgets[tab]) }
+
+// PickMethod lists the methods of the server of tab in a menu.
+func (host urlbarHost) PickMethod(tab *tabs.Tab) { host.pickGRPCMethod(host.widgets[tab]) }
+
+// Streaming reports whether tab streams instead of making single calls.
+func (host urlbarHost) Streaming(tab *tabs.Tab) bool { return host.widgets[tab].grpcStream }
+
+// ToggleStream switches tab between single calls and a stream.
+func (host urlbarHost) ToggleStream(tab *tabs.Tab) { host.toggleStream(host.widgets[tab]) }
+
+// Offered are the protocols the chip cycles through for a request on current.
+func (host urlbarHost) Offered(current request.Protocol) []request.Protocol {
+	return host.protocolsFor(current)
+}
+
+// Choose gives tab the protocol; a connection belongs to the protocol that
+// opened it, so it is closed first, and the pane indexes start over.
+func (host urlbarHost) Choose(tab *tabs.Tab, protocol request.Protocol) {
+	widgets := host.widgets[tab]
+	host.disconnect(widgets)
+	editRequest(widgets, requestedit.ProtocolChosen{Protocol: protocol})
+	widgets.paneTab, widgets.respTab = 0, 0 // the indexes point into the panes of the protocol
+}
+
+// Segments colors the {{variables}} of the URL raw of req.
+func (host urlbarHost) Segments(req *request.Request, raw string) []widget.Span {
+	return host.urlSegments(req, raw)
+}
+
+// Tip is what the URL of tab resolves to.
+func (host urlbarHost) Tip(tab *tabs.Tab) string { return host.urlTip(host.widgets[tab]) }
+
+// Hint is label with the shortcut of action.
+func (host urlbarHost) Hint(label, action string) string { return host.hint(label, action) }
+
+// protocolsFor are the protocols the chip cycles through for a request on
+// current: the experimental ones only when settings switch them on, except
+// the one the request already uses, so it never loses its protocol.
+func (a *App) protocolsFor(current request.Protocol) []request.Protocol {
+	var offered []request.Protocol
+	for _, view := range protocolViews {
+		if view.offered == nil || view.offered(a.settings) || view.protocol == current {
+			offered = append(offered, view.protocol)
+		}
+	}
+	return offered
+}

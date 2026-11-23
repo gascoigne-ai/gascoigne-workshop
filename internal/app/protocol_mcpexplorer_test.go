@@ -140,7 +140,7 @@ func TestLeavingMCPShowsTheFirstResponsePane(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	tab.respTab = 1
-	a.cycleProtocol(tab) // mcp -> sse
+	a.urlbar.CycleProtocol(tab.Tab) // mcp -> sse
 	if tab.respTab != 0 {
 		t.Fatalf("respTab %d", tab.respTab)
 	}

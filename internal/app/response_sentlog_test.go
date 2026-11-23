@@ -19,7 +19,7 @@ func TestSendingARequestListsItInTheSentLogNewestFirst(t *testing.T) {
 	for _, target := range []*request.Request{first, second} {
 		a.openRequest(target)
 		tab := a.cur()
-		pointTabAt(tab, server.URL)
+		a.pointTabAt(tab, server.URL)
 		a.send(tab)
 		waitForResponse(t, a, tab)
 	}
@@ -36,7 +36,7 @@ func TestTheSentLogComesBackAfterARestart(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
 	first := testApp(t, memorySettings(), withOptions(Options{StatePath: statePath}))
 	tab := first.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	first.pointTabAt(tab, jsonServer(t).URL)
 	first.send(tab)
 	waitForResponse(t, first, tab)
 
@@ -49,7 +49,7 @@ func TestTheSentLogComesBackAfterARestart(t *testing.T) {
 func TestTheSidebarFilterNarrowsTheSentLog(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 
@@ -66,7 +66,7 @@ func TestTheSidebarFilterNarrowsTheSentLog(t *testing.T) {
 func TestPickingASentRowOpensItsRequest(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	row := a.side.Sent().Rows(a.side.Filter().Text)[0]
@@ -91,7 +91,7 @@ func TestTheSidebarCanShowTheSentLogAndTheEmptyNote(t *testing.T) {
 	a.side.SetShowSent(true)
 	a.Step(core.Input{}) // empty log
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	a.Step(core.Input{}) // with a row

@@ -58,7 +58,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
-	tab.url = widget.NewTextField(tab.Req.URL)
+	*a.urlbar.Field(tab.Tab) = widget.NewTextField(tab.Req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(tab), "Connected") })

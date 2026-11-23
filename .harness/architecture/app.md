@@ -27,7 +27,7 @@ flowchart LR
 
 - **Bus** (`feature/workspace/bus`): the only path from a goroutine to the UI. Goroutines read
   only fields that never change after `NewApp` (the bus, the ports). A one-shot send is a `Cmd` run
-  by `Bus.Run` whose result (`sendResult`) comes back as a message. A connection emits many events,
+  by `Bus.Run` whose result (`sends.Result`) comes back as a message. A connection emits many events,
   so its goroutine dispatches `wsOpened`/`wsFailed` and each `wsReceived` itself and returns
   `wsClosed` as its `Cmd` result; a retry dispatches `wsRetry` from a timer. A dispatched `func()` runs on the UI goroutine (file dialog answers, the
   gRPC method menu, MCP sampling dialogs, `prefs.Later`).
@@ -46,13 +46,17 @@ flowchart LR
   the undo history (`tabs.HistoryLimit` steps per table and tab, on `tabs.Tab`) and asks the App to run the
   pane's `changed` hook (Params rewrite the URL). Menus, keys, drag and bulk edit all use it.
 - **Sending**: `App.dispatch` expands `{{vars}}` (`Request.Expanded`, the stored request stays as
-  typed) and runs `protocol.Registry.Send` as a `Cmd`. Each tab numbers its sends; a result whose
-  number is no longer current (cancelled or replaced) is dropped. Timeout: the request's, else
-  `settings.TimeoutSec`, else a minute.
+  typed) and runs `protocol.Registry.Send` as a `Cmd` returning a `sends.Result`. The store
+  `feature/send/sends` (`App.sends`) holds the sends in flight, keyed by the tab's request (a controller
+  of feature send may not import `tabs`), with one counter for the whole store: a number is never reused,
+  so a result whose send was cancelled, or whose tab closed, is dropped even when the same request opens
+  again. `Begin`, `Accept`, `Cancel` and `Sending` are the only way to start, end or ask; `cancelSend`
+  also shows the cancellation as the response. Timeout: the request's, else `settings.TimeoutSec`, else a minute.
 
 ### Window
 
-The window is VML views (`window.go`, `tree_sidebar.go`, `request_urlbar.go`);
+The window is VML views (`window.go`, `tree_sidebar.go`);
+the bar above the request pane is the component `ui/editor/urlbar` (`App.urlbar`, built in `NewApp`): it owns the URL field of every open tab (a map pruned in `Tick`), the protocol, method and Stream chips and the Send, Connect and Cancel button, and asks `urlbarHost` (`window_hosts.go`) for the current tab, the sends, the connection, the gRPC method and stream, the protocols the chip offers, the variable colors and tooltip, and the hints. The Params table rewrites the URL through `urlbar.Reload` (the pane's `changed` hook takes the `App`); `Field` serves the variable completion and `Type` the driver;
 the request tab strip is the component `ui/tabstrip` (`App.strip`, built in `NewApp`): it owns its scroll, ends a tab drag on release in `BeginFrame` (called in `beginFrame` before `kv.BeginFrame`), and asks `tabstripHost` (`window_hosts.go`) for the tabs (`Update` is `updateTabs`), the dirty and stripe marks, the tab menu (still built by the App), a new request and the hints; the drag index stays in `tabs.Set`;
 the status bar is the component `ui/statusbar` (`App.bar`, built in `NewApp`; it reads the status line and opens the log and the welcome dialog through its `Deps`), the fixed widths and `StatusH` are `ui/sizes`, and the status line is `workspace/notice` (`App.notices`; the toasts stay in `App` until the overlays move); `responseStatus` stays in `window.go` until the response pane moves; handlers are closures that change the `App`. Panes are tables, not switches:
 
@@ -116,8 +120,11 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   no code clears the old owner by hand.
 - **Keys**: `routeKeys` (`game.go`) gives the frame's keys to the overlay, the sidebar (`sidebar.Keys`:
   Up, Down, Enter, F2 and Delete while the tree has the keyboard; its result is not read yet, the shortcuts
-  still run in that frame), the shortcuts or the table undo (`kvtable.Keys`, offered last, claims Ctrl+Z and
-Ctrl+Y for the showing table unless text has the keyboard: `textFocused` asks `kv.Typing()`), in that order. Escape closes one layer per press, the topmost in
+  still run in that frame), the URL field (`urlbar.Keys`, which claims only while the current tab's field has the
+  keyboard: Undo and Redo, which keep the table's undo from running while a user binding on them still fires, and a
+  frame of typing keys, `engine.Binding.TypesText`, which skips the shortcuts; Escape, Ctrl+Enter, Ctrl+L and
+  Ctrl+Space are never claimed), the shortcuts or the table undo (`kvtable.Keys`, offered last, claims Ctrl+Z and
+Ctrl+Y for the showing table unless text has the keyboard: `textFocused` asks `urlbar.Typing()` and `kv.Typing()`), in that order. The `send` and `focus-url` rows of the shortcut table call `urlbar.Send` and `urlbar.FocusURL`; ids and defaults stay in the table. Escape closes one layer per press, the topmost in
   `feature/workspace/overlay`'s order, ending with cancelling a running request.
 - **Shortcuts**: the `shortcuts` table (`settings_shortcuts.go`) holds each action with a stable `id` and its
   default. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.

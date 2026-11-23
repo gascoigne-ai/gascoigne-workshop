@@ -16,8 +16,8 @@ import (
 )
 
 // responseEmpty is noResponse plus the case of a body that is not text.
-func responseEmpty(tab *reqTab) (string, bool) {
-	if msg, isErr := noResponse(tab); msg != "" {
+func responseEmpty(app *App, tab *reqTab) (string, bool) {
+	if msg, isErr := noResponse(app, tab); msg != "" {
 		return msg, isErr
 	}
 	if tab.picture != nil {

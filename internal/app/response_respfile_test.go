@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
@@ -27,8 +28,7 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	send := func(status int) {
-		tab.BeginSend()
-		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: status, StatusText: "S", Body: []byte("{}")}})
+		answer(a, tab, request.Response{Status: status, StatusText: "S", Body: []byte("{}")})
 	}
 	send(200)
 	if len(tab.Earlier) != 0 {
@@ -53,12 +53,11 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	if len(tab.Earlier) != tabs.PastLimit {
 		t.Fatalf("history grew to %d", len(tab.Earlier))
 	}
-	tab.BeginSend()
+	number, _ := a.sends.Begin(tab.Req, func() {})
 	n := len(tab.Earlier)
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Err: "boom"}})
-	a.apply(sendResult{tab: tab, seq: tab.Seq + 1, resp: request.Response{Status: 200}}) // stale: ignored
-	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 204}})
+	a.apply(sends.Result{Owner: tab.Req, Number: number, Response: request.Response{Err: "boom"}})
+	a.apply(sends.Result{Owner: tab.Req, Number: number, Response: request.Response{Status: 200}}) // stale: ignored
+	answer(a, tab, request.Response{Status: 204})
 	if len(tab.Earlier) != n {
 		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.Earlier))
 	}
@@ -99,8 +98,7 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
-	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)}})
+	answer(a, tab, request.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)})
 	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
 		t.Fatalf("%+v", tab.testResults)
 	}
@@ -132,20 +130,18 @@ func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
 	}
 	a := testApp(t)
 	tab := a.cur()
-	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
-		Headers: []request.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}}) // mislabeled on purpose
+	answer(a, tab, request.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
+		Headers: []request.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}) // mislabeled on purpose
 	if tab.picture == nil || !strings.HasPrefix(tab.pictureInfo, "PNG 40x20") {
 		t.Fatalf("picture %v info %q", tab.picture, tab.pictureInfo)
 	}
-	if msg, _ := responseEmpty(tab); msg != "" {
+	if msg, _ := responseEmpty(a, tab); msg != "" {
 		t.Fatalf("a picture must not be reported as binary: %q", msg)
 	}
 	if d := view.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
 		t.Fatalf("pane:\n%s", d)
 	}
-	tab.BeginSend()
-	a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, Body: []byte(`{"a":1}`)}})
+	answer(a, tab, request.Response{Status: 200, Body: []byte(`{"a":1}`)})
 	if tab.picture != nil {
 		t.Fatal("the next, non-image response must clear the picture")
 	}
@@ -200,8 +196,7 @@ func TestCapturedValuesBecomeVariablesInTheActiveScope(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "set token = json access_token"
 	send := func(body string) {
-		tab.BeginSend()
-		a.apply(sendResult{tab: tab, seq: tab.Seq, resp: request.Response{Status: 200, Body: []byte(body)}})
+		answer(a, tab, request.Response{Status: 200, Body: []byte(body)})
 	}
 	a.col().Vars = nil
 	send(`{"access_token":"t1"}`)

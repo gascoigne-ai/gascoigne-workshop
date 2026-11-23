@@ -110,8 +110,7 @@ func (d *Driver) TypeBody(text string) error {
 
 // TypeURL types text into the open request's URL, so its tab is marked changed.
 func (d *Driver) TypeURL(text string) {
-	d.app.cur().url.Insert(text)
-	d.app.urlEdited(d.app.cur())
+	d.app.urlbar.Type(d.app.cur().Tab, text)
 	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 }
 
@@ -293,7 +292,7 @@ func (d *Driver) SendsPending() bool { return d.sendNext != nil }
 
 // AllAnswered reports whether every send the driver started has its outcome.
 func (d *Driver) AllAnswered() bool {
-	return !slices.ContainsFunc(d.waiting, func(tab *reqTab) bool { return !answered(tab) })
+	return !slices.ContainsFunc(d.waiting, func(tab *reqTab) bool { return !d.app.answered(tab) })
 }
 
 // Settled reports whether the open request shows nothing still loading: its
@@ -311,9 +310,9 @@ func (d *Driver) SendWithoutWaiting() { d.app.send(d.app.cur()) }
 // answered reports whether what a driver sent has an outcome to show: a
 // response, or for a socket an open connection (an MCP server also has
 // said who it is) or a failed one.
-func answered(tab *reqTab) bool {
+func (a *App) answered(tab *reqTab) bool {
 	if !isSocket(tab) {
-		return tab.Resp != nil && !tab.Sending() // a tab sent again still holds its earlier response
+		return tab.Resp != nil && !a.sends.Sending(tab.Req) // a tab sent again still holds its earlier response
 	}
 	if tab.State() == tabs.ConnConnecting {
 		return false

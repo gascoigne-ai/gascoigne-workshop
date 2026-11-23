@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -390,12 +391,12 @@ func TestAnAnsweredSendIsTheLatestSendOfATab(t *testing.T) {
 	a := driverApp(t, Options{})
 	tab := a.cur()
 	tab.Resp = &request.Response{Status: 200}
-	tab.BeginSend()
-	if answered(tab) {
+	number, _ := a.sends.Begin(tab.Req, func() {})
+	if a.answered(tab) {
 		t.Fatal("a tab still sending is not answered by the response of its earlier send")
 	}
-	tab.Accept(tab.Seq)
-	if !answered(tab) {
+	a.sends.Accept(sends.Result{Owner: tab.Req, Number: number})
+	if !a.answered(tab) {
 		t.Fatal("answered once the send ended")
 	}
 }
@@ -404,12 +405,12 @@ func TestDriverSendIsAnsweredOnceTheResponseIsIn(t *testing.T) {
 	srv := jsonServer(t)
 	a := driverApp(t, withAdapters(Options{}))
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.Driver().Send()
 	if a.Driver().AllAnswered() {
 		t.Fatal("a send without its response is not answered")
 	}
-	if !tab.Sending() && tab.Resp == nil {
+	if !a.sends.Sending(tab.Req) && tab.Resp == nil {
 		t.Fatal("Send must start the request")
 	}
 	waitForResponse(t, a, tab)
@@ -463,9 +464,9 @@ func TestDriverSendWithoutWaitingCapturesTheRequestInFlight(t *testing.T) {
 	t.Cleanup(func() { close(release) })
 	a := driverApp(t, withAdapters(Options{}))
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.Driver().SendWithoutWaiting()
-	if !tab.Sending() {
+	if !a.sends.Sending(tab.Req) {
 		t.Fatal("SendWithoutWaiting must start the request")
 	}
 	if !a.Driver().AllAnswered() {
@@ -480,7 +481,7 @@ func TestDriverSendsTheNextRequestAfterTheEarlierAnswers(t *testing.T) {
 	a := driverApp(t, withAdapters(Options{}))
 	driver := a.Driver()
 	first := a.cur().Req
-	pointTabAt(a.cur(), srv.URL)
+	a.pointTabAt(a.cur(), srv.URL)
 	named := a.findRequestByName("Get User")
 	named.URL = srv.URL
 	driver.Send()
@@ -512,7 +513,7 @@ func TestDriverFindsTheQueryInTheResponse(t *testing.T) {
 	srv := jsonServer(t)
 	a := driverApp(t, withAdapters(Options{}))
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.Driver().Send()
 	waitForResponse(t, a, tab)
 	a.Driver().Find("ok")

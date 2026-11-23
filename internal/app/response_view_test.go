@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"image"
 	"image/png"
 	"os"
@@ -69,8 +70,8 @@ var responseStates = []responseState{
 
 // answer gives tab a response as a finished send would.
 func answer(app *App, tab *reqTab, resp request.Response) {
-	tab.BeginSend()
-	app.apply(sendResult{tab: tab, seq: tab.Seq, resp: resp})
+	number, _ := app.sends.Begin(tab.Req, func() {})
+	app.apply(sends.Result{Owner: tab.Req, Number: number, Response: resp})
 }
 
 // pngBody is a 40x20 PNG, an image response body. It is stored uncompressed

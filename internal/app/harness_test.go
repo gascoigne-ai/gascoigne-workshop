@@ -424,9 +424,9 @@ func jsonServer(t *testing.T) *httptest.Server {
 }
 
 // pointTabAt makes the open request target url, as if typed into the field.
-func pointTabAt(tab *reqTab, url string) {
+func (a *App) pointTabAt(tab *reqTab, url string) {
 	tab.Req.URL = url
-	tab.url = widget.NewTextField(url)
+	*a.urlbar.Field(tab.Tab) = widget.NewTextField(url)
 }
 
 // Cells of the Params table at 1280x800: request pane starts at x=260,
@@ -560,7 +560,7 @@ func openAuthPane(t *testing.T) *App {
 func sendAndWait(t *testing.T, app *App, url string) {
 	t.Helper()
 	tab := app.cur()
-	pointTabAt(tab, url)
+	app.pointTabAt(tab, url)
 	tab.Resp = nil
 	app.send(tab)
 	waitForResponse(t, app, tab)
@@ -751,11 +751,10 @@ func openSession(tab *reqTab, session request.Session) {
 
 // setSending puts tab in the sending or the idle state, as a send or its
 // answer would.
-func setSending(tab *reqTab, sending bool) {
+func setSending(app *App, tab *reqTab, sending bool) {
 	switch {
-	case sending && !tab.Sending():
-		tab.BeginSend()
-	case !sending && tab.Sending():
-		tab.Accept(tab.Seq)
+	case sending && !app.sends.Sending(tab.Req):
+		app.sends.Begin(tab.Req, func() {})
+	case !sending && app.sends.Cancel(tab.Req):
 	}
 }

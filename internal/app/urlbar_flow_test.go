@@ -2,26 +2,21 @@ package app
 
 import (
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Widths the URL bar is pinned at: the main column of the test window,
 // and the narrowest one the sidebar divider allows.
-const (
-	urlWideW   = winW - sidebarW
-	urlNarrowW = minMainW
-)
+const urlWideW = winW - sidebarW
 
 // grpcMethod is the method the gRPC states call.
 const grpcMethod = "grpc.health.v1.Health/Check"
@@ -39,81 +34,48 @@ type urlBarState struct {
 var urlBarStates = []urlBarState{
 	{"rest-get", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "GET"
-		pointTabAt(tab, "https://api.example.test/users")
+		app.pointTabAt(tab, "https://api.example.test/users")
 	}},
 	{"rest-post-vars", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "POST"
-		pointTabAt(tab, "{{base}}/users/{{id}}")
+		app.pointTabAt(tab, "{{base}}/users/{{id}}")
 	}},
 	{"websocket", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
-		pointTabAt(tab, "ws://127.0.0.1:1/")
+		app.pointTabAt(tab, "ws://127.0.0.1:1/")
 	}},
 	{"websocket-connected", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "websocket"
-		pointTabAt(tab, echoServer(t))
+		app.pointTabAt(tab, echoServer(t))
 		app.toggleConnection(tab)
 		t.Cleanup(func() { app.disconnect(tab) })
 	}},
 	{"sse", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "sse"
-		pointTabAt(tab, "http://127.0.0.1:1/events")
+		app.pointTabAt(tab, "http://127.0.0.1:1/events")
 	}},
 	{"mcp", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol = "mcp"
-		pointTabAt(tab, "http://127.0.0.1:1/mcp")
+		app.pointTabAt(tab, "http://127.0.0.1:1/mcp")
 	}},
 	{"grpc-no-method", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", ""
-		pointTabAt(tab, "grpc://127.0.0.1:1")
+		app.pointTabAt(tab, "grpc://127.0.0.1:1")
 	}},
 	{"grpc-method", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", grpcMethod
-		pointTabAt(tab, "grpc://127.0.0.1:1")
+		app.pointTabAt(tab, "grpc://127.0.0.1:1")
 	}},
 	{"grpc-stream", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", grpcMethod
-		pointTabAt(tab, "grpc://127.0.0.1:1")
+		app.pointTabAt(tab, "grpc://127.0.0.1:1")
 		app.toggleStream(tab)
 	}},
 	{"sending", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "GET"
-		pointTabAt(tab, silentServer(t))
+		app.pointTabAt(tab, silentServer(t))
 		app.send(tab)
 	}},
-}
-
-// The URL bar is pinned as text (element kinds, options, handlers,
-// rectangles) at two widths in every look, so moving it to markup cannot
-// change a pixel unnoticed.
-func TestTheURLBarLaysOutAsPinned(t *testing.T) {
-	sizes := []struct {
-		name  string
-		width int
-	}{
-		{"wide", urlWideW},
-		{"narrow", urlNarrowW},
-	}
-	for _, state := range urlBarStates {
-		for _, size := range sizes {
-			name := "urlbar-" + state.name + "-" + size.name
-			t.Run(name, func(t *testing.T) {
-				a := testApp(t)
-				t.Cleanup(a.WaitWrites)
-				tab := a.cur()
-				state.setUp(t, a, tab)
-				root := a.urlBar(tab)
-				Layout(a.ctx, root, size.width, urlH)
-				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
-				if err != nil {
-					t.Fatal(err)
-				}
-				if got := Dump(root); got != string(want) {
-					t.Fatalf("got:\n%s\nwant:\n%s", got, want)
-				}
-			})
-		}
-	}
 }
 
 // Points of the URL bar in the test window: the protocol chip, the method
@@ -121,7 +83,7 @@ func TestTheURLBarLaysOutAsPinned(t *testing.T) {
 const (
 	protocolChipX = sidebarW + core.Gutter + 32
 	methodChipX   = protocolChipX + 32 + 1 + 42
-	streamChipX   = protocolChipX + 32 + 1 + grpcMethodW + 1 + 28
+	streamChipX   = protocolChipX + 32 + 1 + sizes.GRPCMethodW + 1 + 28
 	urlFieldX     = 1100
 )
 
@@ -217,11 +179,11 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 	cases := []struct {
 		name  string
 		state string
-		check func(tab *reqTab) bool
+		check func(a *App, tab *reqTab) bool
 	}{
-		{"send", "rest-get", func(tab *reqTab) bool { return tab.Sending() }},
-		{"cancel", "sending", func(tab *reqTab) bool { return !tab.Sending() }},
-		{"connect", "websocket", func(tab *reqTab) bool { return tab.Active() }},
+		{"send", "rest-get", func(a *App, tab *reqTab) bool { return a.sends.Sending(tab.Req) }},
+		{"cancel", "sending", func(a *App, tab *reqTab) bool { return !a.sends.Sending(tab.Req) }},
+		{"connect", "websocket", func(a *App, tab *reqTab) bool { return tab.Active() }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -230,8 +192,8 @@ func TestTheURLBarsButtonFollowsItsLabel(t *testing.T) {
 			tab := a.cur()
 			stateNamed(t, tc.state).setUp(t, a, tab)
 			click(a, sendX, urlBarY)
-			if !tc.check(tab) {
-				t.Fatalf("after the click: sending %v, connection active %v", tab.Sending(), tab.Active())
+			if !tc.check(a, tab) {
+				t.Fatalf("after the click: sending %v, connection active %v", a.sends.Sending(tab.Req), tab.Active())
 			}
 			a.cancelSend(tab)
 			a.disconnect(tab)
@@ -252,7 +214,7 @@ func TestTypingAURLEditsTheRequestAndEnterSendsIt(t *testing.T) {
 		t.Fatalf("URL %q", tab.Req.URL)
 	}
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyEnter}, Enter: true})
-	if !tab.Sending() {
+	if !a.sends.Sending(tab.Req) {
 		t.Fatal("Enter in the URL field should send the request")
 	}
 	a.cancelSend(tab)
@@ -265,13 +227,13 @@ func TestTheURLFieldIsWiredToTheTab(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
-	field := findWidget(a.urlBar(tab), "*widget.fieldB")
+	field := findWidget(a.urlbar.View(a.ctx), "*widget.fieldB")
 	if field == nil {
 		t.Fatal("the URL bar has no field")
 	}
 	settings := fmt.Sprintf("%+v", field.Behavior())
 	for _, want := range []string{
-		fmt.Sprintf("field:%p", &tab.url),
+		fmt.Sprintf("field:%p", a.urlbar.Field(tab.Tab)),
 		"placeholder:Enter URL ",
 		"segments:0x",
 		"onEnter:0x",

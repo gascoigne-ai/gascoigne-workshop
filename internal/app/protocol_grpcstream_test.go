@@ -32,18 +32,18 @@ func TestAGRPCTabIsASocketOnlyWhileStreamIsOn(t *testing.T) {
 func TestTheUnaryGRPCTabOffersAStreamChipThatTurnsConnectOn(t *testing.T) {
 	a := testApp(t)
 	tab := grpcTab(a)
-	if dump := view.Dump(a.urlBar(tab)); !strings.Contains(dump, "Stream") || !strings.Contains(dump, `"Send"`) {
+	if dump := view.Dump(a.urlbar.View(a.ctx)); !strings.Contains(dump, "Stream") || !strings.Contains(dump, `"Send"`) {
 		t.Fatalf("url bar:\n%s", dump)
 	}
 	a.toggleStream(tab)
-	if dump := view.Dump(a.urlBar(tab)); !strings.Contains(dump, `"Connect"`) {
+	if dump := view.Dump(a.urlbar.View(a.ctx)); !strings.Contains(dump, `"Connect"`) {
 		t.Fatalf("url bar with Stream on:\n%s", dump)
 	}
 }
 
 func TestOtherProtocolsHaveNoStreamChip(t *testing.T) {
 	a := testApp(t)
-	if dump := view.Dump(a.urlBar(a.cur())); strings.Contains(dump, "Stream") {
+	if dump := view.Dump(a.urlbar.View(a.ctx)); strings.Contains(dump, "Stream") {
 		t.Fatalf("a REST tab has a Stream chip:\n%s", dump)
 	}
 }

@@ -31,7 +31,7 @@ func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
 	t.Cleanup(srv.Close)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 
 	a.dispatch(tab, tab.Req)
 	a.clearCookies()
@@ -47,16 +47,16 @@ func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
 func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 	cases := []struct {
 		name  string
-		focus func(*reqTab)
+		focus func(*App, *reqTab)
 	}{
-		{"url", func(tab *reqTab) { tab.url.Focused = true }},
-		{"find", func(tab *reqTab) { tab.find.Focused = true }},
-		{"timeout", func(tab *reqTab) { tab.timeout.Focused = true }},
-		{"body", func(tab *reqTab) { tab.body.Focused = true }},
-		{"tests", func(tab *reqTab) { tab.tests.Focused = true }},
-		{"graphql variables", func(tab *reqTab) { tab.gqlVars.Focused = true }},
-		{"file path", func(tab *reqTab) { tab.file.Focused = true }},
-		{"message composer", func(tab *reqTab) { tab.msg.Focused = true }},
+		{"url", func(a *App, tab *reqTab) { a.urlbar.Field(tab.Tab).Focused = true }},
+		{"find", func(a *App, tab *reqTab) { tab.find.Focused = true }},
+		{"timeout", func(a *App, tab *reqTab) { tab.timeout.Focused = true }},
+		{"body", func(a *App, tab *reqTab) { tab.body.Focused = true }},
+		{"tests", func(a *App, tab *reqTab) { tab.tests.Focused = true }},
+		{"graphql variables", func(a *App, tab *reqTab) { tab.gqlVars.Focused = true }},
+		{"file path", func(a *App, tab *reqTab) { tab.file.Focused = true }},
+		{"message composer", func(a *App, tab *reqTab) { tab.msg.Focused = true }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 			if a.textFocused() {
 				t.Fatal("nothing is focused at the start")
 			}
-			c.focus(a.cur())
+			c.focus(a, a.cur())
 			if !a.textFocused() {
 				t.Fatalf("%s has the keyboard but textFocused is false", c.name)
 			}
@@ -96,13 +96,13 @@ func TestClosingATabStopsItsRequest(t *testing.T) {
 	srv, _ := pathServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL+"/slow")
+	a.pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
-	if !tab.Sending() {
+	if !a.sends.Sending(tab.Req) {
 		t.Fatal("test setup: the request must be running")
 	}
 	a.closeTab(a.tabs.Active())
-	if tab.Sending() {
+	if a.sends.Sending(tab.Req) {
 		t.Error("the request of the closed tab is still running")
 	}
 }
@@ -223,7 +223,7 @@ func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
 	tab.Req.Method, tab.Req.URL = "POST", "http://127.0.0.1:1/x"
 	tab.Req.BodyType, tab.Req.Body = request.BodyFile, "/etc/hostname"
 	a.send(tab)
-	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || tab.Sending() {
-		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, tab.Sending())
+	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || a.sends.Sending(tab.Req) {
+		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, a.sends.Sending(tab.Req))
 	}
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"strings"
 
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -42,19 +41,6 @@ func (a *App) pickGRPCMethod(tab *reqTab) {
 		}
 	})
 }
-
-// grpcMethodLabel is what the method chip of a gRPC tab shows, and in
-// which color: the method, or a muted prompt to pick one.
-func grpcMethodLabel(tab *reqTab) (string, w.Token) {
-	if tab.Req.Method == "" {
-		return "Pick method...", w.Muted
-	}
-	return tab.Req.Method, w.Accent
-}
-
-// grpcMethodW is the width of the method chip: wide, as method names are
-// long.
-const grpcMethodW = 200
 
 // toggleStream switches a gRPC tab between single calls and a stream shown
 // in the Messages pane. An open stream is closed first, since it belongs to

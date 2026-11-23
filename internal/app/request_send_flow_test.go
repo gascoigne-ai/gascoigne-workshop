@@ -41,7 +41,7 @@ func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 	a := testApp(t)
 	req := a.cur().Req
 	req.Protocol, req.Method = "grpc", ""
-	a.cycleProtocol(a.cur())
+	a.urlbar.CycleProtocol(a.cur().Tab)
 	if req.Protocol != "rest" || req.Method != "GET" {
 		t.Fatalf("got %q %q, want rest GET", req.Protocol, req.Method)
 	}
@@ -60,17 +60,17 @@ func TestSendShowsTheResponse(t *testing.T) {
 	defer srv.Close()
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
-	if !tab.Sending() {
+	if !a.sends.Sending(tab.Req) {
 		t.Fatal("a click on Send must start a request")
 	}
 	close(release)
 	waitForResponse(t, a, tab)
 
-	if tab.Sending() || tab.Resp.Status != 200 || tab.Resp.Err != "" {
-		t.Fatalf("sending %v resp %+v", tab.Sending(), tab.Resp)
+	if a.sends.Sending(tab.Req) || tab.Resp.Status != 200 || tab.Resp.Err != "" {
+		t.Fatalf("sending %v resp %+v", a.sends.Sending(tab.Req), tab.Resp)
 	}
 	if len(tab.view.Lines) != 3 { // pretty-printed {"ok":true}
 		t.Fatalf("response view has %d lines", len(tab.view.Lines))
@@ -84,7 +84,7 @@ func TestEnterInTheURLFieldSends(t *testing.T) {
 	srv := jsonServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 
 	click(a, 1100, urlBarY) // focus the field
 	a.Step(core.Input{Enter: true})
@@ -106,7 +106,7 @@ func TestSendingTwiceWhileRunningStartsOneRequest(t *testing.T) {
 	defer srv.Close()
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 
 	click(a, sendX, urlBarY)
 	a.Step(combo(ebiten.KeyEnter, true, false, false))
@@ -125,7 +125,7 @@ func TestFailedSendShowsTheError(t *testing.T) {
 	srv.Close() // nothing listens any more
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, url)
+	a.pointTabAt(tab, url)
 
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
@@ -164,12 +164,12 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	tab := a.cur()
 
 	states := map[string]func(){
-		"no response": func() { tab.Resp = nil; setSending(tab, false) },
-		"sending":     func() { tab.Resp = nil; setSending(tab, true) },
-		"error":       func() { tab.Resp = &respErr; setSending(tab, false) },
+		"no response": func() { tab.Resp = nil; setSending(a, tab, false) },
+		"sending":     func() { tab.Resp = nil; setSending(a, tab, true) },
+		"error":       func() { tab.Resp = &respErr; setSending(a, tab, false) },
 		"ok": func() {
-			setSending(tab, false)
-			pointTabAt(tab, srv.URL)
+			setSending(a, tab, false)
+			a.pointTabAt(tab, srv.URL)
 			a.send(tab)
 			waitForResponse(t, a, tab)
 		},
@@ -185,12 +185,6 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	}
 }
 
-func sendingTab() *tabs.Tab {
-	tab := &tabs.Tab{}
-	tab.BeginSend()
-	return tab
-}
-
 func TestNoResponseStates(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -198,13 +192,15 @@ func TestNoResponseStates(t *testing.T) {
 		wantMsg string
 		wantErr bool
 	}{
-		{"sending", reqTab{Tab: sendingTab()}, "Sending...", false},
-		{"not sent", reqTab{Tab: &tabs.Tab{}}, "Send the request to see the response", false},
-		{"failed", reqTab{Tab: &tabs.Tab{Resp: &respErr}}, "boom", true},
-		{"ok", reqTab{Tab: &tabs.Tab{Resp: &respOK}}, "", false},
+		{"sending", reqTab{Tab: &tabs.Tab{Req: &request.Request{}}}, "Sending...", false},
+		{"not sent", reqTab{Tab: &tabs.Tab{Req: &request.Request{}}}, "Send the request to see the response", false},
+		{"failed", reqTab{Tab: &tabs.Tab{Req: &request.Request{}, Resp: &respErr}}, "boom", true},
+		{"ok", reqTab{Tab: &tabs.Tab{Req: &request.Request{}, Resp: &respOK}}, "", false},
 	}
 	for _, tt := range tests {
-		msg, isErr := noResponse(&tt.tab)
+		a := testApp(t)
+		setSending(a, &tt.tab, tt.name == "sending")
+		msg, isErr := noResponse(a, &tt.tab)
 		if msg != tt.wantMsg || isErr != tt.wantErr {
 			t.Errorf("%s: got %q %v", tt.name, msg, isErr)
 		}
@@ -215,7 +211,7 @@ func TestCtrlEnterSendsTheRequest(t *testing.T) {
 	srv := jsonServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.Step(combo(ebiten.KeyEnter, true, false, false))
 	waitForResponse(t, a, tab)
 	if tab.Resp.Status != 200 {
@@ -325,7 +321,7 @@ func TestSendingAFormBodyUsesTheRows(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Method, tab.Req.BodyType = "POST", request.BodyForm
 	tab.Req.Form = []request.KV{{Name: "q", Value: "go lang", Enabled: true}}
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	if want := "application/x-www-form-urlencoded|q=go+lang"; <-got != want {
@@ -355,15 +351,15 @@ func TestSendingTurnsIntoCancelAndStopsTheRequest(t *testing.T) {
 	srv, _ := pathServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL+"/slow")
+	a.pointTabAt(tab, srv.URL+"/slow")
 
 	click(a, sendX, urlBarY)
-	if !tab.Sending() {
+	if !a.sends.Sending(tab.Req) {
 		t.Fatal("test setup: the request must be running")
 	}
 	click(a, sendX, urlBarY) // the same button now cancels
-	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
-		t.Fatalf("sending %v resp %+v", tab.Sending(), tab.Resp)
+	if a.sends.Sending(tab.Req) || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
+		t.Fatalf("sending %v resp %+v", a.sends.Sending(tab.Req), tab.Resp)
 	}
 	if a.notices.Status() != "Cancelled" {
 		t.Fatalf("status = %q", a.notices.Status())
@@ -374,17 +370,17 @@ func TestEscapeCancelsARunningRequestButClosesTheMenuFirst(t *testing.T) {
 	srv, _ := pathServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL+"/slow")
+	a.pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
 
 	a.menu = true
 	a.Step(core.Input{Escape: true})
-	if a.menu || !tab.Sending() {
-		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, tab.Sending())
+	if a.menu || !a.sends.Sending(tab.Req) {
+		t.Fatalf("the first Escape closes the menu only: menu %v sending %v", a.menu, a.sends.Sending(tab.Req))
 	}
 	a.Step(core.Input{Escape: true})
-	if tab.Sending() || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
-		t.Fatalf("the second Escape cancels: sending %v resp %+v", tab.Sending(), tab.Resp)
+	if a.sends.Sending(tab.Req) || tab.Resp == nil || tab.Resp.Err != "Cancelled" {
+		t.Fatalf("the second Escape cancels: sending %v resp %+v", a.sends.Sending(tab.Req), tab.Resp)
 	}
 }
 
@@ -401,10 +397,10 @@ func TestALateResultFromACancelledRequestIsIgnored(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 
-	pointTabAt(tab, srv.URL+"/slow")
+	a.pointTabAt(tab, srv.URL+"/slow")
 	click(a, sendX, urlBarY)
 	click(a, sendX, urlBarY) // cancel
-	pointTabAt(tab, srv.URL+"/fast")
+	a.pointTabAt(tab, srv.URL+"/fast")
 	click(a, sendX, urlBarY)
 	waitForResponse(t, a, tab)
 	for tab.Resp.Err != "" || string(tab.Resp.Body) != "fast" { // the cancelled one may still be in flight
@@ -426,7 +422,7 @@ func TestRequestTimeoutStopsASlowRequest(t *testing.T) {
 	srv, _ := pathServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL+"/slow")
+	a.pointTabAt(tab, srv.URL+"/slow")
 	tab.Req.TimeoutSec = 1
 
 	start := time.Now()
@@ -479,7 +475,7 @@ func TestFollowRedirectsToggleControlsRedirects(t *testing.T) {
 	srv, _ := pathServer(t)
 	a := openSettingsPane(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL+"/redirect")
+	a.pointTabAt(tab, srv.URL+"/redirect")
 
 	a.send(tab)
 	waitForResponse(t, a, tab)
@@ -522,11 +518,11 @@ func TestBinaryBodiesAreNotShownAsText(t *testing.T) {
 	defer srv.Close()
 	a := testApp(t)
 	sendAndWait(t, a, srv.URL)
-	msg, isErr := paneEmpty(responsePanes[0], a.cur())
+	msg, isErr := paneEmpty(a, responsePanes[0], a.cur())
 	if !strings.Contains(msg, "Binary body") || !strings.Contains(msg, "8B") || isErr {
 		t.Fatalf("message %q error %v", msg, isErr)
 	}
-	if msg, _ := paneEmpty(responsePanes[1], a.cur()); msg != "" {
+	if msg, _ := paneEmpty(a, responsePanes[1], a.cur()); msg != "" {
 		t.Fatalf("the Headers pane must still show headers, got %q", msg)
 	}
 }
@@ -632,5 +628,21 @@ func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	clickText(t, a, "Pretty", 0)
 	if a.cur().look.Compact() || a.cur().look.Raw() || a.settings.ResponseView != "pretty" {
 		t.Fatalf("compact %v raw %v setting %q", a.cur().look.Compact(), a.cur().look.Raw(), a.settings.ResponseView)
+	}
+}
+
+// A gRPC tab can have a unary call in flight and then switch Stream on, so
+// sending and connecting are two machines, not one.
+func TestASendInFlightDoesNotForbidAConnect(t *testing.T) {
+	a := testApp(t)
+	tab := a.cur()
+	if _, started := a.sends.Begin(tab.Req, func() {}); !started {
+		t.Fatal("send not started")
+	}
+	if _, ok := tab.Begin(); !ok {
+		t.Fatal("a connect is refused while a send is in flight")
+	}
+	if !a.sends.Sending(tab.Req) || tab.State() != tabs.ConnConnecting {
+		t.Fatalf("sending %v, connection %d", a.sends.Sending(tab.Req), tab.State())
 	}
 }

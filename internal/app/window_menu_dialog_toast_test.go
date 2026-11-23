@@ -207,7 +207,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 	a.prompt("Rename", "x", "Rename", func(string) {})
 	a.Step(core.Input{})
 	a.Step(core.Input{Tab: true})
-	if !a.dialog.Input.Focused || a.cur().url.Focused {
+	if !a.dialog.Input.Focused || a.urlbar.Field(a.cur().Tab).Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
 	a.Step(combo(ebiten.KeyT, true, false, false))
@@ -314,7 +314,7 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 	}
 
 	pickMenu(t, a, "Select all")
-	url := &a.cur().url
+	url := a.urlbar.Field(a.cur().Tab)
 	if url.SelectedText() != url.Text {
 		t.Fatal("Select all")
 	}

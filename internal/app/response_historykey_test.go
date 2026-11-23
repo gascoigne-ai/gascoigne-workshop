@@ -50,7 +50,7 @@ func TestASentRowOpensTheRequestOfItsOwnCollection(t *testing.T) {
 	betaInner := entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0]
 	a.openRequest(betaInner)
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	row := a.side.Sent().Rows("")[0]

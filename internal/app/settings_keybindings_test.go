@@ -148,12 +148,12 @@ func TestAPlainKeyBindingFiresOnlyWhileNoTextFieldHasFocus(t *testing.T) {
 	a.settings.Shortcuts = map[string]string{"close-tab": "Q"}
 	a.newRequest() // closing the only tab opens a fresh one, which would hide the effect
 	tabs := len(a.tabs.Tabs())
-	a.cur().url.Focused = true
+	a.urlbar.Field(a.cur().Tab).Focused = true
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}})
 	if len(a.tabs.Tabs()) != tabs {
 		t.Fatal("typing Q in the URL field must not close the tab")
 	}
-	a.cur().url.Focused = false
+	a.urlbar.Field(a.cur().Tab).Focused = false
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}})
 	if len(a.tabs.Tabs()) == tabs {
 		t.Fatal("Q with no text field focused closes the tab")

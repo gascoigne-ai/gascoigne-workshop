@@ -24,7 +24,7 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 	if last.Name != "page" || last.Value != "2" || !last.Enabled {
 		t.Fatalf("params = %+v", req.Params)
 	}
-	if got := a.cur().url.Text; got != req.URL {
+	if got := a.urlbar.Field(a.cur().Tab).Text; got != req.URL {
 		t.Fatalf("field %q and request %q disagree", got, req.URL)
 	}
 }
@@ -83,7 +83,7 @@ func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 	if tableEditing(a) || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
 		t.Fatalf("edit %+v params %+v url %q", editCell(a), req.Params, req.URL)
 	}
-	if a.cur().url.Text != req.URL {
+	if a.urlbar.Field(a.cur().Tab).Text != req.URL {
 		t.Fatal("the URL field must show the rewritten URL")
 	}
 }
@@ -201,7 +201,7 @@ func TestResponseHeadersAreNotEditable(t *testing.T) {
 	srv := jsonServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	tab.respTab = 1 // Headers

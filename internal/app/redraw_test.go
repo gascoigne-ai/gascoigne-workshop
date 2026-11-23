@@ -99,7 +99,7 @@ func TestAnArrivingResponseRequestsARedraw(t *testing.T) {
 	srv := jsonServer(t)
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, srv.URL)
+	a.pointTabAt(tab, srv.URL)
 	a.send(tab)
 	for range 400 {
 		a.dirty = false
@@ -149,7 +149,7 @@ func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
 		return
 	}
 	unfocused := draws(120)
-	a.cur().url.Focused = true
+	a.urlbar.Field(a.cur().Tab).Focused = true
 	focused := draws(120)
 	if unfocused < 120*engine.MinFPS/engine.ActiveTPS || focused < 120*engine.MinFPS/engine.ActiveTPS {
 		t.Fatalf("draws in 120 frames: unfocused %d, focused %d, want at least %d each", unfocused, focused, 120*engine.MinFPS/engine.ActiveTPS)

@@ -1,6 +1,6 @@
 // Package tabs holds the state of one open request that does not depend on
 // how it is drawn: the request and its saved copy, the shown response and
-// the sending of it. The window keeps the widget state of the tab beside it.
+// its connection. The window keeps the widget state of the tab beside it.
 package tabs
 
 import (
@@ -16,7 +16,6 @@ type Tab struct {
 	Resp      *request.Response
 	Earlier   []PastResponse         // earlier responses, newest first
 	histories map[string]*RowHistory // undo history of each table
-	Send
 	Connection
 }
 
@@ -36,17 +35,6 @@ func (tab *Tab) Dirty() bool { return !reflect.DeepEqual(tab.Saved, tab.Req.Clon
 
 // MarkSaved makes the request as it is the saved copy.
 func (tab *Tab) MarkSaved() { tab.Saved = tab.Req.Clone() }
-
-// Cancel stops the running send, which makes its late answer an old one,
-// and shows the cancellation as the response. It reports whether a send was
-// running.
-func (tab *Tab) Cancel() bool {
-	if !tab.cancelSend() {
-		return false
-	}
-	tab.Resp = &request.Response{Err: request.ErrCancelled}
-	return true
-}
 
 // Next is the tab step places away from active among count tabs, wrapping
 // at the ends.

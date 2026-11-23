@@ -173,7 +173,7 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 	s.idle("toast expired", 2)
 
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	tab.Resp = nil
 	a.send(tab)
 	for i := 0; tab.Resp == nil && i < 400; i++ { // the response arrives through the bus

@@ -213,6 +213,25 @@ func (a *App) urlTip(tab *reqTab) string {
 	return tip
 }
 
+// urlSegments colors the {{variables}} of the URL raw of req so they stand
+// out from the literal URL: defined ones in the success color, unresolved
+// ones as errors.
+func (a *App) urlSegments(req *request.Request, raw string) []Span {
+	var segs []Span
+	vars := a.varsFor(req)
+	for _, seg := range request.SplitVars(raw) {
+		style := w.Text
+		if seg.IsVar {
+			style = w.OK
+			if !request.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.Text, "{{"), "}}"), vars) {
+				style = w.Error
+			}
+		}
+		segs = append(segs, Span{Text: seg.Text, Style: style})
+	}
+	return segs
+}
+
 // editVars points the Vars pane at the variables of dir (the collection's
 // for the root) and shows it.
 func (a *App) editVars(dir *request.Folder) {
@@ -233,7 +252,8 @@ func (a *App) editVars(dir *request.Folder) {
 // variableCompletion is what Ctrl+Space in the URL field offers (see
 // request.VarCompletion).
 func (a *App) variableCompletion(tab *reqTab) (names []string, from int) {
-	return request.VarCompletion(tab.url.Text, tab.url.Cursor, a.varsFor(tab.Req))
+	field := a.urlbar.Field(tab.Tab)
+	return request.VarCompletion(field.Text, field.Cursor, a.varsFor(tab.Req))
 }
 
 // completeVariable opens a menu of the variables that fit at the cursor of
@@ -245,7 +265,7 @@ func (a *App) completeVariable() {
 		return
 	}
 	t := a.cur()
-	if !t.url.Focused {
+	if !a.urlbar.Typing() {
 		a.toast(w.PlatformKeyText(a.ctx.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", severity.Info)
 		return
 	}
@@ -264,17 +284,18 @@ func (a *App) completeVariable() {
 // insertVariable writes {{name}} at the cursor of the URL field, replacing
 // the partly typed name that starts at rune from (-1 for none).
 func (a *App) insertVariable(tab *reqTab, name string, from int) {
-	runes := []rune(tab.url.Text)
-	cur := min(tab.url.Cursor, len(runes))
+	field := a.urlbar.Field(tab.Tab)
+	runes := []rune(field.Text)
+	cur := min(field.Cursor, len(runes))
 	if from < 0 || from > cur {
 		from = cur
 	}
 	text := string(runes[:from]) + "{{" + name + "}}" + string(runes[cur:])
-	tab.url.Text = text
-	tab.url.Cursor = from + len([]rune("{{"+name+"}}"))
-	tab.url.HasSel = false
-	tab.url.Focused = true
-	a.urlEdited(tab)
+	field.Text = text
+	field.Cursor = from + len([]rune("{{"+name+"}}"))
+	field.HasSel = false
+	field.Focused = true
+	a.urlbar.Edited(tab.Tab)
 }
 
 // Templates, parsed once above.

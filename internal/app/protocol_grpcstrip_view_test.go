@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,14 +48,14 @@ func TestTheGRPCStripSeparatesItsChips(t *testing.T) {
 			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			stateNamed(t, state).setUp(t, a, tab)
-			root := a.urlBar(tab)
+			root := a.urlbar.View(a.ctx)
 			Layout(a.ctx, root, urlWideW, urlH)
 			dump := Dump(root)
 			dividers := dividerXs(dump)
 			if len(dividers) != 2 {
 				t.Fatalf("%d dividers, want 2 (after the protocol and after the method):\n%s", len(dividers), dump)
 			}
-			label, _ := grpcMethodLabel(tab)
+			label, _ := urlbar.MethodLabel(tab.Req)
 			if gap := textX(t, dump, label) - dividers[0]; gap < 8 {
 				t.Fatalf("the method text starts %d px after the first divider, want at least 8", gap)
 			}
@@ -84,7 +85,7 @@ func TestTheStreamChipShowsItsState(t *testing.T) {
 }
 
 func layoutBar(app *App, tab *reqTab) Node {
-	root := app.urlBar(tab)
+	root := app.urlbar.View(app.ctx)
 	Layout(app.ctx, root, urlWideW, urlH)
 	return root
 }

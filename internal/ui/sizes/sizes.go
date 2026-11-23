@@ -49,12 +49,13 @@ const (
 	CountW       = 64  // the item count beside the response chips
 
 	// The URL bar.
-	ProtocolChipW = 64 // the protocol chip
-	MethodChipW   = 84 // the HTTP method chip
-	StreamChipW   = 56 // the Stream chip of a gRPC call
-	SendBtnMinW   = 80 // the Send button
-	ConnectMinW   = 96 // the Connect and Disconnect button
-	CancelBtnW    = 80 // the Cancel button of a running request
+	ProtocolChipW = 64  // the protocol chip
+	MethodChipW   = 84  // the HTTP method chip
+	StreamChipW   = 56  // the Stream chip of a gRPC call
+	SendBtnMinW   = 80  // the Send button
+	ConnectMinW   = 96  // the Connect and Disconnect button
+	CancelBtnW    = 80  // the Cancel button of a running request
+	GRPCMethodW   = 200 // the method chip of a gRPC call: wide, as method names are long
 
 	// The socket bar (WebSocket and MCP).
 	ReconnectChipW = 116 // the Auto-reconnect chip
@@ -88,7 +89,7 @@ var fixedSizes = map[string]any{
 	"timeoutW": TimeoutW, "modeBtnW": ModeBtnW, "compactChipW": CompactChipW, "prettyChipW": PrettyChipW,
 	"rawChipW": RawChipW, "historyBtnW": HistoryBtnW, "saveBtnW": SaveBtnW, "countW": CountW,
 	"protocolChipW": ProtocolChipW, "methodChipW": MethodChipW, "streamChipW": StreamChipW,
-	"sendBtnMinW": SendBtnMinW, "connectMinW": ConnectMinW, "cancelBtnW": CancelBtnW,
+	"sendBtnMinW": SendBtnMinW, "connectMinW": ConnectMinW, "cancelBtnW": CancelBtnW, "grpcMethodW": GRPCMethodW,
 	"reconnectChipW": ReconnectChipW, "toolsBtnMinW": ToolsBtnMinW, "resourcesMinW": ResourcesMinW,
 	"promptsBtnMinW": PromptsBtnMinW, "smallBtnMinW": SmallBtnMinW, "formatMsgMinW": FormatMsgMinW,
 	"sendMsgMinW": SendMsgMinW, "tabStripeW": TabStripeW, "tabLabelInset": TabLabelInset,
@@ -100,6 +101,7 @@ var fixedSizes = map[string]any{
 // Sizes the sidebar shares with the window and the tabs.
 const (
 	HeaderH    = 44 // the banner: title, environment chip, settings; the sidebar's header row is as high
+	URLBarH    = 56 // the URL bar: its controls plus padding above and below
 	TreeIndent = 16 // how far each folder level of the tree moves right
 	BadgeW     = 40 // the slot of a method or protocol badge in a tree row
 )

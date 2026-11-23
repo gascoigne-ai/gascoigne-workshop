@@ -219,7 +219,7 @@ func exampleServerURLs(t *testing.T) map[string]string {
 func TestAServerWithoutReflectionIsCalledFromTheProtoFileAddedInThePane(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
 	urls := exampleServerURLs(t)
-	pointTabAt(tab, urls["grpc-no-reflection"])
+	a.pointTabAt(tab, urls["grpc-no-reflection"])
 	editRequest(tab, requestedit.MethodChosen{Method: "grpc.health.v1.Health/Check"})
 	editRequest(tab, requestedit.BodyTyped{Text: `{"service": "example"}`})
 
@@ -254,7 +254,7 @@ func TestSendingWithABrokenProtoFileShowsWhereItBreaks(t *testing.T) {
 	}
 	lines := strings.SplitAfter(string(source), "\n")
 	broken := protoFileIn(t, dir, "broken.proto", []byte(strings.Join(lines[:33], "")))
-	pointTabAt(tab, urls["grpc"]) // the port with reflection: the files must still win
+	a.pointTabAt(tab, urls["grpc"]) // the port with reflection: the files must still win
 	editRequest(tab, requestedit.MethodChosen{Method: "grpc.health.v1.Health/Check"})
 	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: broken})
 	tab.Resp = nil

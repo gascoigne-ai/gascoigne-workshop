@@ -32,8 +32,8 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	tab.url = widget.NewTextField("https://api.test/users/:id")
-	a.urlEdited(tab)
+	*a.urlbar.Field(tab.Tab) = widget.NewTextField("https://api.test/users/:id")
+	a.urlbar.Edited(tab.Tab)
 	var row *request.KV
 	for i := range tab.Req.Params {
 		if tab.Req.Params[i].Name == ":id" {

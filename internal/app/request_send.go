@@ -4,16 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"time"
 )
-
-type sendResult struct {
-	tab  *reqTab
-	seq  int // which send of the tab this answers
-	resp request.Response
-}
 
 // send runs t's request off the UI goroutine; the result comes back
 // through the bus and is applied in drain.
@@ -32,15 +27,15 @@ func (a *App) dispatch(tab *reqTab, source *request.Request) {
 	if !a.allowed(tab, source, func() { a.dispatch(tab, source) }) {
 		return
 	}
-	seq, started := tab.BeginSend()
+	req := source.Expanded(a.varsFor(tab.Req))
+	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
+	number, started := a.sends.Begin(tab.Req, cancel)
 	if !started {
+		cancel()
 		return
 	}
 	a.notices.SetStatus("Sending " + source.URL)
-	req := source.Expanded(a.varsFor(tab.Req))
 	a.calls.Sent(a.now(), req)
-	ctx, cancel := context.WithTimeout(context.Background(), a.timeoutFor(req))
-	tab.cancel = cancel
 	reg := a.reg // the command must not read App fields the UI goroutine replaces
 	a.bus.Run(ctx, func(ctx context.Context) bus.Msg {
 		defer cancel()
@@ -48,17 +43,17 @@ func (a *App) dispatch(tab *reqTab, source *request.Request) {
 		if err != nil {
 			resp = request.Response{Err: err.Error()}
 		}
-		return sendResult{tab: tab, seq: seq, resp: resp}
+		return sends.Result{Owner: tab.Req, Number: number, Response: resp}
 	})
 }
 
 // cancelSend stops the running request of tab. Its late result, which
 // arrives after this, belongs to an older send and is dropped.
 func (a *App) cancelSend(tab *reqTab) {
-	if !tab.Cancel() {
+	if !a.sends.Cancel(tab.Req) {
 		return
 	}
-	tab.cancel()
+	tab.Resp = &request.Response{Err: request.ErrCancelled}
 	tab.view.SetLines(nil)
 	a.notices.SetStatus(request.ErrCancelled)
 }
@@ -76,7 +71,7 @@ func (a *App) drain() bool { return a.bus.Drain(a.handle) }
 // handle applies one message from the bus.
 func (a *App) handle(msg bus.Msg) {
 	switch msg := msg.(type) {
-	case sendResult:
+	case sends.Result:
 		a.apply(msg)
 	case wsMessage:
 		a.handleWS(msg)
@@ -87,25 +82,28 @@ func (a *App) handle(msg bus.Msg) {
 	}
 }
 
-func (a *App) apply(result sendResult) {
-	t := result.tab
-	if !t.Accept(result.seq) {
+func (a *App) apply(result sends.Result) {
+	if !a.sends.Accept(result) {
 		return // the answer to a send that was cancelled or replaced
 	}
+	t := a.tabOfRequest(result.Owner)
+	if t == nil {
+		return
+	}
 	t.Remember(t.Resp, a.now())
-	t.Resp = &result.resp
+	t.Resp = &result.Response
 	a.saveHistory(t)
 	if owner, path, _ := a.holderOf(t.Req); path != "" {
-		a.side.Sent().Record(a, a.now(), owner.Dir, path, t.Req, result.resp.Status)
+		a.side.Sent().Record(a, a.now(), owner.Dir, path, t.Req, result.Response.Status)
 	}
-	a.calls.Answer(a.now(), t.Req, &result.resp)
-	a.rememberSchema(t, &result.resp)
+	a.calls.Answer(a.now(), t.Req, &result.Response)
+	a.rememberSchema(t, &result.Response)
 	a.refreshView(t)
-	if result.resp.Err != "" {
+	if result.Response.Err != "" {
 		a.notices.SetStatus("Request failed")
 		a.runTests(t)
 		return
 	}
-	a.notices.SetStatus(fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.resp.Status, result.resp.StatusText, format.Duration(result.resp.Duration)))
+	a.notices.SetStatus(fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.Response.Status, result.Response.StatusText, format.Duration(result.Response.Duration)))
 	a.runTests(t)
 }

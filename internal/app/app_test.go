@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"path/filepath"
 	"time"
 
@@ -13,23 +14,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 )
-
-func TestNext(t *testing.T) {
-	chipOrder := []request.Protocol{"rest", "websocket", "mcp", "sse", "grpc"}
-	tests := []struct {
-		name      string
-		cur, want request.Protocol
-	}{
-		{"advances", "rest", "websocket"},
-		{"wraps", "grpc", "rest"},
-		{"unknown starts over", "carrier-pigeon", "rest"},
-	}
-	for _, tt := range tests {
-		if got := next(chipOrder, tt.cur); got != tt.want {
-			t.Errorf("%s: next(%q) = %q, want %q", tt.name, tt.cur, got, tt.want)
-		}
-	}
-}
 
 // Every pane must carry what its kind needs, or drawing it would panic.
 func TestPaneTablesAreComplete(t *testing.T) {
@@ -57,10 +41,10 @@ func TestPaneTablesAreComplete(t *testing.T) {
 }
 
 func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
-	a := &App{}
+	a := &App{sends: sends.New()}
 	tab := &reqTab{Tab: &tabs.Tab{Req: &request.Request{}}}
 	for _, p := range responsePanes {
-		msg, _ := paneEmpty(p, tab)
+		msg, _ := paneEmpty(a, p, tab)
 		if p.kind == paneNote && msg == "" && p.label != "Tests" {
 			t.Errorf("pane %q would read a nil response", p.label)
 		}
@@ -71,16 +55,18 @@ func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
 }
 
 func TestParamsChangedRewritesURL(t *testing.T) {
-	tab := newTab(&request.Request{
+	a := testApp(t)
+	tab := a.cur()
+	*tab.Req = request.Request{
 		URL: "http://x/s?q=a&sort=stars",
 		Params: []request.KV{
 			{Name: "q", Value: "a", Enabled: true},
 			{Name: "sort", Value: "stars", Enabled: false},
 		},
-	})
-	paramsChanged(tab)
-	if tab.Req.URL != "http://x/s?q=a" || tab.url.Text != tab.Req.URL {
-		t.Fatalf("url = %q field = %q", tab.Req.URL, tab.url.Text)
+	}
+	paramsChanged(a, tab)
+	if tab.Req.URL != "http://x/s?q=a" || a.urlbar.Field(tab.Tab).Text != tab.Req.URL {
+		t.Fatalf("url = %q field = %q", tab.Req.URL, a.urlbar.Field(tab.Tab).Text)
 	}
 }
 

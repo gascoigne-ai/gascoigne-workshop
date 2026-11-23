@@ -64,14 +64,13 @@ func (a *App) sendCurrent() {
 		a.kv.InsertRowBelow()
 		return
 	}
-	a.send(a.cur())
+	a.urlbar.Send()
 }
 
 // focusURL puts the keyboard in the URL field with its text selected.
 func (a *App) focusURL() {
 	a.commitEdit()
-	a.cur().url.Focused = true // the context takes the keyboard from whatever had it
-	a.cur().url.SelectAll()
+	a.urlbar.FocusURL()
 }
 
 // switchTab activates the tab dir places away, wrapping at the ends.

@@ -16,7 +16,7 @@ func focusName(app *App) string {
 	switch {
 	case app.side.Filter().Focused:
 		return "filter"
-	case t.url.Focused:
+	case app.urlbar.Field(t.Tab).Focused:
 		return "url"
 	case t.find.Focused:
 		return "find"
@@ -31,7 +31,7 @@ func focusName(app *App) string {
 func TestTabVisitsTheWindowInReadingOrderAndCycles(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	var order []string

@@ -99,7 +99,7 @@ func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
 	a := testApp(t)
 	click(a, 1100, 600) // click on empty space so nothing is focused
 	a.Step(combo(ebiten.KeyL, true, false, false))
-	url := &a.cur().url
+	url := a.urlbar.Field(a.cur().Tab)
 	if !url.Focused || url.SelectedText() != url.Text {
 		t.Fatalf("focused %v selection %q", url.Focused, url.SelectedText())
 	}
@@ -148,7 +148,7 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
 		a.Step(combo(k, false, false, false)) // plain letters must never trigger anything
 	}
-	if len(a.tabs.Tabs()) != 1 || a.menu || a.cur().Sending() {
+	if len(a.tabs.Tabs()) != 1 || a.menu || a.sends.Sending(a.cur().Req) {
 		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs.Tabs()), a.menu)
 	}
 }

@@ -38,7 +38,7 @@ func TestTheProtocolChipCyclesThroughGRPCAndBackToRESTWithAMethod(t *testing.T) 
 	tab := a.cur()
 	seen := map[request.Protocol]bool{}
 	for range request.Protocols {
-		a.cycleProtocol(tab)
+		a.urlbar.CycleProtocol(tab.Tab)
 		seen[tab.Req.Protocol] = true
 		if tab.Req.Protocol == "grpc" {
 			tab.Req.Method = "pkg.Service/Call" // a gRPC method is not an HTTP one

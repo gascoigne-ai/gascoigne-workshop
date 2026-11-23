@@ -24,7 +24,6 @@ type reqTab struct {
 	grpcBlock
 	mcpBlock
 	responseBlock
-	url         widget.TextField
 	paneTab     int
 	bodyView    widget.CodeView                             // request body, read-only
 	tests       widget.TextArea                             // the assertions editor
@@ -36,7 +35,6 @@ type reqTab struct {
 	bodyTypesX  widget.ScrollState                          // sideways scroll of the body type chips
 	reqTabsX    widget.ScrollState                          // sideways scroll of the two pane tab strips
 	timeout     widget.TextField                            // the request's timeout seconds, as typed
-	cancel      context.CancelFunc                          // stops the running request
 	auth        map[requestedit.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
 	showSecrets bool                                        // show masked credential fields
 	schema      *send.Schema                                // what a GraphQL introspection answered
@@ -134,7 +132,7 @@ func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
 
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
-	t := &reqTab{Tab: tab, url: widget.NewTextField(req.URL)}
+	t := &reqTab{Tab: tab}
 	t.look.Match = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
@@ -145,6 +143,17 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 	t.file = widget.NewTextField(req.Body)
 	t.gqlVars = widget.NewTextArea(req.GraphQLVars)
 	return t
+}
+
+// tabOfRequest is the widget state of the tab showing req, nil when no open
+// tab shows it.
+func (a *App) tabOfRequest(req *request.Request) *reqTab {
+	for tab, widgets := range a.widgets {
+		if tab.Req == req {
+			return widgets
+		}
+	}
+	return nil
 }
 
 func (a *App) cur() *reqTab { return a.widgets[a.tabs.Current()] }

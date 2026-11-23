@@ -17,7 +17,7 @@ const (
 	sidebarW = 260           // the collections tree's default width
 	headerH  = sizes.HeaderH // the banner: title, environment chip, settings
 	tabsH    = sizes.TabsH   // the request tab row: a tab's height plus the room above it
-	urlH     = 56            // the URL bar: its controls plus padding above and below
+	urlH     = sizes.URLBarH // the URL bar: its controls plus padding above and below
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
@@ -50,7 +50,7 @@ func (a *App) view() Node {
 		"sidebar":        a.side.View(a.ctx),
 		"header":         a.header(),
 		"requestTabs":    a.strip.View(a.ctx),
-		"urlBar":         a.urlBar(t),
+		"urlBar":         a.urlbar.View(a.ctx),
 		"paneSplit":      &a.paneSplit,
 		"minPaneSize":    minPaneSize,
 		"stacked":        a.settings.Layout == "stacked",

@@ -38,7 +38,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 	}{
 		{"network failure", func(t *testing.T, app *App) {
 			tab := app.cur()
-			pointTabAt(tab, "http://127.0.0.1:1/")
+			app.pointTabAt(tab, "http://127.0.0.1:1/")
 			app.send(tab)
 			waitForResponse(t, app, tab)
 		}, "", "Request failed"},
@@ -145,7 +145,7 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 	a := testApp(t)
 	a.statePath = filepath.Join(file, "state.json") // history lives beside it, below a file
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	a.WaitWrites() // the history is written in the background

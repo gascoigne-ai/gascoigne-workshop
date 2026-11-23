@@ -137,7 +137,7 @@ func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "state.json")
 	first := testApp(t, memorySettings(), withOptions(Options{StatePath: statePath}))
 	tab := first.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	first.pointTabAt(tab, jsonServer(t).URL)
 	first.send(tab)
 	waitForResponse(t, first, tab)
 
@@ -154,7 +154,7 @@ func TestResponsesOfARequestComeBackAfterARestart(t *testing.T) {
 func TestAnAppWithoutAStateFileKeepsNoHistoryOnDisk(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	tab := a.cur()
-	pointTabAt(tab, jsonServer(t).URL)
+	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	if a.historyDir() != "" {
