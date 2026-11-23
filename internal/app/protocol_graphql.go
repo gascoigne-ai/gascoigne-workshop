@@ -18,14 +18,15 @@ var graphQLTemplate = markup.Must("graphql.vml", graphqlSource)
 // graphQLBody is the editor of a GraphQL body: the query, the variables as
 // JSON, and a button that asks the server for its schema.
 func (a *App) graphQLBody(tab *reqTab) Node {
-	syncQuery := func() { editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text}) }
+	query := a.body.Area(tab.Tab) // the body component's area is the query editor
+	syncQuery := func() { editRequest(tab, requestedit.BodyTyped{Text: query.Text}) }
 	syncVars := func() { editRequest(tab, requestedit.VarsTyped{Text: tab.gqlVars.Text}) }
 	status, valid := format.JSONStatus(tab.gqlVars.Text)
 	statusColor := w.Error
 	if valid {
 		statusColor = w.OK
 	}
-	tab.body.Styler = nil
+	query.Styler = nil
 	operations := 0
 	if tab.schema != nil {
 		operations = len(tab.schema.Operations)
@@ -35,8 +36,8 @@ func (a *App) graphQLBody(tab *reqTab) Node {
 		"schemaLabel": fmt.Sprintf("Schema (%d)", operations),
 		"openSchema":  func(posX, posY int) { a.openMenu(posX, posY, a.schemaMenu(tab)) },
 		"loadSchema":  func() { a.loadSchema(tab) },
-		"query":       &tab.body,
-		"queryText":   &tab.body.TextField,
+		"query":       query,
+		"queryText":   &query.TextField,
 		"syncQuery":   syncQuery,
 		"hasVars":     tab.gqlVars.Text != "",
 		"status":      status,
@@ -71,7 +72,7 @@ func (a *App) schemaMenu(tab *reqTab) []MenuItem {
 
 // useOperation puts the starter query and variables of op into the tab.
 func (a *App) useOperation(tab *reqTab, op send.Operation) {
-	tab.body = NewTextArea(op.Query)
+	*a.body.Area(tab.Tab) = NewTextArea(op.Query)
 	tab.gqlVars = NewTextArea(op.Variables)
 	editRequest(tab, requestedit.OperationChosen{Query: op.Query, Variables: op.Variables})
 }

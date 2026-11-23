@@ -20,7 +20,7 @@ func focusName(app *App) string {
 		return "url"
 	case t.find.Focused:
 		return "find"
-	case t.body.Focused:
+	case app.body.Area(t.Tab).Focused:
 		return "body"
 	case t.view.Focused:
 		return "response"

@@ -262,9 +262,9 @@ func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 	req := a.cur().Req
 	click(a, jsonChipX, chipsY)
 	req.Body = `{"a":1,"b":[1,2]}`
-	a.cur().body.SelectAll()
-	a.cur().body.Insert(req.Body)
-	req.Body = a.cur().body.Text
+	a.body.Area(a.cur().Tab).SelectAll()
+	a.body.Area(a.cur().Tab).Insert(req.Body)
+	req.Body = a.body.Area(a.cur().Tab).Text
 
 	click(a, formatX, chipsY)
 	if want := "{\n  \"a\": 1,\n  \"b\": [\n    1,\n    2\n  ]\n}"; req.Body != want {
@@ -272,8 +272,8 @@ func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 	}
 
 	req.Body = `{"a":`
-	a.cur().body.SelectAll()
-	a.cur().body.Insert(req.Body)
+	a.body.Area(a.cur().Tab).SelectAll()
+	a.body.Area(a.cur().Tab).Insert(req.Body)
 	click(a, formatX, chipsY)
 	if req.Body != `{"a":` || !strings.Contains(a.notices.Status(), "Cannot format") {
 		t.Fatalf("Body %q status %q: invalid JSON must be left alone and reported", req.Body, a.notices.Status())
@@ -285,8 +285,8 @@ func TestFormatButtonOnlyExistsForJSON(t *testing.T) {
 	req := a.cur().Req
 	click(a, textChipX, chipsY)
 	req.Body = `{"a":1}`
-	a.cur().body.SelectAll()
-	a.cur().body.Insert(req.Body)
+	a.body.Area(a.cur().Tab).SelectAll()
+	a.body.Area(a.cur().Tab).Insert(req.Body)
 	click(a, formatX, chipsY)
 	if req.Body != `{"a":1}` {
 		t.Fatalf("a text body must not be reformatted, Body = %q", req.Body)

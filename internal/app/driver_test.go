@@ -157,14 +157,14 @@ func TestDriverActionsApply(t *testing.T) {
 			if tab.Req.Name != "Echo" {
 				t.Fatalf("open request %q, want Echo: wrap must apply after the request is opened", tab.Req.Name)
 			}
-			if !tab.view.Wrap || !tab.body.Wrap {
-				t.Errorf("response wrap %v, body wrap %v, want both on", tab.view.Wrap, tab.body.Wrap)
+			if !tab.view.Wrap || !a.body.Area(tab.Tab).Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both on", tab.view.Wrap, a.body.Area(tab.Tab).Wrap)
 			}
 		}},
 		// Without WrapOn both stay off, the default the user decided.
 		{"leave wrap off by default", Options{}, func(driver *Driver) error { return driver.OpenRequest("Echo") }, func(t *testing.T, a *App) {
-			if tab := a.cur(); tab.view.Wrap || tab.body.Wrap {
-				t.Errorf("response wrap %v, body wrap %v, want both off", tab.view.Wrap, tab.body.Wrap)
+			if tab := a.cur(); tab.view.Wrap || a.body.Area(tab.Tab).Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both off", tab.view.Wrap, a.body.Area(tab.Tab).Wrap)
 			}
 		}},
 		// Each text is an error toast, oldest first.
@@ -308,8 +308,8 @@ func TestDriverTypesTheBody(t *testing.T) {
 		t.Fatal(err)
 	}
 	tab := a.cur()
-	if tab.body.Text != typed || tab.Req.Body != typed {
-		t.Errorf("editor %q, request %q, want both %q", tab.body.Text, tab.Req.Body, typed)
+	if a.body.Area(tab.Tab).Text != typed || tab.Req.Body != typed {
+		t.Errorf("editor %q, request %q, want both %q", a.body.Area(tab.Tab).Text, tab.Req.Body, typed)
 	}
 	if !a.tabDirty(tab) {
 		t.Error("the tab should be marked as changed on the frame of the edit")

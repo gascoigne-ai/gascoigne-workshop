@@ -1,10 +1,12 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
@@ -13,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
@@ -20,6 +23,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -376,7 +380,13 @@ func (host kvtableHost) ToggleSecret(row int) { host.toggleSecret(row) }
 
 // CellStyler marks the {{variables}} of a cell of req.
 func (host kvtableHost) CellStyler(req *request.Request) func(string) []widget.Span {
-	return host.cellStyler(req)
+	vars := host.varsFor(req)
+	return func(text string) []widget.Span {
+		if !strings.Contains(text, "{{") {
+			return nil // a cell without a variable is drawn as it is
+		}
+		return theme.VarSpans(text, "", vars)
+	}
 }
 
 // tabstripHost is what the request tab strip asks of the App (tabstrip.Deps).
@@ -480,3 +490,75 @@ func (a *App) protocolsFor(current request.Protocol) []request.Protocol {
 	}
 	return offered
 }
+
+// bodyHost is what the body pane asks of the App (body.Deps).
+type bodyHost struct{ *App }
+
+// Current is the tab shown.
+func (host bodyHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host bodyHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// FormTable is the table of form fields of tab.
+func (host bodyHost) FormTable(tab *tabs.Tab, scroll *widget.ScrollState) Node {
+	return host.tableView(formPane, host.widgets[tab], scroll, 0)
+}
+
+// GraphQL is the editor of a GraphQL body.
+func (host bodyHost) GraphQL(tab *tabs.Tab) Node { return host.graphQLBody(host.widgets[tab]) }
+
+// Message is a status line in place of the Schema pane.
+func (host bodyHost) Message(text string) Node { return host.messagePane(schemaPane, text, false) }
+
+// VarsFor are the variables req is resolved with.
+func (host bodyHost) VarsFor(req *request.Request) []request.KV { return host.varsFor(req) }
+
+// Check asks the disk whether path is a file, off the UI goroutine.
+func (host bodyHost) Check(path string, answer func(found bool)) {
+	files := host.folders
+	host.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
+		found := files.IsFile(ctx, path)
+		return func() { answer(found) } // on the UI goroutine
+	})
+}
+
+// Pick opens the file chooser.
+func (host bodyHost) Pick(title string, answer func(path string)) {
+	host.pickFile(title, filedialog.OpenFile, "", answer)
+}
+
+// Describe asks for the request message of tab's gRPC method.
+func (host bodyHost) Describe(tab *tabs.Tab, answer func(request.MessageSchema, error)) {
+	req := tab.Req.Expanded(host.varsFor(tab.Req))
+	timeout := host.timeoutFor(req) // read here: the goroutine must not touch App fields
+	host.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		schema, err := host.describeGRPCInput(ctx, req)
+		return func() { answer(schema, err) } // on the UI goroutine
+	})
+}
+
+func (a *App) describeGRPCInput(ctx context.Context, req request.Request) (request.MessageSchema, error) {
+	if a.grpcSchema == nil {
+		return request.MessageSchema{}, errors.New("no gRPC client")
+	}
+	return a.grpcSchema(ctx, req)
+}
+
+// CommitEdit writes a table cell edit in progress into its row.
+func (host bodyHost) CommitEdit() { host.commitEdit() }
+
+// ShowBody shows the Body pane of tab.
+func (host bodyHost) ShowBody(tab *tabs.Tab) {
+	widgets := host.widgets[tab]
+	for i, panel := range requestPanesFor(widgets) {
+		if panel.kind == paneBody {
+			widgets.paneTab = i
+		}
+	}
+}
+
+// SetStatus replaces the status line.
+func (host bodyHost) SetStatus(text string) { host.notices.SetStatus(text) }

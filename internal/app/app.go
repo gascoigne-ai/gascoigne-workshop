@@ -14,6 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/notice"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
@@ -39,6 +40,7 @@ type App struct {
 
 	ctx        *core.Ctx
 	kv         *kvtable.Component  // the key-value tables of the request pane
+	body       *body.Component     // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab
 	urlbar     *urlbar.Component   // the bar above the request pane: URL fields, chips and the Send button
 	strip      *tabstrip.Component // the strip of open requests above the request pane
 	retryDelay time.Duration       // wait before a dropped connection reopens

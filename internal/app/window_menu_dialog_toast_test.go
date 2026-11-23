@@ -379,7 +379,7 @@ func TestBodyEditorMenuPastesLinesAndKeepsTheModelInSync(t *testing.T) {
 	click(a, jsonChipX, chipsY)
 	rightClick(a, editorX, editorY)
 	pickMenu(t, a, "Paste")
-	if a.cur().Req.Body != "{\n  \"a\": 1\n}" || a.cur().body.LineCount() != 3 {
+	if a.cur().Req.Body != "{\n  \"a\": 1\n}" || a.body.Area(a.cur().Tab).LineCount() != 3 {
 		t.Fatalf("Body = %q", a.cur().Req.Body)
 	}
 }

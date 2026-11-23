@@ -52,7 +52,7 @@ func TestTheGraphQLBodyLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
-				a.setBodyType(tab, request.BodyGraphQL)
+				a.body.ChooseType(tab.Tab, request.BodyGraphQL)
 				state.setUp(tab)
 				root := a.graphQLBody(tab)
 				Layout(a.ctx, root, size.width, settingsPaneH)
@@ -75,17 +75,17 @@ func TestTheGraphQLAreasEditTheTabsTexts(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
-	tab.body.Styler = jsonStyler
+	a.body.Area(tab.Tab).Styler = func(line string) []widget.Span { return []widget.Span{{Text: line}} } // what a JSON body leaves behind
 	areas := behaviorStates(a.graphQLBody(tab), "*widget.areaB")
 	if len(areas) != 2 {
 		t.Fatalf("%d areas, want 2: %q", len(areas), areas)
 	}
-	for i, state := range []*widget.TextArea{&tab.body, &tab.gqlVars} {
+	for i, state := range []*widget.TextArea{a.body.Area(tab.Tab), &tab.gqlVars} {
 		if want := fmt.Sprintf("%p", state); !strings.Contains(areas[i], want) {
 			t.Errorf("area %d lacks %s: %s", i, want, areas[i])
 		}
 	}
-	if tab.body.Styler != nil {
+	if a.body.Area(tab.Tab).Styler != nil {
 		t.Error("the query area keeps a styler")
 	}
 }
@@ -108,7 +108,7 @@ func openGraphQLBody(t *testing.T, url string) *App {
 	a := openBodyPane(t)
 	t.Cleanup(a.WaitWrites)
 	a.cur().Req.URL = url
-	a.setBodyType(a.cur(), request.BodyGraphQL)
+	a.body.ChooseType(a.cur().Tab, request.BodyGraphQL)
 	a.Step(core.Input{})
 	return a
 }

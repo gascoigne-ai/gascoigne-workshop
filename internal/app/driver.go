@@ -11,7 +11,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -83,13 +82,10 @@ func (d *Driver) ShowResponsePane(label string) error {
 
 // ChooseBodyType chooses the body type id on the open request, as its chip does.
 func (d *Driver) ChooseBodyType(id string) error {
-	known := slices.ContainsFunc(bodyTypes, func(candidate bodyChoice) bool {
-		return candidate.id == request.BodyType(id)
-	})
-	if !known {
+	if !d.app.body.Offers(request.BodyType(id)) {
 		return fmt.Errorf("body type %q is not one of the body chips", id)
 	}
-	d.app.setBodyType(d.app.cur(), request.BodyType(id))
+	d.app.body.ChooseType(d.app.cur().Tab, request.BodyType(id))
 	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
@@ -101,9 +97,7 @@ func (d *Driver) TypeBody(text string) error {
 	if tab.Req.BodyType != request.BodyJSON && tab.Req.BodyType != request.BodyText {
 		return fmt.Errorf("body text needs a JSON or Text body, the open request's is %q", tab.Req.BodyType)
 	}
-	tab.body.SelectAll()
-	tab.body.Insert(text)
-	editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text})
+	d.app.body.Replace(tab.Tab, text)
 	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
@@ -118,7 +112,7 @@ func (d *Driver) TypeURL(text string) {
 // Wrap chips would.
 func (d *Driver) WrapOn() {
 	d.app.cur().view.Wrap = true
-	d.app.cur().body.Wrap = true
+	d.app.body.Area(d.app.cur().Tab).Wrap = true
 }
 
 // OpenDialog opens the dialog of this kind (rename, delete, or the move and
@@ -300,7 +294,7 @@ func (d *Driver) AllAnswered() bool {
 // message schema.
 func (d *Driver) Settled() bool {
 	tab := d.app.cur()
-	return !protoReading(tab) && !schemaLoading(tab)
+	return !protoReading(tab) && !d.app.schemaLoading(tab)
 }
 
 // SendWithoutWaiting sends the open request and does not wait for its

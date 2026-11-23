@@ -28,11 +28,7 @@ type reqTab struct {
 	bodyView    widget.CodeView                             // request body, read-only
 	tests       widget.TextArea                             // the assertions editor
 	gqlVars     widget.TextArea                             // the variables of a GraphQL body
-	file        widget.TextField                            // the path of a file body
-	fileCheck   bodyFileCheck                               // what the file system said about file's path
-	body        widget.TextArea                             // request body editor
 	reqScroll   widget.ScrollState                          // scroll of the table and note panes
-	bodyTypesX  widget.ScrollState                          // sideways scroll of the body type chips
 	reqTabsX    widget.ScrollState                          // sideways scroll of the two pane tab strips
 	timeout     widget.TextField                            // the request's timeout seconds, as typed
 	auth        map[requestedit.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
@@ -50,9 +46,8 @@ type socketBlock struct {
 
 // grpcBlock holds the state of a gRPC tab: streaming and the Proto and Schema panes.
 type grpcBlock struct {
-	grpcStream    bool               // a gRPC tab streams instead of making single calls
-	proto         protoState         // the Proto pane of a gRPC tab
-	messageSchema messageSchemaState // the Schema pane of a gRPC tab
+	grpcStream bool       // a gRPC tab streams instead of making single calls
+	proto      protoState // the Proto pane of a gRPC tab
 }
 
 // mcpBlock holds the state of an MCP tab: the explorer, the form of the open entry and its answer.
@@ -138,9 +133,7 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()
 	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
-	t.body = widget.NewTextArea(req.Body)
 	t.tests = widget.NewTextArea(req.Tests)
-	t.file = widget.NewTextField(req.Body)
 	t.gqlVars = widget.NewTextArea(req.GraphQLVars)
 	return t
 }

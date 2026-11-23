@@ -63,7 +63,14 @@ func paramsChanged(app *App, tab *reqTab) {
 var (
 	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged, table: kvlogic.Params,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Params }}
-	bodyPane    = pane{label: "Body", kind: paneBody}
+	bodyPane = pane{label: "Body", kind: paneBody}
+	// formPane is the table of form and multipart fields; the body pane
+	// asks for it through its Slots.
+	formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true, table: kvlogic.Form,
+		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Form }}
+	// schemaPane is the Schema tab of a gRPC request: the fields of the request
+	// message of its method, drawn by the body component.
+	schemaPane  = pane{label: "Schema", kind: paneSchema}
 	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true, table: kvlogic.Headers,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Headers }}
 	authPane = pane{label: "Auth", kind: paneAuth}
@@ -193,7 +200,7 @@ func paneEmpty(app *App, panel pane, tab *reqTab) (string, bool) {
 // paneBuilders turns a pane into its view, by kind.
 var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *ScrollState) Node{
 	paneNote:       (*App).notePane,
-	paneBody:       (*App).bodyPane,
+	paneBody:       (*App).bodyPaneView,
 	paneSettings:   (*App).settingsPane,
 	paneAuth:       (*App).authPane,
 	paneResponse:   (*App).responsePane,
@@ -203,7 +210,27 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 	paneResults:    (*App).resultsPane,
 	paneTable:      (*App).tablePane,
 	paneProto:      (*App).protoPane,
-	paneSchema:     (*App).schemaPane,
+	paneSchema:     (*App).schemaPaneView,
+}
+
+// bodyPaneView is the Body pane, drawn by the body component.
+func (a *App) bodyPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.body.View(a.ctx, tab.Tab, scroll)
+}
+
+// schemaPaneView is the Schema pane of a gRPC tab, drawn by the body component.
+func (a *App) schemaPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.body.SchemaView(a.ctx, tab.Tab, scroll)
+}
+
+// schemaLoading reports whether tab shows its Schema pane while the message
+// is still being asked for, so a capture waits for it.
+func (a *App) schemaLoading(tab *reqTab) bool {
+	panes := requestPanesFor(tab)
+	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneSchema {
+		return false
+	}
+	return a.body.SchemaPending(tab.Tab)
 }
 
 // paneBody is what fills the area under a pane's tab strip.

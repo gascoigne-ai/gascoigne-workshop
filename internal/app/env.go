@@ -4,6 +4,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/environments"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
 
@@ -217,19 +218,7 @@ func (a *App) urlTip(tab *reqTab) string {
 // out from the literal URL: defined ones in the success color, unresolved
 // ones as errors.
 func (a *App) urlSegments(req *request.Request, raw string) []Span {
-	var segs []Span
-	vars := a.varsFor(req)
-	for _, seg := range request.SplitVars(raw) {
-		style := w.Text
-		if seg.IsVar {
-			style = w.OK
-			if !request.Defined(strings.TrimSuffix(strings.TrimPrefix(seg.Text, "{{"), "}}"), vars) {
-				style = w.Error
-			}
-		}
-		segs = append(segs, Span{Text: seg.Text, Style: style})
-	}
-	return segs
+	return theme.VarSpans(raw, w.Text, a.varsFor(req))
 }
 
 // editVars points the Vars pane at the variables of dir (the collection's

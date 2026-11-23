@@ -174,19 +174,20 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	tab.body = widget.NewTextArea("typed text")
+	*a.body.Area(tab.Tab) = widget.NewTextArea("typed text")
 	tab.Req.Body = "typed text"
-	a.setBodyType(tab, request.BodyFile)
+	a.body.ChooseType(tab.Tab, request.BodyFile)
 	if tab.Req.BodyType != request.BodyFile || tab.Req.Body != "" {
 		t.Fatalf("type %q body %q", tab.Req.BodyType, tab.Req.Body)
 	}
-	tab.file = widget.NewTextField("/tmp/x.bin")
-	tab.Req.Body = tab.file.Text
-	a.setBodyType(tab, request.BodyText)
+	*a.body.File(tab.Tab) = widget.NewTextField("/tmp/x.bin")
+	tab.Req.Body = a.body.File(tab.Tab).Text
+	a.body.ChooseType(tab.Tab, request.BodyText)
 	if tab.Req.Body != "typed text" {
 		t.Fatalf("the text body must come back: %q", tab.Req.Body)
 	}
-	if d := view.Dump(a.fileBody(tab)); !strings.Contains(d, "Choose...") {
+	a.body.ChooseType(tab.Tab, request.BodyFile) // the file editor is shown for a File body only
+	if d := view.Dump(a.body.View(a.ctx, tab.Tab, &widget.ScrollState{})); !strings.Contains(d, "Choose...") {
 		t.Fatalf("file editor:\n%s", d)
 	}
 }
@@ -227,8 +228,8 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
-	tab.body = widget.NewTextArea("{ repos { name } }")
-	a.setBodyType(tab, request.BodyGraphQL)
+	*a.body.Area(tab.Tab) = widget.NewTextArea("{ repos { name } }")
+	a.body.ChooseType(tab.Tab, request.BodyGraphQL)
 	if tab.Req.Method != "POST" || tab.Req.Body != "{ repos { name } }" {
 		t.Fatalf("method %q body %q", tab.Req.Method, tab.Req.Body)
 	}

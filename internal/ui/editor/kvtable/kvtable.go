@@ -26,8 +26,8 @@
 // here until the response pane takes it over (task 037); it is about twenty
 // lines of View.
 //
-// The form table is drawn inside the Body pane: the body pane (task 034)
-// must take the table as a slot from its parent, since siblings never
+// The form table is drawn inside the Body pane: it reaches the pane through
+// body.Deps.Slots.FormTable, which the parent answers, since siblings never
 // import each other.
 //
 // At most one activity runs at a time. Editing starts with BeginEdit, which

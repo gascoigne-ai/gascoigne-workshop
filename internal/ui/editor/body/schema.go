@@ -1,23 +1,18 @@
-package app
+package body
 
 import (
-	"context"
-	"errors"
 	"reflect"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-)
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 
-// schemaPane is the Schema tab of a gRPC request: the fields of the
-// request message of its method, and a button that fills the Body with a
-// JSON skeleton of them.
-var schemaPane = pane{label: "Schema", kind: paneSchema}
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
 
 const (
 	schemaIndent  = 16 // pixels a nested message is moved right
@@ -25,9 +20,12 @@ const (
 	reloadButtonW = 76
 )
 
-// messageSchemaState is what a tab keeps for its Schema pane between
-// frames: the last answer, and what it was asked for.
-type messageSchemaState struct {
+var schemaTemplate = markup.Must("schemapane.vml", schemaSource)
+
+// messageSchema is what a tab keeps for its Schema pane between frames:
+// the last answer, and what it was asked for. Audit note: running, schema
+// and err are a flag bundle over idle, loading, loaded and failed.
+type messageSchema struct {
 	asked   schemaKey
 	running bool
 	schema  *request.MessageSchema
@@ -94,12 +92,15 @@ func fieldText(field request.SchemaField) string {
 	return text
 }
 
-func (a *App) schemaPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
+// SchemaView is the Schema pane of a gRPC tab: the fields of the request
+// message of its method, and a button that fills the Body with a JSON
+// skeleton of them. It asks for the message when the request changed.
+func (c *Component) SchemaView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) Node {
 	if !methodChosen(tab.Req) {
-		return a.messagePane(panel, "Pick a method to see its request message", false)
+		return c.deps.Slots.Message("Pick a method to see its request message")
 	}
-	a.loadMessageSchema(tab)
-	state := tab.messageSchema
+	c.loadSchema(tab)
+	state := c.state(tab).schema
 	rows := []schemaRowView{}
 	title := ""
 	if state.schema != nil {
@@ -108,7 +109,7 @@ func (a *App) schemaPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 			rows = append(rows, schemaRowView{Pad: row.Depth * schemaIndent, Text: row.Text})
 		}
 	}
-	return schemaPaneTemplate.MustBuild(a.scope(markup.Scope{
+	return schemaTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
 		"scroll":  scroll,
 		"fillW":   fillBodyW,
 		"reloadW": reloadButtonW,
@@ -118,76 +119,56 @@ func (a *App) schemaPane(panel pane, tab *reqTab, scroll *ScrollState) Node {
 		"error":   state.err,
 		"title":   title,
 		"rows":    rows,
-		"fill":    func() { a.fillBody(tab, state.schema) },
-		"reload":  func() { tab.messageSchema = messageSchemaState{} },
+		"fill":    func() { c.fill(tab, state.schema) },
+		"reload":  func() { c.reload(tab) },
 	}))
 }
 
-// schemaLoading reports whether t shows its Schema pane while the message
-// is still being asked for, so a capture waits for it.
-func schemaLoading(tab *reqTab) bool {
-	panes := requestPanesFor(tab)
-	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneSchema || !methodChosen(tab.Req) {
+// SchemaPending reports whether the message of tab's method is still being
+// asked for, or not asked for yet, so a capture waits for it.
+func (c *Component) SchemaPending(tab *tabs.Tab) bool {
+	if !methodChosen(tab.Req) {
 		return false
 	}
-	return tab.messageSchema.running || !reflect.DeepEqual(tab.messageSchema.asked, schemaKeyOf(tab.Req))
+	state := c.state(tab).schema
+	return state.running || !reflect.DeepEqual(state.asked, schemaKeyOf(tab.Req))
 }
 
-// loadMessageSchema asks for the request's message in the background when the
-// request changed since the last answer. An answer for an older request
-// is dropped by the key comparison and the next build asks again.
-func (a *App) loadMessageSchema(tab *reqTab) {
+// loadSchema asks for the request's message in the background when the
+// request changed since the last answer. An answer for an older request is
+// dropped by the key comparison and the next build asks again.
+func (c *Component) loadSchema(tab *tabs.Tab) {
 	key := schemaKeyOf(tab.Req)
-	state := &tab.messageSchema
+	state := &c.state(tab).schema
 	if state.running || (state.asked.Method != "" && reflect.DeepEqual(state.asked, key)) {
 		return
 	}
 	state.running, state.asked = true, key
-	req := tab.Req.Expanded(a.varsFor(tab.Req))
-	timeout := a.timeoutFor(req) // read here: the goroutine must not touch App fields
-	a.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-		schema, err := a.describeGRPCInput(ctx, req)
-		return func() { // runs on the UI goroutine
-			*state = messageSchemaState{asked: key}
-			if err != nil {
-				state.err = err.Error()
-				return
-			}
-			state.schema = &schema
+	c.deps.Schemas.Describe(tab, func(schema request.MessageSchema, err error) {
+		*state = messageSchema{asked: key}
+		if err != nil {
+			state.err = err.Error()
+			return
 		}
+		state.schema = &schema
 	})
 }
 
-func (a *App) describeGRPCInput(ctx context.Context, req request.Request) (request.MessageSchema, error) {
-	if a.grpcSchema == nil {
-		return request.MessageSchema{}, errors.New("no gRPC client")
-	}
-	return a.grpcSchema(ctx, req)
-}
+// reload forgets the answer, so the next frame asks again.
+func (c *Component) reload(tab *tabs.Tab) { c.state(tab).schema = messageSchema{} }
 
-// fillBody replaces the body with the skeleton of schema, as typing it
-// would (so it can be undone), and shows the Body pane.
-func (a *App) fillBody(tab *reqTab, schema *request.MessageSchema) {
+// fill replaces the body with the skeleton of schema, as typing it would
+// (so it can be undone), and shows the Body pane.
+func (c *Component) fill(tab *tabs.Tab, schema *request.MessageSchema) {
 	if schema == nil {
 		return
 	}
-	tab.body.SelectAll()
-	tab.body.Insert(schema.Skeleton())
-	editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text})
-	for i, p := range requestPanesFor(tab) {
-		if p.kind == paneBody {
-			tab.paneTab = i
-		}
-	}
+	c.Replace(tab, schema.Skeleton())
+	c.deps.Window.ShowBody(tab)
 }
 
-var schemaPaneTemplate = markup.Must("schemapane.vml", schemapaneSource)
-
-// Templates, parsed once above.
-const (
-	schemapaneSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
+// Template, parsed once above.
+const schemaSource = `<scroll state="scroll" pad="{{gutter}}" gap="{{looseGap}}">
   <row h="{{rowH}}" gap="{{tightGap}}" align-items="center">
     <button if="loaded" w="{{fillW}}" on-click="fill">Fill body</button>
     <button w="{{reloadW}}" on-click="reload">Reload</button>
@@ -200,4 +181,3 @@ const (
   </row>
 </scroll>
 `
-)

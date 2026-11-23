@@ -1,42 +1,13 @@
 package app
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
-
-func TestSchemaRowsShowEveryFieldWithItsNesting(t *testing.T) {
-	address := &request.MessageSchema{Name: "Address", Fields: []request.SchemaField{{Name: "street", Type: "string"}}}
-	node := &request.MessageSchema{Name: "Node", Cut: true}
-	schema := request.MessageSchema{Name: "Person", Fields: []request.SchemaField{
-		{Name: "name", Type: "string"},
-		{Name: "tags", Type: "string", Repeated: true},
-		{Name: "status", Type: "enum Status", EnumValues: []string{"UNKNOWN", "SERVING"}},
-		{Name: "labels", Type: "map<string, string>", MapKey: "string"},
-		{Name: "email", Type: "string", Oneof: "contact"},
-		{Name: "home", Type: "message Address", Message: address},
-		{Name: "next", Type: "message Node", Message: node},
-	}}
-	want := []schemaRow{
-		{Depth: 0, Text: "name: string"},
-		{Depth: 0, Text: "tags: repeated string"},
-		{Depth: 0, Text: "status: enum Status (UNKNOWN, SERVING)"},
-		{Depth: 0, Text: "labels: map<string, string>"},
-		{Depth: 0, Text: "email: string, oneof contact"},
-		{Depth: 0, Text: "home: message Address"},
-		{Depth: 1, Text: "street: string"},
-		{Depth: 0, Text: "next: message Node (recursive)"},
-	}
-	if got := schemaRows(schema); !reflect.DeepEqual(got, want) {
-		t.Errorf("rows = %+v\nwant   %+v", got, want)
-	}
-}
 
 func TestTheSchemaPaneFollowsTheProtoPane(t *testing.T) {
 	labels := paneLabels(grpcRequestPanes)
@@ -91,8 +62,8 @@ func TestTheSchemaPaneAsksForAMethodFirst(t *testing.T) {
 func TestFillBodyWritesTheSkeletonIntoTheBodyAndShowsIt(t *testing.T) {
 	a, tab := grpcTabOnSchemaPane(t)
 	clickText(t, a, "Fill body", 0)
-	if want := `{"service":""}`; tab.Req.Body != want || tab.body.Text != want {
-		t.Errorf("body = %q, editor = %q, want %q", tab.Req.Body, tab.body.Text, want)
+	if want := `{"service":""}`; tab.Req.Body != want || a.body.Area(tab.Tab).Text != want {
+		t.Errorf("body = %q, editor = %q, want %q", tab.Req.Body, a.body.Area(tab.Tab).Text, want)
 	}
 	if !tab.Dirty() {
 		t.Error("filling the body did not mark the request edited")
