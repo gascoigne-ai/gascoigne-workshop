@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
 	"strings"
 	"time"
 

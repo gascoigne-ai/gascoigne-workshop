@@ -193,10 +193,10 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"format imports an adapter", synthetic("internal/ui/format", "internal/feature/send/adapter/preview")},
 		{"feature root imports another feature root", synthetic("internal/feature/send", "internal/feature/history")},
 		{"controller external test imports another feature", xtest},
-		{"ui imports an adapter", synthetic("internal/feature/send/ui/respview", "internal/feature/send/adapter/preview")},
-		{"ui imports another ui", synthetic("internal/feature/send/ui/respview", "internal/feature/send/ui/calltrace")},
+		{"ui imports an adapter", synthetic("internal/ui/response/respview", "internal/feature/send/adapter/preview")},
+		{"ui imports another ui", synthetic("internal/ui/response/respview", "internal/ui/response/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/requestedit", "uitoolkit/widget")},
-		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/feature/history/ui/sentlog")},
+		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/ui/sidebar/sentlog")},
 		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
 		{"exampleserver imports the send root", synthetic("internal/exampleserver", "internal/feature/send")},
 		{"unclassified internal package", synthetic("internal/stuff")},
@@ -218,14 +218,14 @@ func TestCheckLayersAllows(t *testing.T) {
 		pkg  listedPackage
 	}{
 		{"theme imports toolkit core and theming", synthetic("internal/ui/theme", "uitoolkit/core", "uitoolkit/theming")},
-		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/feature/send/ui/respview")},
+		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/ui/response/respview")},
 		{"cmd is not checked", synthetic("cmd/workshop", "internal/app", "internal/feature/send")},
 		{"e2e is not checked", synthetic("e2e", "internal/feature/send")},
 		{"standard library and ebiten are ignored", listedPackage{ImportPath: testModule + "/internal/feature/request/severity", Imports: []string{"fmt", "github.com/hajimehoshi/ebiten/v2"}}},
 		{"external test imports its own package and root", ownXtest},
 		{"workspace root imports its controller", synthetic("internal/feature/workspace", "internal/feature/workspace/state")},
 		{"adapter imports its own root", synthetic("internal/feature/workspace/adapter/folders", "internal/feature/workspace")},
-		{"ui imports toolkit and own controller", synthetic("internal/feature/send/ui/respview", "uitoolkit/widget", "internal/feature/send/viewer", "internal/feature/send")},
+		{"ui imports toolkit and own controller", synthetic("internal/ui/response/respview", "uitoolkit/widget", "internal/feature/send/viewer", "internal/feature/send")},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -278,8 +278,8 @@ func TestCheckLayersTargetLayout(t *testing.T) {
 }
 
 func TestCheckLayersTestOnlyRows(t *testing.T) {
-	production := synthetic("internal/feature/history/ui/sentlog", "internal/feature/history/adapter/historyfile")
-	test := synthetic("internal/feature/history/ui/sentlog")
+	production := synthetic("internal/ui/sidebar/sentlog", "internal/feature/history/adapter/historyfile")
+	test := synthetic("internal/ui/sidebar/sentlog")
 	test.TestImports = []string{testModule + "/internal/feature/history/adapter/historyfile"}
 	if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
 		t.Error("a production import matching only a test-only row must be a violation")
@@ -298,7 +298,6 @@ func TestZoneOf(t *testing.T) {
 		{"internal/ui/format", zoneUI, ""},
 		{"internal/feature/request/severity", zoneBase, ""},
 		{"internal/feature/send", zoneFeatureRoot, "send"},
-		{"internal/feature/send/ui/respview", zoneFeatureUI, "send"},
 		{"internal/feature/send/adapter/preview", zoneAdapter, "send"},
 		{"internal/feature/request", zoneBase, ""},
 		{"internal/feature/request/sub", zoneBase, ""},
@@ -497,6 +496,35 @@ func TestThemeLivesInUIWithoutAnException(t *testing.T) {
 	for _, rule := range layerRules {
 		if strings.Contains(rule.Name, "settings/theme") {
 			t.Errorf("rule %q still names settings/theme", rule.Name)
+		}
+	}
+}
+
+// The feature ui packages joined the screen tree: no feature has a ui
+// directory, the dialog package is named settingsdialog.
+func TestFeatureUIPackagesJoinedTheScreenTree(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	for _, want := range []string{
+		"internal/ui/overlays/destpicker", "internal/ui/sidebar/sentlog",
+		"internal/ui/overlays/settingsdialog", "internal/ui/overlays/settingsdialog/formpage",
+		"internal/ui/overlays/settingsdialog/colorpage", "internal/ui/overlays/settingsdialog/shortcutpage",
+		"internal/ui/overlays/settingsdialog/systempage", "internal/ui/response/respview",
+		"internal/ui/response/calltrace", "internal/ui/editor/mcp/mcpform", "internal/ui/appicon",
+	} {
+		if !listed[want] {
+			t.Errorf("%s is not in the tree", want)
+		}
+	}
+	for path := range listed {
+		if strings.HasPrefix(path, featurePrefix) && strings.Contains(strings.TrimPrefix(path, featurePrefix), "/ui") {
+			t.Errorf("%s still holds a package: feature ui moved into internal/ui", path)
+		}
+		if strings.HasSuffix(path, "/settingsui") {
+			t.Errorf("%s still exists: settingsui is renamed settingsdialog", path)
 		}
 	}
 }

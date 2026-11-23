@@ -1,4 +1,4 @@
-package settingsui
+package settingsdialog
 
 import (
 	"fmt"

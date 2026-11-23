@@ -5,7 +5,7 @@ Tabs, remembered state, the bus, the file browser, autosave, overlays, and the f
 ## Layout
 - `internal/feature/workspace`: the model (root package `workspace`) with the ports `Folders` and `StateStore`.
 - Controllers as sub-packages: `tabs` (tab list, send and connection state), `state` (the remembered-state record), `filebrowser`, `autosave`, `bus`, `overlay`, `serial`.
-- `adapter/statefile`: the `state.json` store. `ui/appicon`: the application icon.
+- `adapter/statefile`: the `state.json` store.
 - `adapter/folders` is the user's file system on the disk (`Folders`); `adapter/statefile` keeps the remembered state.
 - Imports: the base feature (`feature/request` for the MCP server info a connection keeps) plus the toolkit for the icon. The root imports its own `state` sub-package.
 
@@ -63,7 +63,7 @@ flowchart LR
 
 ### Icon and packaging
 
-- `workspace/ui/appicon` (under `internal/feature/`) rasterizes `appicon.svg` in software, so the icon exists before any window.
+- `internal/ui/appicon` rasterizes `appicon.svg` in software, so the icon exists before any window.
   `main` sets it as the window icon, `desktop.SetDockIcon` (toolkit) as the macOS Dock icon, and
   `-icon-png FILE` writes it for packaging.
 - `make install` installs the binary and, on Linux, `packaging/gascoigne-workshop.desktop` and the

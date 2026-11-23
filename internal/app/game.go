@@ -2,8 +2,8 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/settingsui"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -145,7 +145,7 @@ func (a *App) endFrame(moved bool) {
 	if a.edit != nil && !a.edit.field.Focused { // a click elsewhere ends the edit
 		a.commitEdit()
 	}
-	if a.ctx.Tick%settingsui.PollTicks == 0 {
+	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
 		a.prefs.Poll(a)
 	}

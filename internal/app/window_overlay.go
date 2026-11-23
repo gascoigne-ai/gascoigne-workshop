@@ -4,8 +4,8 @@ import (
 	"cmp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
 
 	"github.com/hajimehoshi/ebiten/v2"
 

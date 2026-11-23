@@ -13,7 +13,6 @@ const (
 	zoneUnchecked                // cmd, e2e and anything outside internal and uitoolkit
 	zoneFeatureRoot
 	zoneController
-	zoneFeatureUI
 	zoneAdapter
 	zoneBase
 	zoneUILogic
@@ -26,7 +25,7 @@ const (
 func (z zone) String() string {
 	names := map[zone]string{
 		zoneUnclassified: "unclassified", zoneUnchecked: "unchecked",
-		zoneFeatureRoot: "feature root", zoneController: "controller", zoneFeatureUI: "feature ui",
+		zoneFeatureRoot: "feature root", zoneController: "controller",
 		zoneBase: "base", zoneUILogic: "ui logic", zoneUI: "ui",
 		zoneAdapter: "adapter", zoneApp: "app",
 		zoneExampleServer: "exampleserver", zoneToolkit: "toolkit",
@@ -81,8 +80,6 @@ func featureZone(inFeature string) (zone, string) {
 		return zoneBase, ""
 	case !nested:
 		return zoneFeatureRoot, feature
-	case rest == "ui" || strings.HasPrefix(rest, "ui/"):
-		return zoneFeatureUI, feature
 	case rest == "adapter" || strings.HasPrefix(rest, "adapter/"):
 		return zoneAdapter, feature
 	}
@@ -118,18 +115,14 @@ type layerRule struct {
 var currentLayoutRules = []layerRule{
 	{"feature root -> own controllers", selector{Zones: []zone{zoneFeatureRoot}}, selector{Zones: []zone{zoneController}}, true, false, "a root may delegate to a sub-package of its own feature", false},
 	{"controller -> own root, controllers", selector{Zones: []zone{zoneController}}, selector{Zones: []zone{zoneFeatureRoot, zoneController}}, true, false, "controllers share their feature's types", false},
-	{"ui -> base, toolkit", selector{Zones: []zone{zoneFeatureUI}}, selector{Zones: []zone{zoneBase, zoneToolkit}}, false, false, "views draw with the toolkit", false},
-	{"feature ui -> ui/format", selector{Zones: []zone{zoneFeatureUI}}, selector{Paths: []string{"internal/ui/format"}}, false, false, "views use the shared text helpers; the row disappears when task 028 moves these packages into internal/ui", false},
-	{"feature ui -> ui/theme", selector{Zones: []zone{zoneFeatureUI}}, selector{Paths: []string{"internal/ui/theme"}}, false, false, "views use the shared look; the row disappears when task 028 moves these packages into internal/ui", false},
-	{"ui -> own root, controllers", selector{Zones: []zone{zoneFeatureUI}}, selector{Zones: []zone{zoneFeatureRoot, zoneController}}, true, false, "views sit behind their feature's types", false},
 	{"adapter -> own root, controllers, adapters", selector{Zones: []zone{zoneAdapter}}, selector{Zones: []zone{zoneFeatureRoot, zoneController, zoneAdapter}}, true, false, "adapters implement their feature's ports", false},
 	{"app -> everything", selector{Zones: []zone{zoneApp}}, selector{Zones: allZones()}, false, false, "the composition root knows both sides", false},
 	{"toolkit -> toolkit", selector{Zones: []zone{zoneToolkit}}, selector{Zones: []zone{zoneToolkit}}, false, false, "the toolkit knows nothing of the app", false},
 	{"test only: exampleserver -> collections", selector{Paths: []string{"internal/exampleserver"}}, selector{Paths: []string{"internal/feature/collections"}}, false, true, "test fixture: the dev server tests load the real sample collection", false},
 	{"test only: exampleserver -> protocol", selector{Paths: []string{"internal/exampleserver"}}, selector{Paths: []string{"internal/feature/send/adapter/protocol"}}, false, true, "test fixture: the dev server tests drive the real protocol registry", false},
-	{"test only: history/ui/sentlog -> historyfile", selector{Paths: []string{"internal/feature/history/ui/sentlog"}}, selector{Paths: []string{"internal/feature/history/adapter/historyfile"}}, false, true, "test fixture: the view test uses the real history adapter", false},
-	{"test only: settings/ui/formpage -> settingsfile", selector{Paths: []string{"internal/feature/settings/ui/formpage"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the view test uses the real settings file adapter", false},
-	{"test only: settings/ui/settingsui -> settingsfile", selector{Paths: []string{"internal/feature/settings/ui/settingsui"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the dialog tests use the real settings file adapter", false},
+	{"test only: ui/sidebar/sentlog -> historyfile", selector{Paths: []string{"internal/ui/sidebar/sentlog"}}, selector{Paths: []string{"internal/feature/history/adapter/historyfile"}}, false, true, "test fixture: the view test uses the real history adapter", false},
+	{"test only: ui/overlays/settingsdialog/formpage -> settingsfile", selector{Paths: []string{"internal/ui/overlays/settingsdialog/formpage"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the view test uses the real settings file adapter", false},
+	{"test only: ui/overlays/settingsdialog -> settingsfile", selector{Paths: []string{"internal/ui/overlays/settingsdialog"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the dialog tests use the real settings file adapter", false},
 }
 
 // targetLayoutRules are the rows of the layout in .harness/reorg.md. They sit
@@ -153,5 +146,5 @@ var targetLayoutRules = []layerRule{
 var layerRules = append(append([]layerRule{}, currentLayoutRules...), targetLayoutRules...)
 
 func allZones() []zone {
-	return []zone{zoneUnclassified, zoneUnchecked, zoneFeatureRoot, zoneController, zoneFeatureUI, zoneAdapter, zoneBase, zoneUILogic, zoneUI, zoneApp, zoneExampleServer, zoneToolkit}
+	return []zone{zoneUnclassified, zoneUnchecked, zoneFeatureRoot, zoneController, zoneAdapter, zoneBase, zoneUILogic, zoneUI, zoneApp, zoneExampleServer, zoneToolkit}
 }

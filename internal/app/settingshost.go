@@ -3,16 +3,16 @@ package app
 import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/shortcutpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/systempage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/systempage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -21,7 +21,7 @@ import (
 )
 
 // The methods below make the App the host of the settings dialog
-// (settingsui.Host). Size, Toast and SetStatus are with the other hosts.
+// (settingsdialog.Host). Size, Toast and SetStatus are with the other hosts.
 
 // Settings are the settings in effect.
 func (a *App) Settings() settings.Settings { return a.settings }

@@ -90,7 +90,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   `App.bindingOf` is the one place a binding is resolved; the shortcut runner, menus' shortcut
   text and the Shortcuts page read it. A binding fires only when its modifiers match exactly. A
   plain-key binding is allowed but held back while a text field has focus. The editor is
-  `feature/settings/ui/shortcutpage` (Settings).
+  `ui/overlays/settingsdialog/shortcutpage` (Settings).
 - **Overlays**, bottom to top: settings dialog, in-app file browser, context menu, dialog (with a
   scrim), toasts. While one has the keyboard the global shortcuts are off. The context menu is the
   toolkit's popup menu, its state in `core.Ctx.Menu` (typed `any`, see its doc); the app only fills a missing
@@ -99,7 +99,7 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
   text menu, not the row menu.
 - **Toasts** carry a `severity.Level` (`internal/feature/request/severity`), mapped once to the toolkit's
   kind; the settings, the sent log and the call trace use the same type. Info fades, errors stay.
-- The settings dialog's System page (`feature/settings/ui/systempage`) reports
+- The settings dialog's System page (`ui/overlays/settingsdialog/systempage`) reports
   the app's `SystemInfo` port.
 
 ### Drawing only when something changed

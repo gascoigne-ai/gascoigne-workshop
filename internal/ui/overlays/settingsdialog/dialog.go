@@ -1,11 +1,11 @@
-// Package settingsui is the settings dialog shell: a title bar, a list of
+// Package settingsdialog is the settings dialog shell: a title bar, a list of
 // pages with the search field on top, a title row over every page, and the
 // text of settings.json with live validation and completion. The pages are
 // drawn by the application through Host: the form of a category from the
 // settings schema (package formpage) and the tables (colors, shortcuts,
 // system). The dialog imports no other ui package; it reaches the
 // application through Host.
-package settingsui
+package settingsdialog
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"

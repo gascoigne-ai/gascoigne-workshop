@@ -5,7 +5,7 @@ What the workshop remembers about sent requests: the responses of each request a
 ## Layout
 - `internal/feature/history`: the model (`Entry`, `Sent`, `SentLimit`) and the ports (`History`, `SentStore`).
 - `adapter/historyfile`: the disk store (`Dir`, `SentLog`), package `historyfile`.
-- `ui/sentlog`: the sidebar's `Sent` list, behind its `Host` seam (`Host.SentStore`); the `App` implements the host.
+- The sidebar's `Sent` list is `internal/ui/sidebar/sentlog`, behind its `Host` seam (`Host.SentStore`); the `App` implements the host.
 - Imports: the base feature (`feature/request`, `feature/request/severity`) and `storage` plus the toolkit for the view.
 
 ## Behavior
@@ -27,4 +27,3 @@ Formats and versions are in `.harness/architecture/persistence.md` (`history/<ha
 ## Known gaps
 - The model is the one root file `model.go`; it moved here from the old `internal/response` because only this feature used it.
 - The tab's in-memory history list lives in `internal/app` (`statesync.go`), not in this feature.
-- `ui/sentlog` imports the toolkit (`uitoolkit/...`), as every `ui` does.

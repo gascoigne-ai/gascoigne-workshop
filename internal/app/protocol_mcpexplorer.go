@@ -11,9 +11,9 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )

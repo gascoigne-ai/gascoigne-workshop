@@ -27,7 +27,7 @@ parsing is pure and tested without a display. It imports nothing of the toolkit 
   window and the desktop, not about requests. An `internal/platform` layer once held them
   behind ports owned by `settings` and `workspace`, but no feature code used those ports: only
   `app` and a view did, so the layer is gone. The ports live where they are used: `internal/app/ports.go`
-  and `settings/ui/formpage` (fonts), next to the fakes of the tests.
+  and `ui/overlays/settingsdialog/formpage` (fonts), next to the fakes of the tests.
 - **Sub-packages.** `displayscale`, `keyrepeat`, `filedialog`, `systeminfo` and `fonts` each have their own `source`,
   `System` and `run`; one flat package would need prefixes on all of them.
 - **Rejected.** A D-Bus file chooser portal (see the `filedialog` package doc). Revisit when a

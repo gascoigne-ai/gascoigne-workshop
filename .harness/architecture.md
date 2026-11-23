@@ -1,13 +1,13 @@
 # Architecture
 
 Start with `overview.md`; this file is the index of the detail. The layout follows the shared
-`common/architecture-style.md`: each domain's root package (types and ports) is its core, `adapter` and `ui` its adapters,
+`common/architecture-style.md`: each domain's root package (types and ports) is its core, `adapter` its adapters, `internal/ui` the screen,
 the `App` its composition root. Known gaps are under Limits.
 
 ```mermaid
 flowchart LR
   cmd["cmd/workshop"] --> app["internal/app"]
-  app --> ui["domain ui"] & ctl["domain controllers"] & adp["domain adapter"]
+  app --> ui["internal/ui"] & ctl["domain controllers"] & adp["domain adapter"]
   ui --> ctl --> root["domain root"]
   adp -. implements .-> root
   subgraph toolkit["uitoolkit (knows nothing of the app)"]
@@ -24,19 +24,19 @@ flowchart LR
 
 ## Package layout
 
-- Packages are `internal/<domain>/<package>`; only `ui/` and `adapter/` are zone directories. The import
+- Feature packages are `internal/feature/<domain>/<package>`; only `adapter/` is a zone directory inside a feature. The screen is `internal/ui/<area>/<component>`. The import
   rules and their written exceptions are in `internal/CLAUDE.md`; no test checks them.
 - `internal/app` is one package: Go cannot declare a method in another package, and everything
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
-- A feature that needs little of the `App` is its own `ui` package behind a `Host` interface the
-  `App` implements, tested with a fake host: `calltrace` (`feature/send/ui/calltrace`), `mcpform` (`feature/send/ui/mcpform`), `sentlog` (`feature/history/ui/sentlog`), `settingsui`,
-  `formpage`, `colorpage`, `shortcutpage`, `systempage`, `destpicker`. Adapters reach those views through the
+- A view that needs little of the `App` is its own `internal/ui` package behind a `Host` interface the
+  `App` implements, tested with a fake host: `response/calltrace`, `editor/mcp/mcpform`, `sidebar/sentlog`, `overlays/settingsdialog`
+  with its pages `formpage`, `colorpage`, `shortcutpage`, `systempage`, and `overlays/destpicker`. `response/respview` and `appicon` are the other views moved so far. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 
 ## Modules
 
 One functional module per file in `architecture/`; read only the one you touch. A module is a
-domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the toolkit.
+feature directory under `internal/feature/` (root, controllers, `adapter/`; its views are under `internal/ui/`) or the toolkit.
 
 | File | Module | Owns |
 |---|---|---|
@@ -69,6 +69,6 @@ other one, except the `exampleserver` dev tool. `e2e/layers_test.go` checks it i
 - A domain root imports a sub-package of its own domain: `feature/workspace` imports `feature/workspace/state`.
 - `internal/exampleserver` imports `feature/send/adapter/protocol/ws`; the one written exception in `internal/CLAUDE.md`.
 - Six test-only rows in `e2e/layers_rules_test.go` let tests import real adapters as fixtures:
-  `exampleserver` (`feature/collections`, `feature/send/adapter/protocol`), `history/ui/sentlog` (`history/adapter/historyfile`),
-  `settings/ui/formpage` (`uitoolkit/desktop/fonts`, `settings/adapter/settingsfile`), `settings/ui/settingsui`
+  `exampleserver` (`feature/collections`, `feature/send/adapter/protocol`), `ui/sidebar/sentlog` (`history/adapter/historyfile`),
+  `ui/overlays/settingsdialog/formpage` (`uitoolkit/desktop/fonts`, `settings/adapter/settingsfile`), `ui/overlays/settingsdialog`
   (`settings/adapter/settingsfile`). Follow-up: replace the real adapters with fakes and delete the rows.

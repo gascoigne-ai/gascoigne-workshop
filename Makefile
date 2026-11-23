@@ -44,12 +44,12 @@ FUZZ_TARGETS = \
 	./internal/storage:FuzzRead \
 	./internal/feature/history/adapter/historyfile:FuzzLoad \
 	./internal/feature/history/adapter/historyfile:FuzzLoadSent \
-	./internal/feature/send/ui/respview:FuzzDecode \
+	./internal/ui/response/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
 	./internal/feature/send/adapter/protocol:FuzzReadEvents \
 	./internal/feature/settings:FuzzParse \
 	./internal/feature/request:FuzzParseBulk \
-	./internal/feature/settings/ui/shortcutpage:FuzzParseBinding \
+	./internal/ui/overlays/settingsdialog/shortcutpage:FuzzParseBinding \
 	./internal/feature/send/adapter/protocol:FuzzDeliverJSON \
 	./internal/feature/send/adapter/protocol:FuzzAnswerServer \
 	./internal/feature/send/adapter/protocol:FuzzSample \

@@ -1,4 +1,4 @@
-package settingsui
+package settingsdialog
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"

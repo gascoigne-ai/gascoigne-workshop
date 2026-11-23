@@ -31,7 +31,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/ui/appicon"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/appicon"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 )
 

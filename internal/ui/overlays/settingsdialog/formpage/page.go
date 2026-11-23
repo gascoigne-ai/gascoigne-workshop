@@ -2,7 +2,7 @@
 // of a category (or of every category that matches a search), the font
 // drop-down and the typed fields. What a user's action means is decided by
 // the pure Update of package form; this package draws the rows and carries
-// out the effects. The dialog shell (package settingsui) does not import it,
+// out the effects. The dialog shell (package settingsdialog) does not import it,
 // because a ui package imports no other ui package: the application draws
 // this page for the shell, through the shell's Host.
 package formpage

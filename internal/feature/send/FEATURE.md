@@ -7,8 +7,8 @@ Sending a request and reading the answer: the protocol clients, the request edit
 - `adapter/protocol`: one client per protocol, keyed by name in `protocol.Registry` (REST, WebSocket, SSE, MCP, gRPC, GraphQL as a body type); `adapter/protocol/ws` is the WebSocket framing. `adapter/protocol/testdata` holds the proto files and captures its tests read.
 - `assert`: the assertion language of `Request.Tests`. `requestedit`: the request edits of a tab. `mcpexplorer`: the UI-free state of the MCP explorer. `viewer`: the response viewer's model (mode, find state). `outbox`: the order of a connection's sends and pings, one in flight at a time.
 - `adapter/preview`: serves a body on a loopback address for "Open in browser".
-- `ui/respview` (response views), `ui/calltrace` (the call trace), `ui/mcpform` (the form for an MCP tool's arguments); each behind a `Host` interface the `App` implements.
-- Imports: the base feature (`feature/request`, `feature/request/severity`) plus the toolkit and `ui/format` (display text) for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `adapter/protocol/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
+- The views are in `internal/ui`: `response/respview` (response views), `response/calltrace` (the call trace), `editor/mcp/mcpform` (the form for an MCP tool's arguments); each behind a `Host` interface the `App` implements. This feature has no UI.
+- Imports: the base feature (`feature/request`, `feature/request/severity`). `go list` (tests included) shows no other feature. `internal/exampleserver` imports `adapter/protocol/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
 
 ## Model and protocols
 
@@ -166,7 +166,7 @@ stateDiagram-v2
 - **Images**: PNG, JPEG and GIF are sniffed from the body whatever the Content-Type says and shown
   scaled down, never up.
 - **History** and the **sent log**: `internal/feature/history/FEATURE.md`.
-- **Call trace** (`send/ui/calltrace`): the last 500 sends, results and connection changes, in
+- **Call trace** (`ui/response/calltrace`): the last 500 sends, results and connection changes, in
   memory only, shown by the status bar's `Log` button. Socket messages are not traced; the Messages
   pane has them.
 - **Open in browser** (`send/adapter/preview`): the app draws no HTML, so it serves the body on
@@ -182,4 +182,3 @@ Invalid JSON and other text come back as plain lines, so the response pane rende
 
 ## Known gaps
 - `adapter/protocol` is one package for every protocol and the registry; only `adapter/protocol/ws` is split out, so the protocols share the request builder, the event stream and the session helpers.
-- `ui/*` import the toolkit (`uitoolkit/...`), as every `ui` does.

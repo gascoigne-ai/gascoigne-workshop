@@ -178,5 +178,5 @@ func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) 
 }
 
 // dialogPageW is the width of the page in the dialog at its default size: its
-// width of 760 less the list of pages of 170 (package settingsui).
+// width of 760 less the list of pages of 170 (package settingsdialog).
 const dialogPageW = 760 - 170

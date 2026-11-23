@@ -4,19 +4,19 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/ui/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/colorpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/formpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/settingsui"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/ui/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/colorpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -112,14 +112,14 @@ type persistState struct {
 // settingsState holds the settings, their file and the settings dialog with its pages.
 type settingsState struct {
 	settings           settings.Settings
-	settingsPath       string                    // "" keeps settings in memory only
-	settingsAccess     storage.Access            // read-only when a newer build wrote the file
-	menu               bool                      // settings menu is open
-	actionIDs          []string                  // the ids of the shortcut actions, for completing settings.json
-	cancelSettingsPick func()                    // takes back a file question the settings dialog asked
-	settingsUnsaved    bool                      // settings were changed but not written (auto-save is off)
-	prefs              settingsui.SettingsDialog // the settings dialog
-	form               formpage.Page             // the form of the settings dialog
-	shortcutKeys       shortcutpage.Page         // the Shortcuts page of the settings dialog
-	colors             colorpage.Page            // the Colors page of the settings dialog
+	settingsPath       string                        // "" keeps settings in memory only
+	settingsAccess     storage.Access                // read-only when a newer build wrote the file
+	menu               bool                          // settings menu is open
+	actionIDs          []string                      // the ids of the shortcut actions, for completing settings.json
+	cancelSettingsPick func()                        // takes back a file question the settings dialog asked
+	settingsUnsaved    bool                          // settings were changed but not written (auto-save is off)
+	prefs              settingsdialog.SettingsDialog // the settings dialog
+	form               formpage.Page                 // the form of the settings dialog
+	shortcutKeys       shortcutpage.Page             // the Shortcuts page of the settings dialog
+	colors             colorpage.Page                // the Colors page of the settings dialog
 }

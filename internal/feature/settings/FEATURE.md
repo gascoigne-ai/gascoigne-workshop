@@ -6,12 +6,12 @@ The settings the user can change: the schema, the settings file, the theme built
 - `internal/feature/settings`: the model (`Settings`, `Schema`, the codec, `Minimal`, `Validate`, `Complete`) in `model.go` and its neighbours.
 - `prefs`: the messages a page sends; `theme`: how settings become a theme.
 - `form`: a controller, the state of the settings form and what a user's action on it means: a `Model` (the refusal note of each setting), typed messages (`Typed`, `Stepped`, `Reset`, `Choose`, `Picked`) and a pure `Update(model, settings, msg)` that returns the next model and the effects the view carries out (`Apply`, `Restore`, `Fill`, `ForgetTexts`, `ApplyFonts`, `AskFile`). It also holds the pure facts of the form: where a row puts its control (`PlaceOf`), the font and size pairs (`Faces`), the search match (`Matches`, `Lists`). It imports the settings root only, so it runs without a window. The typed text stays a `TextField` in the view (toolkit state); the values stay in `Settings`.- `adapter/settingsfile`: `settings.json` on disk.
-- `ui/settingsui`: the dialog shell (title bar, list of pages, search field, raw JSON view, Save) behind its `Host`. `ui/formpage`: the form view and the font drop-down, on top of `form`. `ui/colorpage`, `ui/shortcutpage`, `ui/systempage`: the three table pages. No `ui` package imports another, so the App draws the form through `Host.FormPage` and the tables through `Host.ExtraPage`, and composes the font list over the dialog (`menuView`).
+- The dialog is `internal/ui/overlays/settingsdialog` (the shell: title bar, list of pages, search field, raw JSON view, Save, behind its `Host`) with the pages `formpage`, `colorpage`, `shortcutpage` and `systempage` below it; this feature has no UI. A `ui` package never imports a sibling, so the App draws the form through `Host.FormPage` and the tables through `Host.ExtraPage`, and composes the font list over the dialog (`menuView`).
 - Installed fonts come from the toolkit's `desktop/fonts` (`Family`, `Find`, `Matching`, the scan); this package keeps only the family names (`UIFont`, `CodeFont`).
-- Imports: `storage` and the base feature leaf `feature/request/severity` plus the toolkit and `ui/format` for the views and `theme` (its test).
+- Imports: `storage` and the base feature leaf `feature/request/severity`.
 
 ## Known gaps
-- `ui/formpage` is about 900 lines because the font drop-down (`fontlist.go`, `fonts.go`) sits in it: the form row draws the font control from the drop-down's state, and a `ui` package cannot import another. It splits when the toolkit has a drop-down widget for a long list of rows.
+- `ui/overlays/settingsdialog/formpage` is about 900 lines because the font drop-down (`fontlist.go`, `fonts.go`) sits in it: the form row draws the font control from the drop-down's state, and a `ui` package cannot import another. It splits when the toolkit has a drop-down widget for a long list of rows.
 
 ```mermaid
 flowchart LR
@@ -20,7 +20,7 @@ flowchart LR
   formpage -- "prefs messages" --> app["App.Send (settingshost.go)"]
   app --> theme["theme.ThemeWith, Ctx.SetTheme"]
   app --> file["settingsfile: settings.json"]
-  file -- "Poll every PollTicks frames" --> shell["settingsui: dialog, raw JSON, search"]
+  file -- "Poll every PollTicks frames" --> shell["settingsdialog: dialog, raw JSON, search"]
 ```
 
 - **One row per setting.** `settings.Schema` (`schema.go`) is the form, the raw
@@ -34,7 +34,7 @@ flowchart LR
   category heading (search results only), the page title row and the search field in the page list
   follow `style.md` (Settings row). The Colors, Shortcuts and System pages stay tables and get only the
   title row.
-- **Dialog and host** (`ui/settingsui`, `ui/formpage`): `settingsui.SettingsDialog` is `App.prefs`, `formpage.Page` is `App.form`, and
+- **Dialog and host** (`ui/overlays/settingsdialog`, `.../formpage`): `settingsdialog.SettingsDialog` is `App.prefs`, `formpage.Page` is `App.form`, and
   the `App` is the `Host` of both. Host methods only read; everything a page asks for is a
   `prefs` message applied by `App.Send`. `SetFonts` stays a method because its
   error is the answer. The Colors, Shortcuts and System pages are separate `ui` packages that the
@@ -76,7 +76,7 @@ flowchart LR
   applied on the UI goroutine. A saved family that is not installed stays saved, shows as
   `(not installed)` and draws in the built-in Go font. The font list builds only the rows in view,
   so only their files are read.
-- **Shortcut editor** (`ui/shortcutpage`): a filterable keymap table (Action, Keystrokes as
+- **Shortcut editor** (`ui/overlays/settingsdialog/shortcutpage`): a filterable keymap table (Action, Keystrokes as
   key chips, Source) over the text editing keys. Clicking a row, or Enter on the selected row
   (`Page.Navigate`, which the app calls while this page is what the dialog shows; Up and Down move the
   selection through the rows the filter leaves), selects it and records the next combination for the
