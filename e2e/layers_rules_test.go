@@ -128,7 +128,6 @@ var currentLayoutRules = []layerRule{
 	{"test only: ui/window -> preview", selector{Paths: []string{"internal/ui/window"}}, selector{Paths: []string{"internal/feature/send/adapter/preview"}}, false, true, "test fixture: the whole-window tests run on the real stores and protocols, as apptest does; task 047 replaces them with fakes", false},
 	{"test only: ui/window -> protocol ws", selector{Paths: []string{"internal/ui/window"}}, selector{Paths: []string{"internal/feature/send/adapter/protocol/ws"}}, false, true, "test fixture: the whole-window tests run on the real stores and protocols, as apptest does; task 047 replaces them with fakes", false},
 	{"test only: ui/window -> exampleserver", selector{Paths: []string{"internal/ui/window"}}, selector{Paths: []string{"internal/exampleserver"}}, false, true, "test fixture: the whole-window tests run on the real stores and protocols, as apptest does; task 047 replaces them with fakes", false},
-	{"test only: ui/overlays/filebrowser -> folders", selector{Paths: []string{"internal/ui/overlays/filebrowser"}}, selector{Paths: []string{"internal/feature/workspace/adapter/folders"}}, false, true, "test fixture: the browser tests list a real temp folder", false},
 }
 
 // targetLayoutRules are the rows of the layout in .harness/reorg.md. They sit

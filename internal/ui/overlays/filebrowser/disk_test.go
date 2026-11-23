@@ -1,58 +1,59 @@
 package filebrowser
 
 import (
-	"os"
+	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	browsing "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// browsingWorld is a browser without a dialog program that lists the disk;
-// its home is a temporary folder holding a folder and two files, and its
-// working directory another one.
-func browsingWorld(t *testing.T) (*world, string) {
-	t.Helper()
-	dir := t.TempDir()
-	for _, name := range []string{"api.json", "notes.txt"} {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("HOME", dir)
-	t.Chdir(t.TempDir())
-	browsingWorld := newWorld(t, folders.Disk{})
-	browsingWorld.desktop.suggest = "zenity" // no dialog program, zenity would give one
-	return browsingWorld, dir
+// treeFolders lists a fixed tree of folders, keyed by the folder they list.
+type treeFolders struct {
+	home string
+	tree map[string][]workspace.FolderEntry
 }
 
-// browserDir is the folder the open browser shows, with links resolved, as
-// the temporary folder of macOS is behind one.
+func (fake treeFolders) Home() (string, error) { return fake.home, nil }
+func (fake treeFolders) List(dir string) ([]workspace.FolderEntry, error) {
+	entries, ok := fake.tree[dir]
+	if !ok {
+		return nil, fmt.Errorf("open %s: %w", dir, fs.ErrNotExist)
+	}
+	return entries, nil
+}
+
+// browsingWorld is a browser without a dialog program that lists a fake
+// tree; its home holds a folder, two files and a hidden file, and the parent
+// of the home lists the home.
+func browsingWorld(t *testing.T) (*world, string) {
+	t.Helper()
+	home := filepath.FromSlash("/home/me")
+	folders := treeFolders{home: home, tree: map[string][]workspace.FolderEntry{
+		filepath.FromSlash("/home"): {{Name: "me", Dir: true}},
+		home:                        {{Name: "sub", Dir: true}, {Name: "api.json"}, {Name: "notes.txt"}, {Name: ".env"}},
+		filepath.Join(home, "sub"):  nil,
+	}}
+	browsingWorld := newWorld(t, folders)
+	browsingWorld.desktop.suggest = "zenity" // no dialog program, zenity would give one
+	return browsingWorld, home
+}
+
+// browserDir is the folder the open browser shows.
 func browserDir(t *testing.T, world *world) string {
 	t.Helper()
 	if !world.c.Shown() {
 		t.Fatal("the file browser is not open")
 	}
-	return evalLinks(t, world.c.session.model.Dir)
-}
-
-func evalLinks(t *testing.T, path string) string {
-	t.Helper()
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return resolved
+	return world.c.session.model.Dir
 }
 
 func pressEdit(world *world, edit core.Edit, keyDown ebiten.Key, alt bool) {
@@ -68,7 +69,7 @@ func typePath(world *world, path string) {
 func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
 	world, dir := browsingWorld(t)
 	world.c.Pick("Choose the file to send", filedialog.OpenFile, "", func(string) {})
-	if got := browserDir(t, world); got != evalLinks(t, dir) {
+	if got := browserDir(t, world); got != dir {
 		t.Fatalf("dir %q, want %q", got, dir)
 	}
 	world.step(core.Input{})
@@ -85,12 +86,12 @@ func TestTheBrowserDoesNotRememberTheLastFolder(t *testing.T) {
 	world.c.Pick("Pick", filedialog.OpenFile, "", func(string) {})
 	typePath(world, filepath.Join(dir, "sub")+string(filepath.Separator))
 	world.c.update(browsing.Entered{})
-	if browserDir(t, world) != filepath.Join(evalLinks(t, dir), "sub") {
+	if browserDir(t, world) != filepath.Join(dir, "sub") {
 		t.Fatalf("Enter on a typed folder opens it: %q", world.c.session.model.Dir)
 	}
 	world.c.Close()
 	world.c.Pick("Pick again", filedialog.OpenFile, "", func(string) {})
-	if got := browserDir(t, world); got != evalLinks(t, dir) {
+	if got := browserDir(t, world); got != dir {
 		t.Fatalf("the next browser opens in %q, want home %q", got, dir)
 	}
 }
@@ -102,11 +103,11 @@ func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 	world.step(core.Input{})
 	pressEdit(world, core.EditDown, ebiten.KeyArrowDown, false) // sub
 	world.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
-	if browserDir(t, world) != filepath.Join(evalLinks(t, dir), "sub") {
+	if browserDir(t, world) != filepath.Join(dir, "sub") {
 		t.Fatalf("Down and Enter open the folder: %q", world.c.session.model.Dir)
 	}
 	pressEdit(world, core.EditBackspace, ebiten.KeyBackspace, false)
-	if browserDir(t, world) != evalLinks(t, dir) {
+	if browserDir(t, world) != dir {
 		t.Fatalf("Backspace with nothing typed goes up: %q", world.c.session.model.Dir)
 	}
 	if !strings.HasSuffix(world.c.session.path.Text, string(filepath.Separator)) {
@@ -116,7 +117,7 @@ func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 	// folder: Backspace must not also go up.
 	world.c.session.path.SelectAll()
 	pressEdit(world, core.EditBackspace, ebiten.KeyBackspace, false)
-	if browserDir(t, world) != evalLinks(t, dir) || world.c.session.path.Text != "" {
+	if browserDir(t, world) != dir || world.c.session.path.Text != "" {
 		t.Fatalf("Backspace over a selection deletes it: dir %q text %q", world.c.session.model.Dir, world.c.session.path.Text)
 	}
 	typePath(world, world.c.session.model.Dir+string(filepath.Separator))
@@ -125,12 +126,12 @@ func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
 		t.Fatalf("typing filters the list: %+v", visible)
 	}
 	pressEdit(world, core.EditUp, ebiten.KeyArrowUp, true)
-	if browserDir(t, world) != filepath.Dir(evalLinks(t, dir)) {
+	if browserDir(t, world) != filepath.Dir(dir) {
 		t.Fatalf("Alt+Up goes up: %q", world.c.session.model.Dir)
 	}
 	typePath(world, filepath.Join(dir, "notes.txt"))
 	world.step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
-	if world.c.Shown() || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "notes.txt") {
+	if world.c.Shown() || got != filepath.Join(dir, "notes.txt") {
 		t.Fatalf("Enter on a typed path chooses it: got %q, browser %v", got, world.c.Shown())
 	}
 }
@@ -146,16 +147,13 @@ func TestADoubleClickOpensARow(t *testing.T) {
 		t.Fatalf("a click selects: got %q selected %d", got, world.c.session.model.Selected)
 	}
 	world.step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 2})
-	if evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
+	if got != filepath.Join(dir, "api.json") {
 		t.Fatalf("a double click opens: %q", got)
 	}
 }
 
 func TestTheHiddenFilesToggleShowsDotNames(t *testing.T) {
-	world, dir := browsingWorld(t)
-	if err := os.WriteFile(filepath.Join(dir, ".env"), nil, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	world, _ := browsingWorld(t)
 	world.c.Pick("Pick", filedialog.OpenFile, "", func(string) {})
 	if strings.Contains(world.layoutDump(), `".env"`) {
 		t.Fatal("hidden names are left out at first")

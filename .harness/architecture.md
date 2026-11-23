@@ -159,5 +159,4 @@ other one, except the `exampleserver` dev tool. `e2e/layers_test.go` checks it i
 - A domain root imports a sub-package of its own domain: `feature/workspace` imports `feature/workspace/state`.
 - `internal/exampleserver` imports `feature/send/adapter/protocol/ws`; the one written exception in `internal/CLAUDE.md`.
 - Test-only rows in `e2e/layers_rules_test.go` let tests import real adapters as fixtures (`ui/window` has nine for the whole-window tests: `collectionstore`, `historyfile`, `protocol`, `protocol/ws`, `settingsfile`, `statefile`, `folders`, `preview` and `exampleserver`; a later task replaces them with fakes; `e2e/apptest_adapters_test.go` is the helper that wires the real adapters for `apptest`):
-  `exampleserver` (`feature/collections`, for the sample collection test),
-  `ui/overlays/filebrowser` (`workspace/adapter/folders`). Follow-up: replace the real adapters with fakes and delete the rows.
+  `exampleserver` (`feature/collections`, for the sample collection test). Follow-up: replace the real adapters with fakes and delete the rows.

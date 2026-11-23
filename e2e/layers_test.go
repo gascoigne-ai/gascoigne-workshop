@@ -335,6 +335,16 @@ func TestCheckLayersSettingsDialogTestsMayNotImportSettingsfile(t *testing.T) {
 	}
 }
 
+// The file browser is tested over a fake folder tree, so its tests may not
+// import the folders adapter.
+func TestCheckLayersFileBrowserTestsMayNotImportFolders(t *testing.T) {
+	test := synthetic("internal/ui/overlays/filebrowser")
+	test.TestImports = []string{testModule + "/internal/feature/workspace/adapter/folders"}
+	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) == 0 {
+		t.Error("a filebrowser test importing folders must be a violation")
+	}
+}
+
 // The whole-window tests run on the real adapters, as apptest does; the rows
 // are for test files only.
 func TestCheckLayersWindowTestFixtures(t *testing.T) {
