@@ -283,6 +283,16 @@ func TestCheckLayersTargetLayout(t *testing.T) {
 	}
 }
 
+// The dev server's own tests no longer drive the protocol registry: those
+// client tests run from e2e, so no test-only row opens the protocol adapter.
+func TestCheckLayersExampleServerTestsMayNotImportProtocol(t *testing.T) {
+	test := synthetic("internal/exampleserver")
+	test.TestImports = []string{testModule + "/internal/feature/send/adapter/protocol"}
+	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) == 0 {
+		t.Error("an exampleserver test importing the protocol adapter must be a violation")
+	}
+}
+
 func TestCheckLayersTestOnlyRows(t *testing.T) {
 	production := synthetic("internal/ui/sidebar/sentlog", "internal/feature/history/adapter/historyfile")
 	test := synthetic("internal/ui/sidebar/sentlog")

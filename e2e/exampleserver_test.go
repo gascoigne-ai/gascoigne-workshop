@@ -1,4 +1,4 @@
-package exampleserver
+package e2e
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 )
@@ -17,13 +18,13 @@ import (
 // these tests also prove the example server speaks what they expect.
 func start(t *testing.T) map[string]string {
 	t.Helper()
-	endpoints, err := Listen(Config{Host: "127.0.0.1"})
+	endpoints, err := exampleserver.Listen(exampleserver.Config{Host: "127.0.0.1"})
 	if err != nil {
 		t.Fatalf("Listen: %v", err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- Serve(ctx, endpoints) }()
+	go func() { done <- exampleserver.Serve(ctx, endpoints) }()
 	t.Cleanup(func() {
 		cancel()
 		<-done
@@ -208,7 +209,7 @@ func TestGRPCWithoutReflectionAnswersACallFromTheProtoFile(t *testing.T) {
 	if _, err := protocol.ListGRPCMethods(within(t), call); err == nil {
 		t.Fatal("the methods were listed without a proto file: the port offers reflection")
 	}
-	healthProto, err := filepath.Abs(filepath.Join("protos", "grpc", "health", "v1", "health.proto"))
+	healthProto, err := filepath.Abs(filepath.Join("..", "internal", "exampleserver", "protos", "grpc", "health", "v1", "health.proto"))
 	if err != nil {
 		t.Fatal(err)
 	}
