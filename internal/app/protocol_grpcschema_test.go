@@ -9,16 +9,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-func TestTheSchemaPaneFollowsTheProtoPane(t *testing.T) {
-	labels := paneLabels(grpcRequestPanes)
-	for i, label := range labels {
-		if label == "Proto" && labels[i+1] != "Schema" {
-			t.Errorf("the pane after Proto is %q, want Schema", labels[i+1])
-			return
-		}
-	}
-}
-
 // grpcTabOnSchemaPane is grpcTabOnProtoPane with health.proto added and
 // the Check method chosen, shown on the Schema pane once it has loaded.
 func grpcTabOnSchemaPane(t *testing.T) (*App, *reqTab) {
@@ -68,7 +58,7 @@ func TestFillBodyWritesTheSkeletonIntoTheBodyAndShowsIt(t *testing.T) {
 	if !tab.Dirty() {
 		t.Error("filling the body did not mark the request edited")
 	}
-	if got := requestPanesFor(tab)[tab.paneTab].label; got != "Body" {
+	if got := a.editor.PaneLabel(tab.Tab); got != "Body" {
 		t.Errorf("pane after Fill body = %q, want Body", got)
 	}
 }

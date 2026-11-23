@@ -78,7 +78,7 @@ func TestTheMessagesPaneLaysOutAsPinned(t *testing.T) {
 				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(a, tab)
-				root := a.messagesPane(wsPanes[0], tab, nil)
+				root := messagesPane(a, tab)
 				Layout(a.ctx, root, size.width, messagesPaneH)
 				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 				if err != nil {
@@ -102,7 +102,7 @@ func TestTheComposerEditsTheTabsMessage(t *testing.T) {
 			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			state.setUp(a, tab)
-			field := findWidget(a.messagesPane(wsPanes[0], tab, nil), "*widget.fieldB")
+			field := findWidget(messagesPane(a, tab), "*widget.fieldB")
 			if state.placeholder == "" {
 				if field != nil {
 					t.Fatalf("a composer where none belongs: %+v", field.Behavior())

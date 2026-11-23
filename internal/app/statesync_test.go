@@ -16,7 +16,8 @@ import (
 func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.openRequest(a.col().Folders[0].Requests[0]) // User/<first>
-	a.cur().paneTab, a.cur().respTab = 2, 1
+	a.editor.ShowPane(a.cur().Tab, 2)
+	a.cur().respTab = 1
 	a.sidebarSplit.Size = 310
 	a.paneSplit.Size = 0.4
 	a.editor.Tables.Widths(kvlogic.Params).Weights = []float64{1, 2, 3}
@@ -46,15 +47,15 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
 	a.openRequest(a.col().Folders[0].Requests[0])
-	a.cur().paneTab = 3
+	a.editor.ShowPane(a.cur().Tab, 3)
 	a.sidebarSplit.Size = 300
 	a.side.Tree().Expanded()[a.col().Folders[2]] = true
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
 	b := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if len(b.tabs.Tabs()) != 2 || b.tabs.Active() != 1 || b.cur().paneTab != 3 {
-		t.Fatalf("tabs %d active %d pane %d", len(b.tabs.Tabs()), b.tabs.Active(), b.cur().paneTab)
+	if len(b.tabs.Tabs()) != 2 || b.tabs.Active() != 1 || b.editor.PaneOf(b.cur().Tab) != 3 {
+		t.Fatalf("tabs %d active %d pane %d", len(b.tabs.Tabs()), b.tabs.Active(), b.editor.PaneOf(b.cur().Tab))
 	}
 	if b.cur().Req != b.col().Folders[0].Requests[0] || b.side.Tree().Selected() != request.Of(b.cur().Req) {
 		t.Fatal("the restored tab must be the request in the new tree")
@@ -78,7 +79,7 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 	if len(a.tabs.Tabs()) != 1 || a.tabs.Active() != 0 {
 		t.Fatalf("tabs %d active %d", len(a.tabs.Tabs()), a.tabs.Active())
 	}
-	if p := a.cur().paneTab; p < 0 || p > 4 {
+	if p := a.editor.PaneOf(a.cur().Tab); p < 0 || p > 4 {
 		t.Fatalf("pane tab %d out of range", p)
 	}
 	if a.cur().respTab < 0 {
@@ -202,9 +203,9 @@ func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 func TestStateSnapshotNamesTheRequestPaneOfEachTab(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.openRequest(a.col().Folders[0].Requests[0])
-	a.cur().paneTab = 1
+	a.editor.ShowPane(a.cur().Tab, 1)
 	s := a.stateFile.Snapshot()
-	if got, want := s.Tabs[1].PaneLabel, requestPanesFor(a.cur())[1].label; got != want {
+	if got, want := s.Tabs[1].PaneLabel, a.editor.PaneTabs(a.cur().Tab)[1].Label; got != want {
 		t.Errorf("PaneLabel = %q, want %q", got, want)
 	}
 }
@@ -229,7 +230,7 @@ func TestStateRestoreFindsTheRequestPaneByItsLabel(t *testing.T) {
 			call.Protocol = "grpc"
 			test.tab.Path = "User/" + call.Name
 			stateHost{a}.Restore(state.State{Tabs: []state.Tab{test.tab}})
-			if got := requestPanesFor(a.cur())[a.cur().paneTab].label; got != test.want {
+			if got := a.editor.PaneLabel(a.cur().Tab); got != test.want {
 				t.Errorf("restored pane = %q, want %q", got, test.want)
 			}
 		})

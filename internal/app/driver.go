@@ -58,12 +58,8 @@ func (d *Driver) OpenRequest(name string) error {
 
 // ShowRequestPane shows the open request's pane with this label.
 func (d *Driver) ShowRequestPane(label string) error {
-	tab := d.app.cur()
-	for i, candidate := range requestPanesFor(tab) {
-		if candidate.label == label {
-			tab.paneTab = i
-			return nil
-		}
+	if d.app.editor.ShowPaneLabeled(d.app.cur().Tab, label) {
+		return nil
 	}
 	return fmt.Errorf("pane %q is not a pane of the open request", label)
 }
@@ -291,8 +287,7 @@ func (d *Driver) AllAnswered() bool {
 // Proto pane waits for the files to be read and its Schema pane for the
 // message schema.
 func (d *Driver) Settled() bool {
-	tab := d.app.cur()
-	return !d.app.protoReading(tab) && !d.app.schemaLoading(tab)
+	return !d.app.editor.Loading(d.app.cur().Tab)
 }
 
 // SendWithoutWaiting sends the open request and does not wait for its
@@ -303,7 +298,7 @@ func (d *Driver) SendWithoutWaiting() { d.app.send(d.app.cur()) }
 // response, or for a socket an open connection (an MCP server also has
 // said who it is) or a failed one.
 func (a *App) answered(tab *reqTab) bool {
-	if !a.isSocket(tab) {
+	if !a.editor.Socket(tab.Tab) {
 		return tab.Resp != nil && !a.sends.Sending(tab.Req) // a tab sent again still holds its earlier response
 	}
 	if tab.State() == tabs.ConnConnecting {
@@ -312,8 +307,7 @@ func (a *App) answered(tab *reqTab) bool {
 	if tab.Session() == nil {
 		return len(a.editor.WS.Lines(tab.Tab)) > 0 // the error is in the log
 	}
-	explores := slices.ContainsFunc(viewOf(tab.Req.Protocol).streamPanes, func(panel pane) bool { return panel.kind == paneExplorer })
-	return !explores || tab.Server != nil // an explorer waits for the server to say who it is
+	return !a.editor.Explores(tab.Tab) || tab.Server != nil // an explorer waits for the server to say who it is
 }
 
 func (a *App) findRequestByName(name string) *request.Request {

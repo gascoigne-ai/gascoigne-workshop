@@ -6,6 +6,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/assertions"
@@ -18,32 +19,53 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// host answers every child's Tabs (and the tables' rows) over real tabs. No
-// table is visible, so a table in bulk mode counts as left.
+// host answers every child's Tabs over real tabs, and the Connections the
+// pane table calls, noting them in order.
 type host struct {
-	set  *tabs.Set
-	rows []request.KV
+	set   *tabs.Set
+	rows  []request.KV
+	calls []string
 }
 
 func (fake *host) Current() *tabs.Tab { return fake.set.Current() }
 func (fake *host) IsOpen(tab *tabs.Tab) bool {
 	return slices.Contains(fake.set.Tabs(), tab)
 }
-func (fake *host) Visible() (logic.Table, bool)   { return logic.Table{}, false }
-func (fake *host) Rows(logic.Table) *[]request.KV { return &fake.rows }
-func (fake *host) Changed(logic.Table)            {}
+func (fake *host) Disconnect(*tabs.Tab)                      { fake.calls = append(fake.calls, "disconnect") }
+func (fake *host) ProtocolChosen(*tabs.Tab)                  { fake.calls = append(fake.calls, "chosen") }
+func (fake *host) Settings() settings.Settings               { return settings.Default() }
+func (fake *host) CommitEdit()                               {}
+func (fake *host) ShowBody(*tabs.Tab)                        {}
+func (fake *host) SetStatus(string)                          {}
+func (fake *host) Open(int, int, []widget.MenuItem)          {}
+func (fake *host) Secret(logic.Table, int) (secret, ok bool) { return false, false }
+func (fake *host) ToggleSecret(int)                          {}
+func (fake *host) CellStyler(*request.Request) func(string) []widget.Span {
+	return nil // the dump does not show spans
+}
+func (fake *host) Rows() *[]request.KV { return &fake.rows }
+func (fake *host) Caption() string     { return "Collection variables" }
 
 // newEditor is the composite over two open tabs, the first current.
 func newEditor(t *testing.T) (*Component, *host) {
 	t.Helper()
 	fake := &host{set: tabs.NewSet()}
-	fake.set.Open(&request.Request{Name: "first", URL: "https://one.test"})
-	fake.set.Open(&request.Request{Name: "second", URL: "https://two.test"})
+	// The tables show the real rows now, so each request has one to edit.
+	fake.set.Open(&request.Request{Name: "first", URL: "https://one.test", Params: []request.KV{{Name: "q", Value: "1", Enabled: true}}})
+	fake.set.Open(&request.Request{Name: "second", URL: "https://two.test", Params: []request.KV{{Name: "q", Value: "2", Enabled: true}}})
 	fake.set.Apply(tabs.Activate{Index: 0})
+	ctx, err := core.NewCtx(theme.ThemeWith(settings.Default()))
+	if err != nil {
+		t.Fatal(err)
+	}
 	editor := New(Deps{
+		Ctx:  ctx,
+		Tabs: fake, Connections: fake, Settings: fake, VarsPane: fake, Window: fake,
 		URLBar:     urlbar.Deps{Tabs: fake},
 		Body:       body.Deps{Tabs: fake},
 		GraphQL:    graphql.Deps{Tabs: fake},
@@ -52,7 +74,7 @@ func newEditor(t *testing.T) (*Component, *host) {
 		GRPC:       grpc.Deps{Tabs: fake},
 		MCP:        mcp.Deps{Tabs: fake},
 		WS:         ws.Deps{Tabs: fake},
-		Tables:     kvtable.Deps{Tables: fake, Tabs: fake},
+		Tables:     kvtable.Deps{Menus: fake, Secrets: fake, Styles: fake},
 	})
 	return editor, fake
 }

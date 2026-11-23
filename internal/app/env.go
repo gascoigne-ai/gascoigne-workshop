@@ -175,11 +175,7 @@ func (a *App) editVars(dir *request.Folder) {
 	} else {
 		a.varsTarget = folderVars(dir)
 	}
-	for i, p := range requestPanesFor(a.cur()) {
-		if p.label == "Vars" {
-			a.cur().paneTab = i
-		}
-	}
+	a.editor.ShowPaneLabeled(a.cur().Tab, "Vars")
 }
 
 // variableCompletion is what Ctrl+Space in the URL field offers (see

@@ -20,12 +20,6 @@ type reqTab struct {
 	*tabs.Tab
 	socketBlock
 	responseBlock
-	paneTab   int
-	bodyView  widget.CodeView    // request body, read-only
-	tests     widget.TextArea    // the assertions editor
-	reqScroll widget.ScrollState // scroll of the table and note panes
-	reqTabsX  widget.ScrollState // sideways scroll of the two pane tab strips
-	timeout   widget.TextField   // the request's timeout seconds, as typed
 }
 
 // socketBlock holds the state of a socket tab the connection lifecycle owns: the connect in progress and the sends waiting their turn. The message log and the composer are the ws component's.

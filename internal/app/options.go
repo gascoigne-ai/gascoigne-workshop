@@ -174,16 +174,18 @@ func NewApp(opts Options) (*App, error) {
 		Folders: sidebarHost{a}, Extras: sidebarHost{a}, Collection: collectionHost{a}, Workspace: sidebarHost{a},
 		Menus: sidebarHost{a}, Sent: a,
 	})
+	host := editorHost{a}
 	a.editor = editor.New(editor.Deps{
-		URLBar:     urlbar.Deps{Tabs: urlbarHost{a}, Sends: urlbarHost{a}, Connections: urlbarHost{a}, GRPC: urlbarHost{a}, Protocols: urlbarHost{a}, Styles: urlbarHost{a}, Hints: urlbarHost{a}},
-		Body:       body.Deps{Tabs: bodyHost{a}, Slots: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}, Window: bodyHost{a}},
+		Ctx: ctx, Tabs: host, Connections: host, Settings: host, VarsPane: host, Window: bodyHost{a},
+		URLBar:     urlbar.Deps{Tabs: urlbarHost{a}, Sends: urlbarHost{a}, Connections: urlbarHost{a}, GRPC: urlbarHost{a}, Styles: urlbarHost{a}, Hints: urlbarHost{a}},
+		Body:       body.Deps{Tabs: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}},
 		GraphQL:    graphql.Deps{Tabs: graphqlHost{a}, Sends: graphqlHost{a}, Window: graphqlHost{a}},
 		Auth:       auth.Deps{Tabs: authHost{a}, Vars: authHost{a}, Trust: authHost{a}, Cookies: authHost{a}, Window: authHost{a}},
 		Assertions: assertions.Deps{Tabs: assertionsHost{a}, Vars: assertionsHost{a}, Status: assertionsHost{a}, Defaults: assertionsHost{a}},
 		GRPC:       grpc.Deps{Tabs: grpcHost{a}, Methods: grpcHost{a}, Vars: grpcHost{a}, Files: grpcHost{a}, Connections: grpcHost{a}, Window: grpcHost{a}},
 		MCP:        mcp.Deps{Tabs: mcpHost{a}, Bus: mcpHost{a}, Composer: mcpHost{a}, Dialogs: mcpHost{a}, Looks: mcpHost{a}},
-		WS:         ws.Deps{Tabs: wsHost{a}, Outbox: wsHost{a}, Tools: wsHost{a}, Window: wsHost{a}, Composers: wsHost{a}},
-		Tables:     kvtable.Deps{Tables: kvtableHost{a}, Tabs: kvtableHost{a}, Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}},
+		WS:         ws.Deps{Tabs: wsHost{a}, Outbox: wsHost{a}, Tools: wsHost{a}, Window: wsHost{a}},
+		Tables:     kvtable.Deps{Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}},
 	})
 	a.resp = response.New(response.Deps{Tabs: responseHost{a}, Slots: responseHost{a}, Headers: responseHost{a}, Files: responseHost{a}, Exports: responseHost{a}, Window: responseHost{a}, Hints: responseHost{a}, Defaults: responseHost{a}})
 	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})

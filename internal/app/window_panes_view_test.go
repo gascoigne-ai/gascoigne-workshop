@@ -68,7 +68,8 @@ func TestTheFormBodyPaneLaysOutAsPinned(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			a, tab := openBodyType(t, request.BodyForm, "")
 			var scroll widget.ScrollState
-			assertDumpPinned(t, a, a.paneBody(bodyPane, tab, &scroll), name, size.width, settingsPaneH)
+			showRequestPane(t, a, tab, "Body")
+			assertDumpPinned(t, a, a.editor.PaneBody(a.ctx, tab.Tab, &scroll), name, size.width, settingsPaneH)
 		})
 	}
 }

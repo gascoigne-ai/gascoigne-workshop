@@ -254,10 +254,10 @@ func TestSSETabListensAndShowsNoComposer(t *testing.T) {
 	a.send(tab)
 	until(t, a, "event", func() bool { return strings.Contains(logText(a, tab), "hello") })
 	until(t, a, "end of stream", func() bool { return tab.Session() == nil })
-	if !strings.Contains(view.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Not connected") {
+	if !strings.Contains(view.Dump(messagesPane(a, tab)), "Not connected") {
 		t.Fatal("the pane did not build")
 	}
-	if strings.Contains(view.Dump(a.messagesPane(wsPanes[0], tab, nil)), "Connect to send messages") {
+	if strings.Contains(view.Dump(messagesPane(a, tab)), "Connect to send messages") {
 		t.Fatal("an SSE tab must not show the composer")
 	}
 }
@@ -362,20 +362,6 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 }
 
 // Pins what differs between the composers of the protocols that connect:
-// only MCP's hint lists its commands.
-func TestOnlyTheMCPComposerShowsTheCommandHint(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	for _, protocol := range []request.Protocol{"websocket", "mcp", "sse", "grpc"} {
-		tab.Req.Protocol = protocol
-		hint := viewOf(protocol).composer.HintFor(true)
-		if mcp := strings.HasPrefix(hint, "call TOOL"); mcp != (protocol == "mcp") {
-			t.Errorf("%s composer hint %q", protocol, hint)
-		}
-	}
-}
-
-// Pins what differs between the composers of the protocols that connect:
 // only WebSocket offers the { } button that makes the message one line of
 // JSON.
 func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
@@ -383,7 +369,7 @@ func TestOnlyTheWebSocketComposerOffersFormat(t *testing.T) {
 	tab := a.cur()
 	for _, protocol := range []request.Protocol{"websocket", "mcp", "grpc"} {
 		tab.Req.Protocol = protocol
-		dump := view.Dump(a.messagesPane(wsPanes[0], tab, nil))
+		dump := view.Dump(messagesPane(a, tab))
 		if formats := strings.Contains(dump, "{ }"); formats != (protocol == "websocket") {
 			t.Errorf("%s offers { }: %v", protocol, formats)
 		}

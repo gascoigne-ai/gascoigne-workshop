@@ -39,7 +39,7 @@ const (
 func openTestsPane(t *testing.T) *App {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	a.cur().paneTab = testsPaneTabIdx
+	a.editor.ShowPane(a.cur().Tab, testsPaneTabIdx)
 	a.cur().Resp = pinnedResponse
 	a.Step(core.Input{})
 	return a

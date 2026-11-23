@@ -290,7 +290,7 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 		"bulk text turned to rows": func(a *App) {
 			a.editor.Tables.ToggleBulk(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params})
 			*a.editor.Tables.BulkArea() = widget.NewTextArea("a: b")
-			a.cur().paneTab = headersTabIdx // another table shows: the next step applies the text
+			a.editor.ShowPane(a.cur().Tab, headersTabIdx) // another table shows: the next step applies the text
 			a.Step(core.Input{X: 5000, Y: 5000})
 		},
 		"a drag resting over a folder": func(a *App) {

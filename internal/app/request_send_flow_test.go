@@ -176,9 +176,10 @@ func TestEveryPaneBuildsInEveryResponseState(t *testing.T) {
 	}
 	for _, name := range []string{"no response", "sending", "error", "ok"} {
 		states[name]()
-		for i := range requestPanes {
+		for i := range a.editor.PaneTabs(tab.Tab) {
 			for j := range responsePanes {
-				tab.paneTab, tab.respTab = i, j
+				a.editor.ShowPane(tab.Tab, i)
+				tab.respTab = j
 				a.Step(core.Input{}) // panics on a bad pane
 			}
 		}
@@ -336,7 +337,7 @@ func TestEachTabKeepsItsOwnBodyEditor(t *testing.T) {
 	a.typeText("first")
 	a.newRequest()
 	second := a.cur()
-	second.paneTab = bodyTabIdx
+	a.editor.ShowPane(second.Tab, bodyTabIdx)
 	a.Step(core.Input{})
 	click(a, textChipX, chipsY)
 	click(a, editorX, editorY)

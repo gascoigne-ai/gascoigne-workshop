@@ -6,6 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -124,6 +125,21 @@ func testApp(t *testing.T, options ...appOption) *App {
 	app.w, app.h = winW, winH
 	app.Step(core.Input{}) // first frame: lay everything out once
 	return app
+}
+
+// showRequestPane shows the request pane called label on tab, as its tab does.
+func showRequestPane(t *testing.T, a *App, tab *reqTab, label string) {
+	t.Helper()
+	if !a.editor.ShowPaneLabeled(tab.Tab, label) {
+		t.Fatalf("no %q pane", label)
+	}
+}
+
+// messagesPane is the Messages pane of a socket tab: the log and its
+// composer, which an MCP tab shows as its JSON-RPC pane.
+func messagesPane(a *App, tab *reqTab) Node {
+	index := slices.IndexFunc(a.editor.StreamPanes(tab.Tab), func(label string) bool { return label == "Messages" || label == "JSON-RPC" })
+	return a.editor.StreamView(a.ctx, tab.Tab, index)
 }
 
 // ---- pollers ---------------------------------------------------------------
@@ -464,7 +480,7 @@ const (
 
 func openBodyPane(t *testing.T) *App {
 	a := testApp(t)
-	a.cur().paneTab = bodyTabIdx
+	a.editor.ShowPane(a.cur().Tab, bodyTabIdx)
 	a.Step(core.Input{})
 	return a
 }
@@ -532,7 +548,7 @@ const (
 
 func openSettingsPane(t *testing.T) *App {
 	a := testApp(t)
-	a.cur().paneTab = settingsTabIdx
+	a.editor.ShowPane(a.cur().Tab, settingsTabIdx)
 	a.Step(core.Input{})
 	return a
 }
@@ -553,7 +569,7 @@ const (
 
 func openAuthPane(t *testing.T) *App {
 	a := testApp(t)
-	a.cur().paneTab = authTabIdx
+	a.editor.ShowPane(a.cur().Tab, authTabIdx)
 	a.Step(core.Input{})
 	return a
 }

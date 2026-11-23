@@ -16,7 +16,7 @@ import (
 // send runs t's request off the UI goroutine; the result comes back
 // through the bus and is applied in drain.
 func (a *App) send(tab *reqTab) {
-	if a.isSocket(tab) {
+	if a.editor.Socket(tab.Tab) {
 		a.toggleConnection(tab)
 		return
 	}
@@ -149,13 +149,6 @@ type (
 
 // defaultRetryDelay is the wait before a dropped connection is reopened.
 const defaultRetryDelay = 2 * time.Second
-
-// isSocket reports whether the tab's protocol keeps a connection open: always,
-// or on a stream the gRPC component says the tab has turned on.
-func (a *App) isSocket(tab *reqTab) bool {
-	connection := tab.Req.Protocol.Info().Connection
-	return connection == request.Always || (connection == request.OnStream && a.editor.GRPC.Streaming(tab.Tab))
-}
 
 // toggleConnection connects a disconnected socket tab and closes a
 // connected one.

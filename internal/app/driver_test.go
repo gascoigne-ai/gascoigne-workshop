@@ -193,7 +193,7 @@ func TestDriverActionsApply(t *testing.T) {
 
 func requestPaneIsSettings(t *testing.T, a *App) {
 	tab := a.cur()
-	if got := requestPanesFor(tab)[tab.paneTab].label; got != "Settings" {
+	if got := a.editor.PaneLabel(tab.Tab); got != "Settings" {
 		t.Errorf("request pane %q, want Settings", got)
 	}
 }
@@ -553,7 +553,7 @@ func TestDriverIsNotSettledWhileTheProtoFilesAreRead(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "grpc"
 	tab.Req.Proto = request.ProtoSource{Files: []string{filepath.Join(t.TempDir(), "gone.proto")}}
-	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Proto")
+	showRequestPane(t, a, tab, "Proto")
 	a.view() // draws the pane, which starts reading the files
 	if a.Driver().Settled() {
 		t.Fatal("settled while the files are being read")
@@ -566,7 +566,7 @@ func TestDriverIsNotSettledWhileTheProtoFilesAreRead(t *testing.T) {
 	if a.Driver().Settled() {
 		t.Fatal("settled with a source nobody has read")
 	}
-	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Body")
+	showRequestPane(t, a, tab, "Body")
 	if !a.Driver().Settled() {
 		t.Fatal("another pane is shown: nothing to wait for")
 	}

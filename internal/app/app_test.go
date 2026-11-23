@@ -15,18 +15,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 )
 
-// Every pane must carry what its kind needs, or drawing it would panic.
+// Every pane must carry what its kind needs, or drawing it would panic. The
+// request side is ui/editor's table, with its own test of the same name.
 func TestPaneTablesAreComplete(t *testing.T) {
-	for name, panes := range map[string][]pane{"request": requestPanes, "response": responsePanes} {
+	for name, panes := range map[string][]pane{"response": responsePanes} {
 		for _, p := range panes {
 			ok := map[paneKind]bool{
-				paneTable:      p.rows != nil,
-				paneBody:       true, // the body pane is built from the request itself
-				paneSettings:   true, // so is the settings pane
-				paneAuth:       true,
-				paneResponse:   true,
-				paneAssertions: true,
-				paneMessages:   true,
+				paneResponse: true,
 			}[p.kind]
 			if paneBuilders[p.kind] == nil {
 				t.Errorf("%s pane %q has a kind with no builder", name, p.label)
@@ -49,22 +44,6 @@ func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
 			t.Errorf("pane %q would read a nil response", p.label)
 		}
 		_ = p.badge(a, tab) // must not panic with no response
-	}
-}
-
-func TestParamsChangedRewritesURL(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	*tab.Req = request.Request{
-		URL: "http://x/s?q=a&sort=stars",
-		Params: []request.KV{
-			{Name: "q", Value: "a", Enabled: true},
-			{Name: "sort", Value: "stars", Enabled: false},
-		},
-	}
-	paramsChanged(a, tab)
-	if tab.Req.URL != "http://x/s?q=a" || a.editor.URLBar.Field(tab.Tab).Text != tab.Req.URL {
-		t.Fatalf("url = %q field = %q", tab.Req.URL, a.editor.URLBar.Field(tab.Tab).Text)
 	}
 }
 
@@ -134,8 +113,8 @@ func TestTheProtocolChipOffersGRPCAndSSEOnlyWhenTheyAreSwitchedOn(t *testing.T) 
 		t.Run(tt.name, func(t *testing.T) {
 			a := testApp(t)
 			a.settings.GRPC, a.settings.SSE = tt.grpc, tt.sse
-			if got := a.protocolsFor(tt.current); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("protocolsFor(%q) = %v, want %v", tt.current, got, tt.want)
+			if got := a.editor.Offered(tt.current); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Offered(%q) = %v, want %v", tt.current, got, tt.want)
 			}
 		})
 	}

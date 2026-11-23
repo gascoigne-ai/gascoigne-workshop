@@ -23,7 +23,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
@@ -31,7 +30,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
@@ -309,26 +307,6 @@ func (a *App) closeFocusedCollection() {
 // The key-value tables are the kvtable component's; the App answers what it
 // asks (kvtable.Deps) and keeps the few rules that need the window.
 
-// tablePanes is the pane that shows each table, by kind: where its rows are
-// and what follows a change of them.
-var tablePanes = [kvlogic.KindCount]pane{
-	kvlogic.Params:  paramsPane,
-	kvlogic.Headers: headersPane,
-	kvlogic.Vars:    varsPane,
-	kvlogic.Form:    formPane,
-}
-
-// tablePane is the pane's table in the request pane's padding.
-func (a *App) tablePane(panel pane, tab *reqTab, scroll *widget.ScrollState) Node {
-	return a.tableView(panel, tab, scroll, w.Gutter)
-}
-
-// tableView is the pane's table with the given padding around it.
-func (a *App) tableView(panel pane, tab *reqTab, scroll *widget.ScrollState, pad int) Node {
-	look := kvtable.Look{Caption: panel.captionOf(a), FlagDuplicates: panel.flagDuplicates}
-	return a.editor.Tables.View(a.ctx, kvlogic.Table{Tab: tab.Tab, Kind: panel.table}, look, scroll, pad)
-}
-
 // commitEdit writes a cell edit in progress into its row, before whatever
 // the caller does next could change the rows or the tab.
 func (a *App) commitEdit() {
@@ -346,47 +324,9 @@ func (a *App) deleteRow() {
 	a.editor.Tables.DeleteRow()
 }
 
-// kvtableHost is what the key-value tables ask of the App (kvtable.Deps).
+// kvtableHost is what the key-value tables ask of the App (kvtable.Deps),
+// beyond the rows and the tabs, which the editor's pane table answers.
 type kvtableHost struct{ *App }
-
-// tabOf is the widget state of table's tab. A tab that closed since has none;
-// its table is still written (a bulk text typed before the close), through
-// a stand-in that only carries the request.
-func (host kvtableHost) tabOf(table kvlogic.Table) *reqTab {
-	if tab := host.widgets[table.Tab]; tab != nil {
-		return tab
-	}
-	return &reqTab{Tab: table.Tab}
-}
-
-// Rows are the rows of table.
-func (host kvtableHost) Rows(table kvlogic.Table) *[]request.KV {
-	return tablePanes[table.Kind].rows(host.App, host.tabOf(table))
-}
-
-// Changed runs the hook of the table's pane: the Params rewrite the URL.
-func (host kvtableHost) Changed(table kvlogic.Table) {
-	if changed := tablePanes[table.Kind].changed; changed != nil {
-		changed(host.App, host.tabOf(table))
-	}
-}
-
-// IsOpen reports whether tab is one of the open tabs.
-func (host kvtableHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
-
-// Visible is the editable table the request pane shows, if any: Params,
-// Headers, Vars, or the form fields of the Body pane.
-func (host kvtableHost) Visible() (kvlogic.Table, bool) {
-	tab := host.cur()
-	shown := requestPanesFor(tab)[tab.paneTab]
-	switch {
-	case shown.kind == paneTable:
-		return kvlogic.Table{Tab: tab.Tab, Kind: shown.table}, true
-	case shown.kind == paneBody && (tab.Req.BodyType == request.BodyForm || tab.Req.BodyType == request.BodyMultipart):
-		return kvlogic.Table{Tab: tab.Tab, Kind: formPane.table}, true
-	}
-	return kvlogic.Table{}, false
-}
 
 // Open shows a context menu.
 func (host kvtableHost) Open(posX, posY int, items []widget.MenuItem) {
@@ -514,7 +454,7 @@ func (host urlbarHost) Cancel(tab *tabs.Tab) { host.cancelSend(host.widgets[tab]
 func (host urlbarHost) Sending(tab *tabs.Tab) bool { return host.sends.Sending(tab.Req) }
 
 // Socket reports whether tab keeps a connection open.
-func (host urlbarHost) Socket(tab *tabs.Tab) bool { return host.isSocket(host.widgets[tab]) }
+func (host urlbarHost) Socket(tab *tabs.Tab) bool { return host.editor.Socket(tab) }
 
 // ToggleConnection connects a disconnected socket tab and closes a connected one.
 func (host urlbarHost) ToggleConnection(tab *tabs.Tab) { host.toggleConnection(host.widgets[tab]) }
@@ -528,20 +468,6 @@ func (host urlbarHost) Streaming(tab *tabs.Tab) bool { return host.editor.GRPC.S
 // ToggleStream switches tab between single calls and a stream.
 func (host urlbarHost) ToggleStream(tab *tabs.Tab) { host.editor.GRPC.ToggleStream(tab) }
 
-// Offered are the protocols the chip cycles through for a request on current.
-func (host urlbarHost) Offered(current request.Protocol) []request.Protocol {
-	return host.protocolsFor(current)
-}
-
-// Choose gives tab the protocol; a connection belongs to the protocol that
-// opened it, so it is closed first, and the pane indexes start over.
-func (host urlbarHost) Choose(tab *tabs.Tab, protocol request.Protocol) {
-	widgets := host.widgets[tab]
-	host.disconnect(widgets)
-	editRequest(widgets, requestedit.ProtocolChosen{Protocol: protocol})
-	widgets.paneTab, widgets.respTab = 0, 0 // the indexes point into the panes of the protocol
-}
-
 // Segments colors the {{variables}} of the URL raw of req.
 func (host urlbarHost) Segments(req *request.Request, raw string) []widget.Span {
 	return host.urlSegments(req, raw)
@@ -553,18 +479,32 @@ func (host urlbarHost) Tip(tab *tabs.Tab) string { return host.urlTip(host.widge
 // Hint is label with the shortcut of action.
 func (host urlbarHost) Hint(label, action string) string { return host.hint(label, action) }
 
-// protocolsFor are the protocols the chip cycles through for a request on
-// current: the experimental ones only when settings switch them on, except
-// the one the request already uses, so it never loses its protocol.
-func (a *App) protocolsFor(current request.Protocol) []request.Protocol {
-	var offered []request.Protocol
-	for _, view := range protocolViews {
-		if view.offered == nil || view.offered(a.settings) || view.protocol == current {
-			offered = append(offered, view.protocol)
-		}
-	}
-	return offered
-}
+// editorHost is what the editor asks of the App beyond what each of its
+// components asks: the tab shown, the connection of a tab whose protocol
+// changes, the settings and the Vars pane's table.
+type editorHost struct{ *App }
+
+// Current is the tab shown.
+func (host editorHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host editorHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Disconnect closes the connection of tab.
+func (host editorHost) Disconnect(tab *tabs.Tab) { host.disconnect(host.widgets[tab]) }
+
+// ProtocolChosen starts the response side of tab over: its indexes point
+// into the panes of the protocol.
+func (host editorHost) ProtocolChosen(tab *tabs.Tab) { host.widgets[tab].respTab = 0 }
+
+// Settings are the settings in effect.
+func (host editorHost) Settings() settings.Settings { return host.settings }
+
+// Rows are the rows the Vars pane edits.
+func (host editorHost) Rows() *[]request.KV { return host.varsRows() }
+
+// Caption is the caption above them.
+func (host editorHost) Caption() string { return host.varsCaption() }
 
 // bodyHost is what the body pane asks of the App (body.Deps).
 type bodyHost struct{ *App }
@@ -574,17 +514,6 @@ func (host bodyHost) Current() *tabs.Tab { return host.tabs.Current() }
 
 // IsOpen reports whether tab is one of the open tabs.
 func (host bodyHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
-
-// FormTable is the table of form fields of tab.
-func (host bodyHost) FormTable(tab *tabs.Tab, scroll *widget.ScrollState) Node {
-	return host.tableView(formPane, host.widgets[tab], scroll, 0)
-}
-
-// GraphQL is the editor of a GraphQL body.
-func (host bodyHost) GraphQL(tab *tabs.Tab) Node { return host.editor.GraphQL.View(host.ctx, tab) }
-
-// Message is a status line in place of the Schema pane.
-func (host bodyHost) Message(text string) Node { return host.messagePane(schemaPane, text, false) }
 
 // VarsFor are the variables req is resolved with.
 func (host bodyHost) VarsFor(req *request.Request) []request.KV { return host.varsFor(req) }
@@ -624,16 +553,6 @@ func (a *App) describeGRPCInput(ctx context.Context, req request.Request) (reque
 
 // CommitEdit writes a table cell edit in progress into its row.
 func (host bodyHost) CommitEdit() { host.commitEdit() }
-
-// ShowBody shows the Body pane of tab.
-func (host bodyHost) ShowBody(tab *tabs.Tab) {
-	widgets := host.widgets[tab]
-	for i, panel := range requestPanesFor(widgets) {
-		if panel.kind == paneBody {
-			widgets.paneTab = i
-		}
-	}
-}
 
 // SetStatus replaces the status line.
 func (host bodyHost) SetStatus(text string) { host.notices.SetStatus(text) }
@@ -944,9 +863,6 @@ func (host wsHost) Open(posX, posY int, items []widget.MenuItem) { host.openMenu
 // Toast shows a message over the window.
 func (host wsHost) Toast(text string, level severity.Level) { host.toast(text, level) }
 
-// Composer is how the protocol of tab composes, a row of the protocol table.
-func (host wsHost) Composer(tab *tabs.Tab) ws.Composer { return viewOf(tab.Req.Protocol).composer }
-
 // settingsHost is what the settings dialog asks of the App
 // (settingsdialog.Deps). The settings stay on the App, since the theme, the
 // open tabs and the protocols follow from them; the dialog decides when
@@ -1202,7 +1118,7 @@ func (host stateHost) Snapshot() state.State {
 		if path == "" {
 			continue // not in the tree: Remember drops it
 		}
-		remembered[i] = state.Tab{Collection: owner.Dir, Path: path, Pane: tab.paneTab, PaneLabel: requestPaneLabel(tab), Resp: tab.respTab}
+		remembered[i] = state.Tab{Collection: owner.Dir, Path: path, Pane: host.editor.PaneOf(tab.Tab), PaneLabel: host.editor.PaneLabel(tab.Tab), Resp: tab.respTab}
 	}
 	snapshot.Tabs, snapshot.Active = state.Remember(remembered, host.tabs.Active())
 	for kind := kvlogic.Params; kind < kvlogic.KindCount; kind++ {
@@ -1236,7 +1152,8 @@ func (host stateHost) Restore(saved state.State) {
 		for _, again := range reopened {
 			host.updateTabs(tabs.Open{Req: again.Req})
 			tab := host.cur()
-			tab.paneTab = rememberedPane(tab, again.Tab)
+			labels := tabLabels(host.editor.PaneTabs(tab.Tab))
+			host.editor.ShowPane(tab.Tab, again.Tab.PaneIn(labels, host.editor.PaneOf(tab.Tab)))
 			if again.Tab.Resp >= 0 && again.Tab.Resp < len(host.responsePanesFor(tab)) {
 				tab.respTab = again.Tab.Resp
 			}
@@ -1284,24 +1201,13 @@ func (a *App) requestAt(col *request.Collection, path string) *request.Request {
 	return tree.At(&col.Folder, path)
 }
 
-// requestPaneLabel is the label of the request pane tab shows, "" when its
-// index points nowhere.
-func requestPaneLabel(tab *reqTab) string {
-	panes := requestPanesFor(tab)
-	if tab.paneTab < 0 || tab.paneTab >= len(panes) {
-		return ""
+// tabLabels are the labels of the tabs of a pane's strip.
+func tabLabels(items []widget.TabItem) []string {
+	labels := make([]string, len(items))
+	for i, item := range items {
+		labels[i] = item.Label
 	}
-	return panes[tab.paneTab].label
-}
-
-// rememberedPane is the index of the request pane a remembered tab was on.
-func rememberedPane(tab *reqTab, remembered state.Tab) int {
-	panes := requestPanesFor(tab)
-	labels := make([]string, len(panes))
-	for i, pane := range panes {
-		labels[i] = pane.label
-	}
-	return remembered.PaneIn(labels, tab.paneTab)
+	return labels
 }
 
 // windowPx converts a logical size to window pixels (device independent),

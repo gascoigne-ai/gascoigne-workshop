@@ -66,7 +66,7 @@ connection implements `request.Streamer`; `Registry.Connect` opens a `request.Se
   session. Closes after a timed-out connect use `context.WithoutCancel`, so the goodbye still goes
   out.
 - A tab keeps a session when its protocol's `Connection` is `Always`, or `OnStream` while gRPC
-  streams (`App.isSocket`, which asks `ui/editor/grpc` whether the tab streams). The log and the composer are `ui/editor/ws`; the lifecycle stays in the App (`request_send.go`). Dialing runs off the UI goroutine; every answer, event and end comes back as
+  streams (`editor.Socket`, which asks `ui/editor/grpc` whether the tab streams). The log and the composer are `ui/editor/ws`; the lifecycle stays in the App (`request_send.go`). Dialing runs off the UI goroutine; every answer, event and end comes back as
   a `ws*` message carrying the tab and its connection generation, and a stale generation is dropped
   (its session closed). Changing the protocol disconnects.
 - Every log line is a `request.Event`; code compares its `Kind`, never the peer's `Name` (see the

@@ -57,7 +57,7 @@ func TestDeletingAParamRewritesTheURL(t *testing.T) {
 func TestTabItemsCountEnabledRowsAndHeaders(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	items := a.tabItems(requestPanes, tab)
+	items := a.editor.PaneTabs(tab.Tab)
 	want := map[string]int{"Params": 3, "Body": 0, "Headers": 0, "Auth": 0, "Vars": 1}
 	for _, it := range items {
 		if it.Badge != want[it.Label] {
@@ -65,7 +65,7 @@ func TestTabItemsCountEnabledRowsAndHeaders(t *testing.T) {
 		}
 	}
 	tab.Req.Params[0].Enabled = false
-	if got := a.tabItems(requestPanes, tab)[0].Badge; got != 2 {
+	if got := a.editor.PaneTabs(tab.Tab)[0].Badge; got != 2 {
 		t.Errorf("disabled params must not count, badge = %d", got)
 	}
 }
@@ -184,7 +184,7 @@ func TestLeavingThePlaceholderRowEmptyAddsNothing(t *testing.T) {
 
 func TestHeadersTableIsEditableToo(t *testing.T) {
 	a := testApp(t)
-	a.cur().paneTab = headersTabIdx
+	a.editor.ShowPane(a.cur().Tab, headersTabIdx)
 	a.Step(core.Input{})
 	click(a, nameCellX, paramsRow0Y) // headers have no rows: the placeholder is the first row
 	a.typeText("X-Test")
@@ -413,7 +413,7 @@ func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
 	click(a, bulkBtnX, chipsY)
 	a.editor.Tables.BulkArea().SelectAll()
 	a.editor.Tables.BulkArea().Insert("only: one")
-	a.cur().paneTab = headersTabIdx // as clicking the Headers tab does
+	a.editor.ShowPane(a.cur().Tab, headersTabIdx) // as clicking the Headers tab does
 	a.Step(core.Input{})
 	if tableBulk(a) || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
 		t.Fatalf("bulk %v params %v: nothing typed may be lost", tableBulk(a), paramNames(a))

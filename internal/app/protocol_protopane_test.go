@@ -54,10 +54,11 @@ func protoFileIn(t *testing.T, dir, name string, source []byte) string {
 }
 
 func TestOnlyAGRPCRequestHasAProtoPane(t *testing.T) {
+	a := testApp(t)
 	for protocol, want := range map[request.Protocol]bool{"grpc": true, "rest": false, "websocket": false, "sse": false, "mcp": false} {
 		got := false
-		for _, candidate := range requestPanesFor(newReqTab(tabs.New(&request.Request{Protocol: protocol}))) {
-			got = got || candidate.label == "Proto"
+		for _, candidate := range a.editor.PaneTabs(tabs.New(&request.Request{Protocol: protocol})) {
+			got = got || candidate.Label == "Proto"
 		}
 		if got != want {
 			t.Errorf("%s has a Proto pane: %v, want %v", protocol, got, want)

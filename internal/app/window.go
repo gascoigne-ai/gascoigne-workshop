@@ -49,8 +49,8 @@ func (a *App) view() Node {
 		"paneSplit":      &a.paneSplit,
 		"minPaneSize":    minPaneSize,
 		"stacked":        a.settings.Layout == "stacked",
-		"requestPane":    a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
-		"responsePane":   a.pane(t, a.responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.resp.StatusView(a.ctx, t.Tab)),
+		"requestPane":    a.editor.RequestPane(a.ctx, t.Tab),
+		"responsePane":   a.responsePane(t, a.responsePanesFor(t)),
 		"statusBar":      a.statusBar(),
 	}
 	// The overlays are built after the panes, as before, one node per slot of
@@ -66,18 +66,19 @@ func (a *App) view() Node {
 
 var paneTemplate = markup.Must("pane.vml", paneSource)
 
-// pane is one tabbed area (pane.vml): a tab strip, with extra at its
-// right end when there is one, above the body of the active tab.
-func (a *App) pane(tab *reqTab, panes []pane, active *int, scroll, tabsX *ScrollState, extra Node) Node {
-	selectTab := func(index int) { *active, scroll.Y = index, 0 }
-	*active = min(*active, len(panes)-1) // a socket has fewer response panes
+// responsePane is the response area (pane.vml): a tab strip, with the
+// status at its right end, above the body of the active tab. The request
+// pane is the editor's twin of it.
+func (a *App) responsePane(tab *reqTab, panes []pane) Node {
+	selectTab := func(index int) { tab.respTab, tab.respScroll.Y = index, 0 }
+	tab.respTab = min(tab.respTab, len(panes)-1) // a socket has fewer response panes
 	return paneTemplate.MustBuild(markup.Scope{
-		"tabsX":     tabsX,
+		"tabsX":     &tab.respTabsX,
 		"tabs":      a.tabItems(panes, tab),
-		"active":    *active,
+		"active":    tab.respTab,
 		"selectTab": selectTab,
-		"extra":     extra,
-		"body":      a.paneBody(panes[*active], tab, scroll),
+		"extra":     a.resp.StatusView(a.ctx, tab.Tab),
+		"body":      a.paneBody(panes[tab.respTab], tab, &tab.respScroll),
 	})
 }
 

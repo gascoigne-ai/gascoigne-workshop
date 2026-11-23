@@ -16,15 +16,15 @@ func grpcTab(app *App) *reqTab {
 func TestAGRPCTabIsASocketOnlyWhileStreamIsOn(t *testing.T) {
 	a := testApp(t)
 	tab := grpcTab(a)
-	if a.isSocket(tab) || len(a.responsePanesFor(tab)) == 1 {
+	if a.editor.Socket(tab.Tab) || len(a.responsePanesFor(tab)) == 1 {
 		t.Fatal("a gRPC tab shows the Messages pane before Stream is turned on")
 	}
 	a.editor.GRPC.ToggleStream(tab.Tab)
-	if !a.isSocket(tab) || len(a.responsePanesFor(tab)) != 1 {
+	if !a.editor.Socket(tab.Tab) || len(a.responsePanesFor(tab)) != 1 {
 		t.Fatal("Stream on should give the Messages pane and a Connect button")
 	}
 	a.editor.GRPC.ToggleStream(tab.Tab)
-	if a.isSocket(tab) {
+	if a.editor.Socket(tab.Tab) {
 		t.Fatal("Stream off should go back to single calls")
 	}
 }
@@ -54,9 +54,9 @@ func TestAStreamingTabKeepsStreamAcrossAProtocolChange(t *testing.T) {
 	a := testApp(t)
 	tab := grpcTab(a)
 	a.editor.GRPC.ToggleStream(tab.Tab)
-	urlbarHost{a}.Choose(tab.Tab, "rest")
-	urlbarHost{a}.Choose(tab.Tab, "grpc")
-	if !a.isSocket(tab) {
+	a.editor.Choose(tab.Tab, "rest")
+	a.editor.Choose(tab.Tab, "grpc")
+	if !a.editor.Socket(tab.Tab) {
 		t.Fatal("the tab lost its stream across a protocol change")
 	}
 }

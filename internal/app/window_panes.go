@@ -1,12 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -15,118 +9,24 @@ import (
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
+// paneKind is what builds a pane of the response area.
 type paneKind int
 
 const (
-	paneTable paneKind = iota
-	paneBody
-	paneSettings
-	paneAuth
-	paneResponse // a pane of the response area, drawn by ui/response
-	paneMessages
-	paneAssertions // the request side: the assertions being written
-	paneExplorer   // the response side of MCP: what the server offers
-	paneProto      // the request side of gRPC: reflection or .proto files
-	paneSchema     // the request side of gRPC: the fields of the method's message
+	paneResponse paneKind = iota // a pane of the response area, drawn by ui/response
+	paneStream                   // a pane of a socket's response side, drawn by the editor
+	paneKinds                    // how many kinds there are
 )
 
-// pane describes one tab of the request or response area. The tables
-// below are the whole definition; there is no per-tab switch.
+// pane describes one tab of the response area. The request side's table is
+// ui/editor's (panes.go); the two have a few lines of the same shape, which
+// two small tables do not justify sharing.
 type pane struct {
-	label          string
-	kind           paneKind
-	title          string                                             // caption above a table
-	rows           func(app *App, t *reqTab) *[]request.KV            // paneTable
-	changed        func(app *App, t *reqTab)                          // runs after an edit
-	flagDuplicates bool                                               // mark rows that repeat a name
-	respPane       response.Pane                                      // paneResponse: which of the response component's panes
-	empty          func(app *App, t *reqTab) (msg string, isErr bool) // shown instead of the content
-	caption        func(app *App) string                              // the caption when it depends on the app state
-	table          kvlogic.Kind                                       // paneTable: which table of ui/editor/kvtable it shows
-}
-
-// captionOf is the caption above the pane's table.
-func (p pane) captionOf(app *App) string {
-	if p.caption != nil {
-		return p.caption(app)
-	}
-	return p.title
-}
-
-func paramsChanged(app *App, tab *reqTab) {
-	editRequest(tab, requestedit.ParamsChanged{})
-	app.editor.URLBar.Reload(tab.Tab)
-}
-
-var (
-	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", changed: paramsChanged, table: kvlogic.Params,
-		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Params }}
-	bodyPane = pane{label: "Body", kind: paneBody}
-	// formPane is the table of form and multipart fields; the body pane
-	// asks for it through its Slots.
-	formPane = pane{label: "Body", kind: paneTable, title: "Fields", table: kvlogic.Form,
-		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Form }}
-	// schemaPane is the Schema tab of a gRPC request: the fields of the request
-	// message of its method, drawn by the body component.
-	schemaPane  = pane{label: "Schema", kind: paneSchema}
-	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", flagDuplicates: true, table: kvlogic.Headers,
-		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Headers }}
-	authPane = pane{label: "Auth", kind: paneAuth}
-	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", table: kvlogic.Vars,
-		caption: (*App).varsCaption,
-		rows:    func(app *App, _ *reqTab) *[]request.KV { return app.varsRows() }}
-	testsPane    = pane{label: "Tests", kind: paneAssertions}
-	settingsPane = pane{label: "Settings", kind: paneSettings}
-	// protoPane is the Proto tab of a gRPC request: where its methods come
-	// from, the server's reflection or .proto files, drawn by the gRPC component.
-	protoPane = pane{label: "Proto", kind: paneProto}
-)
-
-// grpcRequestPanes are the request side of gRPC: the HTTP-like panes with
-// Proto after the Body, which holds the message the files describe.
-var grpcRequestPanes = []pane{paramsPane, bodyPane, protoPane, schemaPane, headersPane, authPane, varsPane, testsPane, settingsPane}
-
-// requestPanes are the request side of REST and of every protocol with no
-// panes of its own.
-var requestPanes = []pane{paramsPane, bodyPane, headersPane, authPane, varsPane, testsPane, settingsPane}
-
-// connectionRequestPanes are the request side of a protocol that opens a
-// connection: what it sends is composed in the Messages pane, so there is
-// no Params, Body or Tests tab.
-var connectionRequestPanes = []pane{headersPane, authPane, varsPane, settingsPane}
-
-// protocolView is how the app shows one protocol: the UI half of its row,
-// next to the request.Protocols row that says what the protocol does.
-type protocolView struct {
-	protocol     request.Protocol
-	requestPanes []pane
-	streamPanes  []pane                       // the response side while connected
-	composer     ws.Composer                  // how the Messages pane composes: whether it has a field, offers { } and hints
-	offered      func(settings.Settings) bool // whether the chip cycles to it; nil is always
-}
-
-// protocolViews has one row per row of request.Protocols, in the same order.
-var protocolViews = []protocolView{
-	{protocol: request.ProtocolREST, requestPanes: requestPanes},
-	{protocol: request.ProtocolWebSocket, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
-		composer: ws.Composer{Shown: true, FormatsJSON: true}},
-	{protocol: request.ProtocolMCP, requestPanes: connectionRequestPanes, streamPanes: mcpPanes,
-		composer: ws.Composer{Shown: true, Hint: "call TOOL {json}  ·  read URI  ·  prompt NAME {json}  ·  method {json}  ·  or raw JSON-RPC"}},
-	{protocol: request.ProtocolSSE, requestPanes: connectionRequestPanes, streamPanes: wsPanes,
-		offered: func(current settings.Settings) bool { return current.SSE }},
-	{protocol: request.ProtocolGRPC, requestPanes: grpcRequestPanes, streamPanes: wsPanes, composer: ws.Composer{Shown: true},
-		offered: func(current settings.Settings) bool { return current.GRPC }},
-}
-
-// viewOf is the protocolView of protocol. A request with no known protocol
-// (only one built in code) is shown as the first row.
-func viewOf(protocol request.Protocol) protocolView {
-	for _, view := range protocolViews {
-		if view.protocol == protocol {
-			return view
-		}
-	}
-	return protocolViews[0]
+	label    string
+	kind     paneKind
+	respPane response.Pane                                      // paneResponse: which of the response component's panes
+	stream   int                                                // paneStream: its place among the editor's stream panes
+	empty    func(app *App, t *reqTab) (msg string, isErr bool) // shown instead of the content
 }
 
 func noResponse(app *App, tab *reqTab) (string, bool) {
@@ -160,23 +60,10 @@ var responsePanes = []pane{
 
 // badge is the count shown on a pane's tab.
 func (p pane) badge(app *App, tab *reqTab) int {
-	switch p.kind {
-	case paneAssertions: // how many assertions are written
-		return assert.Count(tab.Req.Tests)
-	case paneResponse:
-		return responseBadge(app, p.respPane, tab)
-	}
-	if p.kind != paneTable {
+	if p.kind != paneResponse {
 		return 0
 	}
-	rows := *p.rows(app, tab)
-	n := 0
-	for _, r := range rows {
-		if r.Enabled {
-			n++
-		}
-	}
-	return n
+	return responseBadge(app, p.respPane, tab)
 }
 
 // responseBadge is the count shown on a tab of the response area: how many
@@ -215,60 +102,24 @@ func paneEmpty(app *App, panel pane, tab *reqTab) (string, bool) {
 	return panel.empty(app, tab)
 }
 
-// paneBuilders turns a pane into its view, by kind.
-var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *ScrollState) Node{
-	paneBody:       (*App).bodyPaneView,
-	paneSettings:   (*App).settingsPaneView,
-	paneAuth:       (*App).authPaneView,
-	paneResponse:   (*App).responsePaneView,
-	paneMessages:   (*App).messagesPane,
-	paneExplorer:   (*App).explorerPaneView,
-	paneAssertions: (*App).assertionsPaneView,
-	paneTable:      (*App).tablePane,
-	paneProto:      (*App).protoPaneView,
-	paneSchema:     (*App).schemaPaneView,
+// paneBuilders turn a pane into its view, by kind.
+var paneBuilders = [paneKinds]func(app *App, panel pane, t *reqTab, scroll *ScrollState) Node{
+	paneResponse: (*App).responsePaneView,
+	paneStream:   (*App).streamPaneView,
 }
 
-// wsPanes are the panes of a socket's response side.
-var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
-
-// mcpPanes are the response side of an MCP server: what it offers, and
-// the JSON-RPC traffic with the composer for anything else.
-var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC", kind: paneMessages}}
-
-// responsePanesFor are the panes of the response side of tab.
+// responsePanesFor are the panes of the response side of tab: the editor's
+// stream panes while it is a socket.
 func (a *App) responsePanesFor(tab *reqTab) []pane {
-	if a.isSocket(tab) {
-		return viewOf(tab.Req.Protocol).streamPanes
+	if !a.editor.Socket(tab.Tab) {
+		return responsePanes
 	}
-	return responsePanes
-}
-
-// explorerPaneView is the MCP explorer, drawn by the mcp component. It
-// ignores the scroll it is handed: the explorer scrolls its own lists.
-func (a *App) explorerPaneView(_ pane, tab *reqTab, _ *ScrollState) Node {
-	return a.editor.MCP.View(a.ctx, tab.Tab)
-}
-
-// messagesPane is the Messages pane, drawn by the ws component. It ignores
-// the scroll it is handed: the log scrolls itself.
-func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
-	return a.editor.WS.View(a.ctx, tab.Tab)
-}
-
-// bodyPaneView is the Body pane, drawn by the body component.
-func (a *App) bodyPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.editor.Body.View(a.ctx, tab.Tab, scroll)
-}
-
-// authPaneView is the Auth pane, drawn by the auth component.
-func (a *App) authPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.editor.Auth.View(a.ctx, tab.Tab, scroll)
-}
-
-// assertionsPaneView is the request's Tests pane, drawn by the assertions component.
-func (a *App) assertionsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.editor.Assertions.View(a.ctx, tab.Tab, scroll)
+	labels := a.editor.StreamPanes(tab.Tab)
+	panes := make([]pane, len(labels))
+	for i, label := range labels {
+		panes[i] = pane{label: label, kind: paneStream, stream: i}
+	}
+	return panes
 }
 
 // responsePaneView is a pane of the response area, drawn by the response
@@ -279,42 +130,13 @@ func (a *App) responsePaneView(panel pane, tab *reqTab, scroll *ScrollState) Nod
 	return a.resp.View(a.ctx, tab.Tab, panel.respPane, &tab.respScroll)
 }
 
-// settingsPaneView is the request's Settings pane, drawn by the assertions component.
-func (a *App) settingsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.editor.Assertions.SettingsView(a.ctx, tab.Tab, scroll)
+// streamPaneView is a pane of a socket's response side, drawn by the
+// editor's components.
+func (a *App) streamPaneView(panel pane, tab *reqTab, _ *ScrollState) Node {
+	return a.editor.StreamView(a.ctx, tab.Tab, panel.stream)
 }
 
-// schemaPaneView is the Schema pane of a gRPC tab, drawn by the body component.
-func (a *App) schemaPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.editor.Body.SchemaView(a.ctx, tab.Tab, scroll)
-}
-
-// schemaLoading reports whether tab shows its Schema pane while the message
-// is still being asked for, so a capture waits for it.
-func (a *App) schemaLoading(tab *reqTab) bool {
-	panes := requestPanesFor(tab)
-	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneSchema {
-		return false
-	}
-	return a.editor.Body.SchemaPending(tab.Tab)
-}
-
-// protoPaneView is the Proto pane of a gRPC tab, drawn by the gRPC component.
-func (a *App) protoPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.editor.GRPC.View(a.ctx, tab.Tab, scroll)
-}
-
-// protoReading reports whether tab shows its Proto pane while the files are
-// still being read, so a capture waits for what the read finds.
-func (a *App) protoReading(tab *reqTab) bool {
-	panes := requestPanesFor(tab)
-	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneProto {
-		return false
-	}
-	return a.editor.GRPC.ProtoPending(tab.Tab)
-}
-
-// paneBody is what fills the area under a pane's tab strip.
+// paneBody is what fills the area under a response pane's tab strip.
 func (a *App) paneBody(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	if msg, isErr := paneEmpty(a, panel, tab); msg != "" {
 		return a.messagePane(panel, msg, isErr)
@@ -345,8 +167,3 @@ const (
 </col>
 `
 )
-
-// requestPanesFor are the panes of the request side of tab.
-func requestPanesFor(tab *reqTab) []pane {
-	return viewOf(tab.Req.Protocol).requestPanes
-}

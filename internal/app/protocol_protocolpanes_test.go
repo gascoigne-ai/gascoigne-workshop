@@ -6,14 +6,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
 
-func paneLabels(panes []pane) []string {
-	labels := make([]string, len(panes))
-	for i, p := range panes {
-		labels[i] = p.label
-	}
-	return labels
-}
-
 func TestRequestPanesFollowTheProtocol(t *testing.T) {
 	tests := []struct {
 		protocol request.Protocol
@@ -32,7 +24,7 @@ func TestRequestPanesFollowTheProtocol(t *testing.T) {
 		t.Run(string(test.protocol), func(t *testing.T) {
 			tab.Req.Protocol = test.protocol
 			have := map[string]bool{}
-			for _, label := range paneLabels(requestPanesFor(tab)) {
+			for _, label := range tabLabels(a.editor.PaneTabs(tab.Tab)) {
 				have[label] = true
 			}
 			for _, label := range test.shown {
@@ -56,30 +48,12 @@ func TestChoosingAProtocolShowsItsFirstRequestPane(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.Protocol = "rest"
-	tab.paneTab = len(requestPanes) - 1
+	a.editor.ShowPane(tab.Tab, len(a.editor.PaneTabs(tab.Tab))-1)
 	a.editor.URLBar.CycleProtocol(tab.Tab) // rest -> websocket
-	if tab.Req.Protocol != "websocket" || tab.paneTab != 0 {
-		t.Fatalf("protocol %q paneTab %d", tab.Req.Protocol, tab.paneTab)
+	if tab.Req.Protocol != "websocket" || a.editor.PaneOf(tab.Tab) != 0 {
+		t.Fatalf("protocol %q pane %d", tab.Req.Protocol, a.editor.PaneOf(tab.Tab))
 	}
-	if got := requestPanesFor(tab)[tab.paneTab].label; got != "Headers" {
+	if got := a.editor.PaneLabel(tab.Tab); got != "Headers" {
 		t.Fatalf("first websocket pane is %q", got)
-	}
-}
-
-// The app shows every protocol the model knows, in the chip's order.
-func TestProtocolViewsCoverEveryProtocolInOrder(t *testing.T) {
-	if len(protocolViews) != len(request.Protocols) {
-		t.Fatalf("%d protocol views for %d protocols", len(protocolViews), len(request.Protocols))
-	}
-	for i, row := range request.Protocols {
-		if got := protocolViews[i].protocol; got != row.Name {
-			t.Errorf("view %d is %s, want %s", i, got, row.Name)
-		}
-		if len(protocolViews[i].requestPanes) == 0 {
-			t.Errorf("%s has no request panes", row.Name)
-		}
-		if row.Connection != request.OneShot && len(protocolViews[i].streamPanes) == 0 {
-			t.Errorf("%s connects but has no panes to show the connection", row.Name)
-		}
 	}
 }

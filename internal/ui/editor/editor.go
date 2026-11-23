@@ -9,12 +9,22 @@
 //
 // Each child keeps its own narrow Deps, answered by the host (the window);
 // the composite takes them as they are because a second copy of the same
-// interfaces would only forward calls. Revisit when the pane table moves in
-// and the host answers one interface per concern.
+// interfaces would only forward calls. The ones that lean on the pane table
+// are answered here instead (the body's slots, the tables' rows and the
+// URL bar's protocols), so the host is asked once for what only it knows.
+//
+// The composite owns the request pane's table (panes.go) and what each tab
+// keeps of it: the pane shown, its scroll and the strip's scroll. That state
+// lives in a map made on first use and pruned in Tick, not on the tab: a
+// tabs.Tab is a workspace type that knows no UI (revisit when tabs get
+// stable ids, so the map can be keyed by them).
 package editor
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/assertions"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/auth"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
@@ -28,8 +38,17 @@ import (
 )
 
 // Deps is what each child asks of the host. GraphQL.Query is filled by New:
-// the query area is the body's.
+// the query area is the body's. So are URLBar.Protocols, Body.Slots,
+// WS.Composers and the tables' Tables and Tabs, which the pane table
+// answers; the body's Window and the tables' Tabs are wrapped, see New.
 type Deps struct {
+	Ctx         *core.Ctx // what the slots, which are handed none, draw with
+	Tabs        Tabs
+	Connections Connections
+	Settings    Settings
+	VarsPane    VarsPane
+	Window      Window
+
 	URLBar     urlbar.Deps
 	Body       body.Deps
 	GraphQL    graphql.Deps
@@ -41,8 +60,49 @@ type Deps struct {
 	Tables     kvtable.Deps
 }
 
+// Tabs says which tab the pane shows and which are still open.
+type Tabs interface {
+	// Current is the tab shown, nil when none is open.
+	Current() *tabs.Tab
+	IsOpen(tab *tabs.Tab) bool
+}
+
+// Connections is what the host does with a tab's connection when the pane
+// changes its protocol.
+type Connections interface {
+	// Disconnect closes the connection of tab: it belongs to the protocol that opened it.
+	Disconnect(tab *tabs.Tab)
+	// ProtocolChosen runs after tab got a protocol and the request panes
+	// started over: the response side starts over too.
+	ProtocolChosen(tab *tabs.Tab)
+}
+
+// Settings are the settings in effect, which say which protocols are offered.
+type Settings interface {
+	Settings() settings.Settings
+}
+
+// VarsPane is the table of the Vars pane, which follows the active
+// environment or the folder being edited and so belongs to the host.
+type VarsPane interface {
+	// Rows are the rows the pane edits.
+	Rows() *[]request.KV
+	// Caption is the caption above them.
+	Caption() string
+}
+
+// Window is what the body asks of the window besides which pane is the Body.
+type Window interface {
+	// CommitEdit writes a table cell edit in progress into its row.
+	CommitEdit()
+	SetStatus(text string)
+}
+
 // Component is the request pane's components.
 type Component struct {
+	deps  Deps
+	panes map[*tabs.Tab]*paneState // what each tab keeps of the request pane; made on first use, pruned in Tick
+
 	URLBar     *urlbar.Component     // the bar above the request pane: URL fields, chips and the Send button
 	Body       *body.Component       // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab
 	Auth       *auth.Component       // the Auth pane, the trust prompt and the cookie jar view
@@ -56,9 +116,12 @@ type Component struct {
 
 // New builds the components, the GraphQL one over the body's query area.
 func New(deps Deps) *Component {
-	c := &Component{}
+	c := &Component{deps: deps, panes: map[*tabs.Tab]*paneState{}}
+	deps.Tables.Tables, deps.Tables.Tabs = tableRows{c}, tableTabs{c}
 	c.Tables = kvtable.New(deps.Tables)
+	deps.URLBar.Protocols = c
 	c.URLBar = urlbar.New(deps.URLBar)
+	deps.Body.Slots, deps.Body.Window = slots{c}, bodyWindow{deps.Window, c}
 	c.Body = body.New(deps.Body)
 	deps.GraphQL.Query = c.Body
 	c.GraphQL = graphql.New(deps.GraphQL)
@@ -66,6 +129,7 @@ func New(deps Deps) *Component {
 	c.Assertions = assertions.New(deps.Assertions)
 	c.GRPC = grpc.New(deps.GRPC)
 	c.MCP = mcp.New(deps.MCP)
+	deps.WS.Composers = composers{}
 	c.WS = ws.New(deps.WS)
 	return c
 }
@@ -96,6 +160,7 @@ func (c *Component) Typing() bool {
 // the order changes nothing else.
 func (c *Component) Tick() bool {
 	changed := false
+	c.prunePanes()
 	for _, tick := range []func() bool{
 		c.Tables.Tick, c.URLBar.Tick, c.Body.Tick, c.Auth.Tick, c.Assertions.Tick,
 		c.WS.Tick, c.GraphQL.Tick, c.GRPC.Tick, c.MCP.Tick,

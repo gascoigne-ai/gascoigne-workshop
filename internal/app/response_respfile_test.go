@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -64,13 +65,13 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	if got := responsePanes[len(responsePanes)-1].badge(a, tab); got != 1 {
 		t.Fatalf("the response Tests tab counts failures: %d", got)
 	}
-	var reqTests pane
-	for _, p := range requestPanes {
-		if p.kind == paneAssertions {
-			reqTests = p
+	reqTests := -1
+	for _, item := range a.editor.PaneTabs(tab.Tab) {
+		if item.Label == "Tests" {
+			reqTests = item.Badge
 		}
 	}
-	if got := reqTests.badge(a, tab); got != 3 {
+	if got := reqTests; got != 3 {
 		t.Fatalf("the request Tests tab counts assertions: %d", got)
 	}
 	if d := view.Dump(a.responsePaneView(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
@@ -219,16 +220,11 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	tab := a.cur()
 	tab.Req.BodyType = request.BodyForm
 	tab.Req.Form = []request.KV{{Name: "user", Value: "ann", Enabled: true}}
-	for i, p := range requestPanes {
-		if p.kind == paneBody {
-			tab.paneTab = i
-		}
-	}
+	showRequestPane(t, a, tab, "Body")
 	a.Step(core.Input{})
-	shown, ok := kvtableHost{a}.Visible()
-	p := tablePanes[shown.Kind]
-	if !ok || p.label != formPane.label || p.captionOf(a) != "Fields" {
-		t.Fatalf("the form is a table with a caption: %v %q", ok, p.captionOf(a))
+	shown, ok := a.editor.VisibleTable()
+	if caption := a.editor.TableCaption(shown.Kind); !ok || shown.Kind != kvlogic.Form || caption != "Fields" {
+		t.Fatalf("the form is a table with a caption: %v %q", ok, caption)
 	}
 	table := shown
 	a.editor.Tables.ToggleBulk(table)

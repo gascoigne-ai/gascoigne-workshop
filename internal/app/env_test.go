@@ -1,6 +1,7 @@
 package app
 
 import (
+	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"strings"
 	"testing"
@@ -63,18 +64,18 @@ func TestEnvironmentLifecycle(t *testing.T) {
 
 func TestVarsPaneEditsTheActiveEnvironment(t *testing.T) {
 	a := testApp(t)
-	pane := requestPanes[4]
-	if pane.label != "Vars" {
+	vars := kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Vars}
+	if label := a.editor.PaneTabs(a.cur().Tab)[4].Label; label != "Vars" {
 		t.Fatal("Vars pane moved")
 	}
-	if rows := pane.rows(a, a.cur()); rows != &a.col().Vars {
+	if rows := a.editor.TableRows(vars); rows != &a.col().Vars {
 		t.Fatal("without an environment the pane edits the collection variables")
 	}
 	a.addEnv("Dev")
-	if rows := pane.rows(a, a.cur()); rows != &a.col().Envs[0].Vars {
+	if rows := a.editor.TableRows(vars); rows != &a.col().Envs[0].Vars {
 		t.Fatal("with an environment the pane edits its variables")
 	}
-	if got := pane.captionOf(a); got != "Environment: Dev" {
+	if got := a.editor.TableCaption(kvlogic.Vars); got != "Environment: Dev" {
 		t.Fatalf("caption %q", got)
 	}
 }
@@ -132,20 +133,21 @@ func TestFolderVariablesAreEditedInTheVarsPaneAndResolveForTheirRequests(t *test
 	req := a.cur().Req
 	a.col().Vars = []request.KV{{Name: "host", Value: "collection.test", Enabled: true}}
 	a.editVars(folder)
-	pane := requestPanes[a.cur().paneTab]
-	if pane.label != "Vars" || pane.rows(a, a.cur()) != &folder.Vars || pane.captionOf(a) != "Folder: "+folder.Name {
-		t.Fatalf("pane %q caption %q", pane.label, pane.captionOf(a))
+	vars := kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Vars}
+	label, caption := a.editor.PaneLabel(a.cur().Tab), a.editor.TableCaption(kvlogic.Vars)
+	if label != "Vars" || a.editor.TableRows(vars) != &folder.Vars || caption != "Folder: "+folder.Name {
+		t.Fatalf("pane %q caption %q", label, caption)
 	}
 	folder.Vars = []request.KV{{Name: "host", Value: "folder.test", Enabled: true}}
 	if got := request.Expand("{{host}}", a.varsFor(req)); got != "folder.test" {
 		t.Fatalf("folder variable not used: %q", got)
 	}
 	a.editVars(&a.col().Folder)
-	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col().Vars {
+	if a.editor.TableRows(vars) != &a.col().Vars {
 		t.Fatal("the root edits the collection's variables")
 	}
 	a.addEnv("Dev") // choosing an environment goes back to the usual pane
-	if requestPanes[a.cur().paneTab].rows(a, a.cur()) != &a.col().Envs[0].Vars {
+	if a.editor.TableRows(vars) != &a.col().Envs[0].Vars {
 		t.Fatal("selecting an environment resets the Vars pane")
 	}
 }

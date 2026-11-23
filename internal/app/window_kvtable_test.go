@@ -86,25 +86,3 @@ func TestUndoGoesToTheURLWhileTheURLFieldIsFocused(t *testing.T) {
 		t.Fatalf("params %+v: with the URL field focused Ctrl+Z belongs to its text", req.Params)
 	}
 }
-
-// The history of a table is keyed by the label of its pane, and the pane
-// names its table by kind: the two must agree, or the undo history of one
-// table would be shared with another's.
-func TestEachTablePaneLabelMatchesItsKind(t *testing.T) {
-	for kind := kvlogic.Params; kind < kvlogic.KindCount; kind++ {
-		if kind == kvlogic.ResponseHeaders {
-			continue // the response's table is drawn by ui/response and has no pane here
-		}
-		shown := tablePanes[kind]
-		if shown.kind != paneTable || shown.table != kind || shown.label != kind.Label() {
-			t.Errorf("kind %d: pane %q (kind %d, table %d), want label %q", kind, shown.label, shown.kind, shown.table, kind.Label())
-		}
-	}
-	for _, list := range [][]pane{requestPanes, connectionRequestPanes, grpcRequestPanes, responsePanes} {
-		for _, shown := range list {
-			if (shown.kind == paneTable) != (shown.table != kvlogic.NoTable) {
-				t.Errorf("pane %q: kind %d with table %d", shown.label, shown.kind, shown.table)
-			}
-		}
-	}
-}

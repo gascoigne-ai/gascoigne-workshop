@@ -65,7 +65,7 @@ Every frame the whole window tree is rebuilt from the App state (why: the `marku
 
 | To add | Do |
 |---|---|
-| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `feature/send/adapter/protocol`, add a row to `NewRegistry`; add its panes to the tables in `internal/app/window_panes.go` |
+| a protocol | implement `request.Sender` (and `Streamer` if it stays connected) in `feature/send/adapter/protocol`, add a row to `NewRegistry`; add its panes to the tables in `internal/ui/editor/panes.go` (the request side and the stream panes) and `internal/app/window_panes.go` (the response side) |
 | a widget | `uitoolkit/widget`: a composition of `view` elements, or a `view.Custom` behavior when it needs its own layout, input or drawing; options, tests, the package doc index and the markup tables (`rules.md`, toolkit API rules) |
 | a view | a package under `internal/ui/<area>/` (anatomy in `internal/CLAUDE.md`): a template string (a `const` at the end of the Go file) and a `Scope` in the file of the view; pinned with a `view.Dump` test; a state of the `App` that has no widget in it goes to a controller package first |
 | a setting | one row in `settings.Schema` (`feature/settings/schema.go`); the form, raw view, validation and reset read it |

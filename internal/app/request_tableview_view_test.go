@@ -24,7 +24,7 @@ const (
 // open tab that look, and which pane and padding show it.
 type tableViewState struct {
 	name  string
-	pane  pane
+	kind  kvlogic.Kind
 	pad   int
 	setUp func(t *testing.T, app *App, tab *reqTab)
 }
@@ -38,33 +38,33 @@ const longParamValue = "gpu-rendered-desktop-clients-written-in-go-with-custom-w
 // (no padding), a response's headers (read-only, no caption) and the
 // rows as text in bulk mode.
 var tableViewStates = []tableViewState{
-	{"params", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
-	{"params-disabled-long", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+	{"params", kvlogic.Params, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
+	{"params-disabled-long", kvlogic.Params, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Params[0].Value = longParamValue
 		tab.Req.Params[1].Enabled = false
 	}},
-	{"params-empty", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+	{"params-empty", kvlogic.Params, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Params = nil
 	}},
-	{"params-selected", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.editor.Tables.Select(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 1)
+	{"params-selected", kvlogic.Params, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+		app.editor.Tables.Select(kvlogic.Table{Tab: tab.Tab, Kind: kvlogic.Params}, 1)
 	}},
-	{"params-editing", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.editor.Tables.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 0, 1)
+	{"params-editing", kvlogic.Params, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+		app.editor.Tables.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: kvlogic.Params}, 0, 1)
 	}},
-	{"headers-duplicate", headersPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+	{"headers-duplicate", kvlogic.Headers, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Headers = []request.KV{
 			{Name: "X-Id", Value: "1", Enabled: true},
 			{Name: "x-id", Value: "2", Enabled: true},
 			{Name: "Accept", Value: "application/json", Enabled: true},
 		}
 	}},
-	{"vars", varsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
-	{"form", formPane, 0, func(t *testing.T, app *App, tab *reqTab) {
+	{"vars", kvlogic.Vars, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {}},
+	{"form", kvlogic.Form, 0, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Form = []request.KV{{Name: "name", Value: "gopher", Enabled: true}}
 	}},
-	{"bulk", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.editor.Tables.ToggleBulk(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table})
+	{"bulk", kvlogic.Params, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
+		app.editor.Tables.ToggleBulk(kvlogic.Table{Tab: tab.Tab, Kind: kvlogic.Params})
 	}},
 }
 
@@ -87,7 +87,7 @@ func TestTheKeyValueTableLaysOutAsPinned(t *testing.T) {
 				t.Cleanup(a.WaitWrites)
 				tab := a.cur()
 				state.setUp(t, a, tab)
-				root := Stack(a.tableView(state.pane, tab, &widget.ScrollState{}, state.pad))
+				root := Stack(a.editor.TableView(tab.Tab, state.kind, &widget.ScrollState{}, state.pad))
 				Layout(a.ctx, root, size.width, tableH)
 				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 				if err != nil {
