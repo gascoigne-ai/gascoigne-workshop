@@ -92,7 +92,7 @@ func (a *App) toggleConnection(tab *reqTab) {
 
 // connect dials in the background; the outcome arrives as a wsOpened or wsFailed.
 func (a *App) connect(tab *reqTab) {
-	if !a.allowed(tab, tab.Req, func() { a.connect(tab) }) {
+	if !a.auth.Allowed(tab.Tab, tab.Req, func() { a.connect(tab) }) {
 		return
 	}
 	gen, ok := tab.Begin()

@@ -24,16 +24,14 @@ type reqTab struct {
 	grpcBlock
 	mcpBlock
 	responseBlock
-	paneTab     int
-	bodyView    widget.CodeView                             // request body, read-only
-	tests       widget.TextArea                             // the assertions editor
-	gqlVars     widget.TextArea                             // the variables of a GraphQL body
-	reqScroll   widget.ScrollState                          // scroll of the table and note panes
-	reqTabsX    widget.ScrollState                          // sideways scroll of the two pane tab strips
-	timeout     widget.TextField                            // the request's timeout seconds, as typed
-	auth        map[requestedit.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
-	showSecrets bool                                        // show masked credential fields
-	schema      *send.Schema                                // what a GraphQL introspection answered
+	paneTab   int
+	bodyView  widget.CodeView    // request body, read-only
+	tests     widget.TextArea    // the assertions editor
+	gqlVars   widget.TextArea    // the variables of a GraphQL body
+	reqScroll widget.ScrollState // scroll of the table and note panes
+	reqTabsX  widget.ScrollState // sideways scroll of the two pane tab strips
+	timeout   widget.TextField   // the request's timeout seconds, as typed
+	schema    *send.Schema       // what a GraphQL introspection answered
 }
 
 // socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.

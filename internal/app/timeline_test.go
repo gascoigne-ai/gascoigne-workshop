@@ -22,7 +22,7 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 	if !ok || rest.Jar != first {
 		t.Fatalf("the REST protocol must use the app's jar: %+v", a.reg["rest"])
 	}
-	a.clearCookies()
+	authHost{a}.Clear()
 	rest, _ = a.reg["rest"].(protocol.REST)
 	if a.jar == first || rest.Jar != a.jar {
 		t.Fatal("clearing cookies must install a new jar everywhere")
@@ -53,14 +53,14 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL = "https://api.test/x"
-	a.showCookies(tab)
+	a.auth.ShowCookies(tab.Tab)
 	if a.dialog == nil || !strings.Contains(a.dialog.Body, "No cookies for api.test") {
 		t.Fatalf("dialog %+v", a.dialog)
 	}
 	a.closeDialog()
 	u, _ := url.Parse("https://api.test/x")
 	a.jar.SetCookies(u, []*http.Cookie{{Name: "session", Value: "abc", Path: "/"}})
-	a.showCookies(tab)
+	a.auth.ShowCookies(tab.Tab)
 	if !strings.Contains(a.dialog.Body, "session=abc") {
 		t.Fatalf("body %q", a.dialog.Body)
 	}
@@ -71,7 +71,7 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	}
 	tab.Req.URL = "not a url"
 	a.closeDialog()
-	a.showCookies(tab)
+	a.auth.ShowCookies(tab.Tab)
 	if a.dialog != nil {
 		t.Fatal("no dialog for a URL without a host")
 	}

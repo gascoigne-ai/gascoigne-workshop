@@ -16,6 +16,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/auth"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
@@ -150,6 +151,7 @@ func NewApp(opts Options) (*App, error) {
 	a.kv = kvtable.New(kvtable.Deps{Tables: kvtableHost{a}, Tabs: kvtableHost{a}, Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}})
 	a.urlbar = urlbar.New(urlbar.Deps{Tabs: urlbarHost{a}, Sends: urlbarHost{a}, Connections: urlbarHost{a}, GRPC: urlbarHost{a}, Protocols: urlbarHost{a}, Styles: urlbarHost{a}, Hints: urlbarHost{a}})
 	a.body = body.New(body.Deps{Tabs: bodyHost{a}, Slots: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}, Window: bodyHost{a}})
+	a.auth = auth.New(auth.Deps{Tabs: authHost{a}, Vars: authHost{a}, Trust: authHost{a}, Cookies: authHost{a}, Window: authHost{a}})
 	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})
 	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: &a.calls, Welcome: a, Version: version})
 	if loadErr != nil {
@@ -215,4 +217,14 @@ func (a *App) loadState(path string) error {
 func newJar() http.CookieJar {
 	jar, _ := cookiejar.New(nil)
 	return jar
+}
+
+// newRegistry builds the protocols from the cookie jar, the network
+// settings (proxy, certificates) and the app's sampling dialog.
+func (a *App) newRegistry() request.Registry {
+	if a.protocols == nil {
+		return request.Registry{}
+	}
+	s := a.settings
+	return a.protocols(request.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.sampleViaDialog})
 }

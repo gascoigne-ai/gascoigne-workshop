@@ -91,23 +91,6 @@ func TestAPIKeyGoesInTheHeaderOrTheQuery(t *testing.T) {
 	}
 }
 
-func TestSecretFieldsAreMaskedUntilShown(t *testing.T) {
-	a := openAuthPane(t)
-	click(a, authBasicX, chipsY)
-	user, pass := a.cur().authInput("user"), a.cur().authInput("password")
-	if user.Masked || !pass.Masked {
-		t.Fatalf("user masked %v, password masked %v", user.Masked, pass.Masked)
-	}
-	click(a, 290, authRow3Y) // the show-secrets row, under the two fields
-	if a.cur().authInput("password").Masked {
-		t.Fatal("the toggle must show the secret")
-	}
-	click(a, 290, authRow3Y)
-	if !a.cur().authInput("password").Masked {
-		t.Fatal("and hide it again")
-	}
-}
-
 func TestVariablesInCredentialsAndHeadersAreExpandedAtSend(t *testing.T) {
 	srv, last := recordServer(t)
 	a := openAuthPane(t)
@@ -123,18 +106,5 @@ func TestVariablesInCredentialsAndHeadersAreExpandedAtSend(t *testing.T) {
 	}
 	if a.cur().Req.Auth.Token != "{{tok}}" {
 		t.Fatal("the stored request keeps the variable")
-	}
-}
-
-func TestSwitchingAuthTypesKeepsEachTypesValues(t *testing.T) {
-	a := openAuthPane(t)
-	click(a, authBearerX, chipsY)
-	click(a, authFieldX, authRow1Y)
-	a.typeText("abc")
-	click(a, authBasicX, chipsY)
-	click(a, authNoneX, chipsY)
-	click(a, authBearerX, chipsY)
-	if a.cur().Req.Auth.Token != "abc" || a.cur().authInput("token").Text != "abc" {
-		t.Fatalf("auth %+v field %q", a.cur().Req.Auth, a.cur().authInput("token").Text)
 	}
 }

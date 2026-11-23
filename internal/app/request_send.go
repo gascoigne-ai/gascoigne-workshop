@@ -24,7 +24,7 @@ func (a *App) send(tab *reqTab) {
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
 func (a *App) dispatch(tab *reqTab, source *request.Request) {
-	if !a.allowed(tab, source, func() { a.dispatch(tab, source) }) {
+	if !a.auth.Allowed(tab.Tab, source, func() { a.dispatch(tab, source) }) {
 		return
 	}
 	req := source.Expanded(a.varsFor(tab.Req))

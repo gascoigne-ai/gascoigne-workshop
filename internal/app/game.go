@@ -137,6 +137,7 @@ func (a *App) endFrame(moved bool) {
 	// read state or touch the cursor, the clock or a write queue.
 	a.treeStale = a.urlbar.Tick() || a.treeStale
 	a.treeStale = a.body.Tick() || a.treeStale
+	a.treeStale = a.auth.Tick() || a.treeStale
 	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
@@ -200,10 +201,6 @@ func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {
 	t := a.cur()
-	focused := a.side.Filter().Focused || a.urlbar.Typing() || t.find.Focused || t.timeout.Focused || a.body.Typing() ||
-		t.tests.Focused || t.gqlVars.Focused || t.msg.Focused || a.kv.Typing()
-	for _, in := range t.auth {
-		focused = focused || in.Focused
-	}
-	return focused
+	return a.side.Filter().Focused || a.urlbar.Typing() || t.find.Focused || t.timeout.Focused || a.body.Typing() ||
+		t.tests.Focused || t.gqlVars.Focused || t.msg.Focused || a.kv.Typing() || a.auth.Typing()
 }

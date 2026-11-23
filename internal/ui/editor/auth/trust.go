@@ -1,12 +1,13 @@
-package app
+package auth
 
 import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 )
 
-// allowed reports whether source may be sent or connected now. A request
+// Allowed reports whether source may be sent or connected now. A request
 // that would run a command or read a file outside its collection, which an
 // imported collection can ask for without the user knowing, first asks the
 // user; the answer is remembered (state.Trusted) per command and per file.
@@ -18,14 +19,11 @@ import (
 // file. Not asked about: a .workshop.* config in the working directory (the
 // user's decision) and .proto imports, which cannot leave their import
 // paths.
-func (a *App) allowed(tab *reqTab, source *request.Request, again func()) bool {
-	folder := ""
-	if entry, ok := a.entryFor(tab.Req); ok {
-		folder = entry.Dir
-	}
+func (c *Component) Allowed(owner *tabs.Tab, source *request.Request, again func()) bool {
 	var unknown []request.Access
-	for _, access := range source.Expanded(a.varsFor(tab.Req)).Accesses(folder) {
-		if !a.trusted.Has(access) {
+	folder := c.deps.Vars.Folder(owner.Req)
+	for _, access := range source.Expanded(c.deps.Vars.VarsFor(owner.Req)).Accesses(folder) {
+		if !c.deps.Trust.Has(access) {
 			unknown = append(unknown, access)
 		}
 	}
@@ -36,9 +34,10 @@ func (a *App) allowed(tab *reqTab, source *request.Request, again func()) bool {
 	for _, access := range unknown {
 		lines = append(lines, string(access.Kind)+": "+access.Subject)
 	}
-	a.confirm("Allow this request?", "It wants to use:\n"+strings.Join(lines, "\n")+"\n\nOnly allow what you recognise. The answer is remembered.", "Allow", func() {
+	body := "It wants to use:\n" + strings.Join(lines, "\n") + "\n\nOnly allow what you recognise. The answer is remembered."
+	c.deps.Window.Confirm("Allow this request?", body, "Allow", func() {
 		for _, access := range unknown {
-			a.trusted.Add(access)
+			c.deps.Trust.Add(access)
 		}
 		again()
 	})

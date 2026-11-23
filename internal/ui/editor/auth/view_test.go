@@ -1,16 +1,14 @@
-package app
+package auth
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -19,24 +17,24 @@ import (
 // set to the query, and Bearer with its secret shown.
 var authPaneStates = []struct {
 	name  string
-	setUp func(tab *reqTab)
+	setUp func(world *world)
 }{
-	{"none", func(tab *reqTab) {}},
-	{"bearer", func(tab *reqTab) {
-		tab.Req.Auth = request.Auth{Type: request.AuthBearer, Token: "example-token"}
+	{"none", func(world *world) {}},
+	{"bearer", func(world *world) {
+		world.tab.Req.Auth = request.Auth{Type: request.AuthBearer, Token: "example-token"}
 	}},
-	{"basic", func(tab *reqTab) {
-		tab.Req.Auth = request.Auth{Type: request.AuthBasic, User: "ann", Password: "pw"}
+	{"basic", func(world *world) {
+		world.tab.Req.Auth = request.Auth{Type: request.AuthBasic, User: "ann", Password: "pw"}
 	}},
-	{"apikey-header", func(tab *reqTab) {
-		tab.Req.Auth = request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1"}
+	{"apikey-header", func(world *world) {
+		world.tab.Req.Auth = request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1"}
 	}},
-	{"apikey-query", func(tab *reqTab) {
-		tab.Req.Auth = request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1", KeyIn: request.KeyInQuery}
+	{"apikey-query", func(world *world) {
+		world.tab.Req.Auth = request.Auth{Type: request.AuthAPIKey, KeyName: "X-Key", KeyValue: "v1", KeyIn: request.KeyInQuery}
 	}},
-	{"bearer-shown", func(tab *reqTab) {
-		tab.Req.Auth = request.Auth{Type: request.AuthBearer, Token: "example-token"}
-		tab.showSecrets = true
+	{"bearer-shown", func(world *world) {
+		world.tab.Req.Auth = request.Auth{Type: request.AuthBearer, Token: "example-token"}
+		world.pane.toggleSecrets(world.tab)
 	}},
 }
 
@@ -47,26 +45,16 @@ func TestTheAuthPaneLaysOutAsPinned(t *testing.T) {
 		name  string
 		width int
 	}{
-		{"wide", settingsWideW},
-		{"narrow", settingsNarrowW},
+		{"wide", wideW},
+		{"narrow", narrowW},
 	}
 	for _, state := range authPaneStates {
 		for _, size := range sizes {
 			name := "authpane-" + state.name + "-" + size.name
 			t.Run(name, func(t *testing.T) {
-				a := testApp(t)
-				t.Cleanup(a.WaitWrites)
-				tab := a.cur()
-				state.setUp(tab)
-				root := a.authPane(authPane, tab, &widget.ScrollState{})
-				Layout(a.ctx, root, size.width, settingsPaneH)
-				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
-				if err != nil {
-					t.Fatal(err)
-				}
-				if got := Dump(root); got != string(want) {
-					t.Fatalf("got:\n%s\nwant:\n%s", got, want)
-				}
+				world := newWorld(t, &request.Request{Name: "R"})
+				state.setUp(world)
+				assertDumpPinned(t, world.ctx, world.view(), name, size.width, paneH)
 			})
 		}
 	}
@@ -91,16 +79,16 @@ func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := testApp(t)
-			t.Cleanup(a.WaitWrites)
-			tab := a.cur()
-			tab.Req.Auth, tab.showSecrets = tc.auth, tc.showSecrets
-			fields := behaviorStates(a.authPane(authPane, tab, &widget.ScrollState{}), "*widget.fieldB")
+			world := newWorld(t, &request.Request{Name: "R", Auth: tc.auth})
+			if tc.showSecrets {
+				world.pane.toggleSecrets(world.tab)
+			}
+			fields := behaviorStates(world.view(), "*widget.fieldB")
 			if len(fields) != len(tc.ids) {
 				t.Fatalf("%d fields, want %d: %q", len(fields), len(tc.ids), fields)
 			}
 			for i, id := range tc.ids {
-				input := tab.authInput(id)
+				input := world.pane.Field(world.tab, id)
 				for _, want := range []string{"field:" + fmt.Sprintf("%p", input), "placeholder: ", "onEnter:<nil>"} {
 					if !strings.Contains(fields[i], want) {
 						t.Errorf("field %s lacks %q: %s", id, want, fields[i])
@@ -129,11 +117,11 @@ func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := testApp(t)
-			t.Cleanup(a.WaitWrites)
-			tab := a.cur()
-			tab.Req.Auth.Type, tab.showSecrets = tc.auth, tc.showSecrets
-			got := behaviorStates(a.authPane(authPane, tab, &widget.ScrollState{}), "widget.checkB")
+			world := newWorld(t, &request.Request{Name: "R", Auth: request.Auth{Type: tc.auth}})
+			if tc.showSecrets {
+				world.pane.toggleSecrets(world.tab)
+			}
+			got := behaviorStates(world.view(), "widget.checkB")
 			if !slices.Equal(got, tc.want) {
 				t.Fatalf("checkboxes %q, want %q", got, tc.want)
 			}
@@ -143,25 +131,24 @@ func TestTheShowSecretsCheckFollowsTheTab(t *testing.T) {
 
 // Right-clicking an auth field opens the text menu.
 func TestTheAuthFieldHasTheTextMenu(t *testing.T) {
-	a := openAuthPane(t)
-	click(a, authBearerX, chipsY)
-	rightClick(a, authFieldX, authRow1Y)
-	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[0] != "Undo" {
-		t.Fatalf("menu = %v", widget.PopupMenu(a.ctx))
+	world := newWorld(t, &request.Request{Name: "R", Auth: request.Auth{Type: request.AuthBearer}})
+	world.frame(core.Input{RightClick: true}, fieldAt(0))
+	menu := widget.PopupMenu(world.ctx)
+	if menu == nil || menu.Items[0].Label != "Undo" {
+		t.Fatalf("menu = %v", menu)
 	}
 }
 
 // The API key's place chooser lights Header while nothing is stored and
 // stores the clicked choice.
 func TestTheAPIKeyPlaceChoiceStoresTheClickedPlace(t *testing.T) {
-	a := openAuthPane(t)
-	click(a, authKeyX, chipsY)
-	click(a, 516, authRow3Y) // the Query choice
-	if got := a.cur().Req.Auth.KeyIn; got != request.KeyInQuery {
+	world := newWorld(t, &request.Request{Name: "R", Auth: request.Auth{Type: request.AuthAPIKey}})
+	world.click("Query")
+	if got := world.tab.Req.Auth.KeyIn; got != request.KeyInQuery {
 		t.Fatalf("KeyIn = %q, want query", got)
 	}
-	click(a, 440, authRow3Y) // the Header choice
-	if got := a.cur().Req.Auth.KeyIn; got != request.KeyInHeader {
+	world.click("Header")
+	if got := world.tab.Req.Auth.KeyIn; got != request.KeyInHeader {
 		t.Fatalf("KeyIn = %q, want header", got)
 	}
 }
@@ -169,20 +156,48 @@ func TestTheAPIKeyPlaceChoiceStoresTheClickedPlace(t *testing.T) {
 // Each type chip chooses its auth type.
 func TestTheAuthTypeChipsChooseTheType(t *testing.T) {
 	cases := []struct {
-		name string
-		x    int
-		want request.AuthType
+		label string
+		want  request.AuthType
 	}{
-		{"bearer", authBearerX, request.AuthBearer},
-		{"basic", authBasicX, request.AuthBasic},
-		{"api key", authKeyX, request.AuthAPIKey},
-		{"none", authNoneX, request.AuthNone},
+		{"Bearer", request.AuthBearer},
+		{"Basic", request.AuthBasic},
+		{"API key", request.AuthAPIKey},
+		{"None", request.AuthNone},
 	}
-	a := openAuthPane(t)
+	world := newWorld(t, &request.Request{Name: "R"})
 	for _, tc := range cases {
-		click(a, tc.x, chipsY)
-		if got := a.cur().Req.Auth.Type; got != tc.want {
-			t.Fatalf("after %s: type %q, want %q", tc.name, got, tc.want)
+		world.click(tc.label)
+		if got := world.tab.Req.Auth.Type; got != tc.want {
+			t.Fatalf("after %s: type %q, want %q", tc.label, got, tc.want)
 		}
+	}
+}
+
+func TestSecretFieldsAreMaskedUntilShown(t *testing.T) {
+	world := newWorld(t, &request.Request{Name: "R"})
+	world.click("Basic")
+	user, password := world.pane.Field(world.tab, "user"), world.pane.Field(world.tab, "password")
+	if user.Masked || !password.Masked {
+		t.Fatalf("user masked %v, password masked %v", user.Masked, password.Masked)
+	}
+	world.toggleShowSecrets()
+	if world.pane.Field(world.tab, "password").Masked {
+		t.Fatal("the toggle must show the secret")
+	}
+	world.toggleShowSecrets()
+	if !world.pane.Field(world.tab, "password").Masked {
+		t.Fatal("and hide it again")
+	}
+}
+
+func TestSwitchingAuthTypesKeepsEachTypesValues(t *testing.T) {
+	world := newWorld(t, &request.Request{Name: "R"})
+	world.click("Bearer")
+	world.typeInto(0, "abc")
+	world.click("Basic")
+	world.click("None")
+	world.click("Bearer")
+	if world.tab.Req.Auth.Token != "abc" || world.pane.Field(world.tab, "token").Text != "abc" {
+		t.Fatalf("auth %+v field %q", world.tab.Req.Auth, world.pane.Field(world.tab, "token").Text)
 	}
 }

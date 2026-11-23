@@ -202,7 +202,7 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 	paneNote:       (*App).notePane,
 	paneBody:       (*App).bodyPaneView,
 	paneSettings:   (*App).settingsPane,
-	paneAuth:       (*App).authPane,
+	paneAuth:       (*App).authPaneView,
 	paneResponse:   (*App).responsePane,
 	paneMessages:   (*App).messagesPane,
 	paneExplorer:   (*App).explorerPane,
@@ -216,6 +216,11 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 // bodyPaneView is the Body pane, drawn by the body component.
 func (a *App) bodyPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	return a.body.View(a.ctx, tab.Tab, scroll)
+}
+
+// authPaneView is the Auth pane, drawn by the auth component.
+func (a *App) authPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.auth.View(a.ctx, tab.Tab, scroll)
 }
 
 // schemaPaneView is the Schema pane of a gRPC tab, drawn by the body component.

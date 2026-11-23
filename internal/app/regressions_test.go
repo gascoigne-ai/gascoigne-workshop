@@ -34,7 +34,7 @@ func TestClearingCookiesWhileARequestRunsIsRaceFree(t *testing.T) {
 	a.pointTabAt(tab, srv.URL)
 
 	a.dispatch(tab, tab.Req)
-	a.clearCookies()
+	authHost{a}.Clear()
 	close(release)
 
 	waitForResponse(t, a, tab)
@@ -57,6 +57,7 @@ func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 		{"graphql variables", func(a *App, tab *reqTab) { tab.gqlVars.Focused = true }},
 		{"file path", func(a *App, tab *reqTab) { a.body.File(tab.Tab).Focused = true }},
 		{"message composer", func(a *App, tab *reqTab) { tab.msg.Focused = true }},
+		{"auth token", func(a *App, tab *reqTab) { a.auth.Field(tab.Tab, "token").Focused = true }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

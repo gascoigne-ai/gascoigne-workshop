@@ -27,5 +27,5 @@ Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-
 
 ## Untrusted input
 - Anything that comes from a file, a clipboard, an import or a server is untrusted: parsers return an error, never panic, hang or grow without a bound; a new parser or importer gets a fuzz target (`FUZZ_TARGETS` in the Makefile) and a limit written into `architecture/limits.md`.
-- A request that runs a command or reads a file outside its collection goes through `App.allowed` (its doc says why it asks rather than refuses); a new protocol that does either extends `request.Request.Accesses`.
+- A request that runs a command or reads a file outside its collection goes through `auth.Component.Allowed` (`ui/editor/auth`; its doc says why it asks rather than refuses); a new protocol that does either extends `request.Request.Accesses`.
 - Values from a server are never expanded as variables (`request.KV.Literal`).

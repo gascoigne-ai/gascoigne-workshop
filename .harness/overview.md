@@ -18,7 +18,7 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
 internal/feature/    feature slices: collections, environments, history, send, settings, workspace (model, controllers, adapter/, FEATURE.md; no ui)
-internal/ui/         the screen, one directory per component (overlays/, response/, sidebar/, tabstrip/, editor/kvtable/, editor/urlbar/, editor/body/, editor/mcp/, appicon, theme)
+internal/ui/         the screen, one directory per component (overlays/, response/, sidebar/, tabstrip/, editor/kvtable/, editor/urlbar/, editor/body/, editor/auth/, editor/mcp/, appicon, theme)
 internal/ui/format/  display formatting, no toolkit: durations, sizes, JSON text helpers, body to display lines
 internal/storage/    user-file location and versioning (zone base): where the program's files live, the "version" key readers
 internal/feature/request/  the request model and ports and OpenCollection, the base feature every other may import

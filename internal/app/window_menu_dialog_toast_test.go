@@ -353,7 +353,7 @@ func TestSecretFieldsCannotBeCutOrCopiedFromTheMenu(t *testing.T) {
 	click(a, authBearerX, chipsY)
 	click(a, authFieldX, authRow1Y)
 	a.typeText("s3cret")
-	a.cur().authInput("token").SelectAll()
+	a.auth.Field(a.cur().Tab, "token").SelectAll()
 	rightClick(a, authFieldX, authRow1Y)
 	if !itemByLabel(t, a, "Cut").Disabled || !itemByLabel(t, a, "Copy").Disabled {
 		t.Fatal("a masked field must not offer Cut or Copy")

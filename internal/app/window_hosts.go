@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -562,3 +565,54 @@ func (host bodyHost) ShowBody(tab *tabs.Tab) {
 
 // SetStatus replaces the status line.
 func (host bodyHost) SetStatus(text string) { host.notices.SetStatus(text) }
+
+// authHost is what the auth pane asks of the App (auth.Deps).
+type authHost struct{ *App }
+
+// Current is the tab shown.
+func (host authHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host authHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// VarsFor are the variables req is resolved with.
+func (host authHost) VarsFor(req *request.Request) []request.KV { return host.varsFor(req) }
+
+// Folder is the directory of the collection that owns req, "" for none.
+func (host authHost) Folder(req *request.Request) string {
+	entry, ok := host.entryFor(req)
+	if !ok {
+		return ""
+	}
+	return entry.Dir
+}
+
+// Has reports whether the user allowed access.
+func (host authHost) Has(access request.Access) bool { return host.trusted.Has(access) }
+
+// Add remembers that the user allowed access.
+func (host authHost) Add(access request.Access) { host.trusted.Add(access) }
+
+// Cookies are the cookies the jar holds for u. The jar is read on every
+// call because Clear replaces it.
+func (host authHost) Cookies(u *url.URL) []*http.Cookie { return host.jar.Cookies(u) }
+
+// Clear replaces the jar with an empty one and rebuilds the protocols that
+// hold it, so connections made before keep nothing.
+func (host authHost) Clear() error {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return err
+	}
+	host.jar = jar
+	host.reg = host.newRegistry()
+	return nil
+}
+
+// Confirm asks the user to confirm.
+func (host authHost) Confirm(title, body, action string, run func()) {
+	host.confirm(title, body, action, run)
+}
+
+// Toast shows text for a moment.
+func (host authHost) Toast(text string, level severity.Level) { host.toast(text, level) }

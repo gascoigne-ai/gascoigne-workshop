@@ -1,11 +1,16 @@
-package app
+package auth
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+
+	// The view DSL is dot-imported so views read like markup.
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // authChoice is one option of the key location chooser.
@@ -53,9 +58,9 @@ var authTypes = []authType{
 
 // authTypeOf is the table entry for an auth type id ("" is none).
 func authTypeOf(id request.AuthType) authType {
-	for _, t := range authTypes {
-		if t.id == id {
-			return t
+	for _, described := range authTypes {
+		if described.id == id {
+			return described
 		}
 	}
 	return authTypes[0]
@@ -63,42 +68,14 @@ func authTypeOf(id request.AuthType) authType {
 
 // authFieldByID finds a field in any type.
 func authFieldByID(id requestedit.AuthField) (authField, bool) {
-	for _, t := range authTypes {
-		for _, f := range t.fields {
-			if f.id == id {
-				return f, true
+	for _, described := range authTypes {
+		for _, field := range described.fields {
+			if field.id == id {
+				return field, true
 			}
 		}
 	}
 	return authField{}, false
-}
-
-// authInput is the text field of an Auth pane field, created on first
-// use from the request's stored value. Secret fields start masked.
-func (t *reqTab) authInput(id requestedit.AuthField) *TextField {
-	if in, ok := t.auth[id]; ok {
-		return in
-	}
-	f, _ := authFieldByID(id)
-	in := new(TextField)
-	if f.id != "" {
-		*in = NewTextField(requestedit.AuthValue(t.Req.Auth, f.id))
-	}
-	in.Masked = f.secret && !t.showSecrets
-	if t.auth == nil {
-		t.auth = map[requestedit.AuthField]*TextField{}
-	}
-	t.auth[id] = in
-	return in
-}
-
-// toggleSecrets shows or hides the secret fields at once.
-func (t *reqTab) toggleSecrets() {
-	t.showSecrets = !t.showSecrets
-	for id, in := range t.auth {
-		f, _ := authFieldByID(id)
-		in.Masked = f.secret && !t.showSecrets
-	}
 }
 
 var authPaneTemplate = markup.Must("authpane.vml", authpaneSource)
@@ -120,53 +97,54 @@ type authChip struct {
 type authRow struct {
 	Label string
 	Chips []authChip
-	Input *TextField
+	Input *widget.TextField
 	Sync  func()
 }
 
-// authPane is the Auth tab: a type chooser and the fields of that type.
-func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
+// View is the Auth pane of tab: a type chooser and the fields of that type.
+// scroll is the pane's scroll state.
+func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) Node {
 	current := authTypeOf(tab.Req.Auth.Type)
 	types := make([]authChip, 0, len(authTypes))
 	for _, at := range authTypes {
-		pick := func() { editRequest(tab, requestedit.AuthTypeChosen{Type: at.id}) }
+		pick := func() { c.edit(tab, requestedit.AuthTypeChosen{Type: at.id}) }
 		types = append(types, authChip{Label: at.label, Width: at.width, Chosen: at.id == current.id, Pick: pick})
 	}
 	hasSecret := false
 	rows := make([]authRow, 0, len(current.fields))
 	for _, field := range current.fields {
 		hasSecret = hasSecret || field.secret
-		rows = append(rows, authFieldRow(tab, field))
+		rows = append(rows, c.authFieldRow(tab, field))
 	}
-	return authPaneTemplate.MustBuild(a.scope(markup.Scope{
+	return authPaneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
 		"scroll":        scroll,
 		"types":         types,
 		"none":          len(current.fields) == 0,
 		"fields":        rows,
 		"hasSecret":     hasSecret,
-		"showSecrets":   tab.showSecrets,
-		"toggleSecrets": tab.toggleSecrets,
+		"showSecrets":   c.state(tab).showSecrets,
+		"toggleSecrets": func() { c.toggleSecrets(tab) },
 	}))
 }
 
 // authFieldRow is the view model of one field: a chooser lights the stored
 // choice, or its first one while nothing is stored; a text field is masked
 // while it is secret and the secrets are hidden.
-func authFieldRow(tab *reqTab, field authField) authRow {
+func (c *Component) authFieldRow(tab *tabs.Tab, field authField) authRow {
 	if field.choices != nil {
 		stored := tab.Req.Auth.KeyIn
 		chips := make([]authChip, 0, len(field.choices))
-		for _, c := range field.choices {
-			pick := func() { editRequest(tab, requestedit.AuthKeyInChosen{In: c.id}) }
-			lit := stored == c.id || (stored == "" && c.id == request.KeyInHeader)
-			chips = append(chips, authChip{Label: c.label, Width: authChoiceChipWidth, Chosen: lit, Pick: pick})
+		for _, choice := range field.choices {
+			pick := func() { c.edit(tab, requestedit.AuthKeyInChosen{In: choice.id}) }
+			lit := stored == choice.id || (stored == "" && choice.id == request.KeyInHeader)
+			chips = append(chips, authChip{Label: choice.label, Width: authChoiceChipWidth, Chosen: lit, Pick: pick})
 		}
 		return authRow{Label: field.label, Chips: chips}
 	}
-	in := tab.authInput(field.id)
-	in.Masked = field.secret && !tab.showSecrets
-	sync := func() { editRequest(tab, requestedit.AuthFieldSet{Field: field.id, Value: in.Text}) }
-	return authRow{Label: field.label, Input: in, Sync: sync}
+	input := c.Field(tab, field.id)
+	input.Masked = field.secret && !c.state(tab).showSecrets
+	sync := func() { c.edit(tab, requestedit.AuthFieldSet{Field: field.id, Value: input.Text}) }
+	return authRow{Label: field.label, Input: input, Sync: sync}
 }
 
 // Templates, parsed once above.
