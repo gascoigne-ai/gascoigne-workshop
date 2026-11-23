@@ -3,7 +3,7 @@ kind: refactor
 commit: refactor(ui): the key-value table is its own component
 scope: internal/**, cmd/**, e2e/**, Makefile, .harness/**
 not_before: 2026-01-01
-depends_on: 030-sidebar-component
+depends_on: 030c-openset-store
 
 # ui/editor/kvtable with logic
 
