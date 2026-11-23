@@ -294,14 +294,24 @@ func TestCheckLayersExampleServerTestsMayNotImportProtocol(t *testing.T) {
 }
 
 func TestCheckLayersTestOnlyRows(t *testing.T) {
-	production := synthetic("internal/ui/sidebar/sentlog", "internal/feature/history/adapter/historyfile")
-	test := synthetic("internal/ui/sidebar/sentlog")
-	test.TestImports = []string{testModule + "/internal/feature/history/adapter/historyfile"}
+	production := synthetic("internal/ui/window", "internal/feature/collections/adapter/collectionstore")
+	test := synthetic("internal/ui/window")
+	test.TestImports = []string{testModule + "/internal/feature/collections/adapter/collectionstore"}
 	if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
 		t.Error("a production import matching only a test-only row must be a violation")
 	}
 	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) != 0 {
 		t.Errorf("a test import matching a test-only row must pass, got %v", got)
+	}
+}
+
+// The sent log is tested over a fake store, so its tests may not import the
+// history adapter.
+func TestCheckLayersSentLogTestsMayNotImportHistoryfile(t *testing.T) {
+	test := synthetic("internal/ui/sidebar/sentlog")
+	test.TestImports = []string{testModule + "/internal/feature/history/adapter/historyfile"}
+	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) == 0 {
+		t.Error("a sentlog test importing historyfile must be a violation")
 	}
 }
 

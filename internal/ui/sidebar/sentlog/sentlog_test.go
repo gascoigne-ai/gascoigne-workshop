@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter/historyfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	core "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -17,7 +16,7 @@ import (
 
 // fakeHost keeps what the log asks the application to do.
 type fakeHost struct {
-	dir      string
+	store    *fakeSentStore // nil: the host has no state folder
 	toasts   []string
 	status   string
 	opened   []string // the paths asked for
@@ -26,10 +25,10 @@ type fakeHost struct {
 }
 
 func (h *fakeHost) SentStore() history.SentStore {
-	if h.dir == "" {
+	if h.store == nil {
 		return nil
 	}
-	return historyfile.SentLog{Dir: h.dir}
+	return h.store
 }
 func (h *fakeHost) Toast(text string, _ severity.Level)          { h.toasts = append(h.toasts, text) }
 func (h *fakeHost) SetStatus(text string)                        { h.status = text }
@@ -38,6 +37,18 @@ func (h *fakeHost) OpenRequest(folder, path string) bool {
 	h.opened = append(h.opened, path)
 	h.openedIn = append(h.openedIn, folder)
 	return h.present[path]
+}
+
+// fakeSentStore keeps the log in memory, newest first as the real store lists it.
+type fakeSentStore struct{ entries []history.Sent }
+
+func (s *fakeSentStore) Append(sent history.Sent) error {
+	s.entries = append([]history.Sent{sent}, s.entries...)
+	return nil
+}
+
+func (s *fakeSentStore) Load() ([]history.Sent, error) {
+	return append([]history.Sent(nil), s.entries...), nil
 }
 
 var clock = time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
@@ -51,7 +62,7 @@ func send(log *Log, host Host, path, url string) {
 // collection and opens the request there.
 func TestARowRemembersAndOpensItsCollection(t *testing.T) {
 	var log Log
-	host := &fakeHost{dir: t.TempDir(), present: map[string]bool{"Users/List": true}}
+	host := &fakeHost{store: &fakeSentStore{}, present: map[string]bool{"Users/List": true}}
 	log.Record(host, clock, "/work/beta", "Users/List", &request.Request{Protocol: "rest", Method: "GET"}, 200)
 	var reloaded Log
 	reloaded.Load(host)
@@ -97,7 +108,7 @@ func TestTheLogKeepsOnlyTheNewestSentLimitEntries(t *testing.T) {
 }
 
 func TestEntriesSurviveAReloadFromTheStateFolder(t *testing.T) {
-	host := &fakeHost{dir: t.TempDir()}
+	host := &fakeHost{store: &fakeSentStore{}}
 	var first Log
 	send(&first, host, "Users/List", "https://one.test")
 	var second Log

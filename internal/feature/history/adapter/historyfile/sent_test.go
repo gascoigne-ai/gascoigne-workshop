@@ -136,3 +136,18 @@ func TestSentLogStoresThroughThePort(t *testing.T) {
 		t.Fatalf("got %+v, err %v", got, err)
 	}
 }
+
+// The sent log's view test runs over a fake store; this pins the half the
+// fake stands for: a row keeps the collection folder across a reload.
+func TestSentLogKeepsTheCollectionOfARow(t *testing.T) {
+	dir := t.TempDir()
+	sent := sentAt(0, "Users/List")
+	sent.Collection = "/work/beta"
+	if err := Dir(dir).Sent().Append(sent); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Dir(dir).Sent().Load()
+	if err != nil || len(got) != 1 || got[0].Collection != "/work/beta" {
+		t.Fatalf("got %+v, %v; want the collection /work/beta kept", got, err)
+	}
+}
