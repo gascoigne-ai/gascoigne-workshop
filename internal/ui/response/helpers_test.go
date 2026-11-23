@@ -1,10 +1,7 @@
 package response
 
 import (
-	"bytes"
 	"fmt"
-	"image"
-	"image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -80,17 +77,17 @@ func (world *world) body() Node {
 	return world.pane.View(world.ctx, world.tab, Body, &widget.ScrollState{})
 }
 
-// pngBody is a 40x20 PNG, an image response body. It is stored uncompressed
-// because the compressed size differs between Go versions and the pinned
-// layouts show the size.
+// pngBody is a 40x20 PNG, an image response body. It is read from a file
+// because png.Encoder's output size differs between Go versions (even
+// uncompressed) and the pinned layouts show the size: CI on Go 1.26 saw
+// 3.22KB where a Go 1.27 run pinned 3.21KB.
 func pngBody(t *testing.T) []byte {
 	t.Helper()
-	var buf bytes.Buffer
-	enc := png.Encoder{CompressionLevel: png.NoCompression}
-	if err := enc.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 40, 20))); err != nil {
+	body, err := os.ReadFile(filepath.Join("testdata", "picture-40x20.png"))
+	if err != nil {
 		t.Fatal(err)
 	}
-	return buf.Bytes()
+	return body
 }
 
 // viewText is the text of the visible lines of the code view of the open tab.
