@@ -7,7 +7,7 @@ Sending a request and reading the answer: the protocol clients, the request edit
 - `adapter/protocol`: one client per protocol, keyed by name in `protocol.Registry` (REST, WebSocket, SSE, MCP, gRPC, GraphQL as a body type); `adapter/protocol/ws` is the WebSocket framing. `adapter/protocol/testdata` holds the proto files and captures its tests read.
 - `assert`: the assertion language of `Request.Tests`. `requestedit`: the request edits of a tab. `mcpexplorer`: the UI-free state of the MCP explorer. `viewer`: the response viewer's model (mode, find state). `outbox`: the order of a connection's sends and pings, one in flight at a time. `sends`: the requests in flight, keyed by the request of the tab, with the numbering and the cancel func of each (`sends.go` says why the key is the request and the counter one for the store).
 - `adapter/preview`: serves a body on a loopback address for "Open in browser".
-- The views are in `internal/ui`: `response/respview` (response views), `response/calltrace` (the call trace), `editor/mcp/mcpform` (the form for an MCP tool's arguments), `editor/urlbar` (the bar with the URL field and the Send button), `editor/ws` (the Messages pane: log, toolbar and composer), `editor/grpc` (the method picker, the Stream switch and the Proto pane); each behind a `Host` interface the `App` implements. This feature has no UI.
+- The views are in `internal/ui`: `response/respview` (response views), `response/calltrace` (the call trace), `editor/mcp/mcpform` (the form for an MCP tool's arguments), `editor/urlbar` (the bar with the URL field and the Send button), `editor/ws` (the Messages pane: log, toolbar and composer), `editor/graphql` (the variables and schema buttons of a GraphQL body), `editor/grpc` (the method picker, the Stream switch and the Proto pane); each behind a `Host` interface the `App` implements. This feature has no UI.
 - Imports: the base feature (`feature/request`, `feature/request/severity`). `go list` (tests included) shows no other feature. `internal/exampleserver` imports `adapter/protocol/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
 
 ## Model and protocols
@@ -110,7 +110,7 @@ stateDiagram-v2
 - **GraphQL** is a body type, not a protocol: it encodes `{"query", "variables"}` and makes a GET
   POST. `App.dispatch` is the one place a tab sends, so a schema load reuses the tab's URL, headers
   and credentials. An introspection answer gives the `Schema (n)` menu of starters; the schema is
-  not saved.
+  kept per tab by `ui/editor/graphql`, not saved.
 - **gRPC**: `Send` makes one unary call and refuses streaming methods. Methods
   come from a table of sources keyed by `request.SourceKind` (`grpcsource.go`):
   - reflection asks v1, then v1alpha on `Unimplemented`;

@@ -17,6 +17,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/assertions"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/auth"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/graphql"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/grpc"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
@@ -48,6 +49,7 @@ type App struct {
 	resp       *response.Component   // the response panes: the body, its find bar, the headers, the timeline and the status pill
 	assertions *assertions.Component // the Tests and Settings panes, the response Tests pane and the assertion results of each tab
 	ws         *ws.Component         // the Messages pane: the log, its toolbar and the composer of each socket tab
+	graphql    *graphql.Component    // the variables and schema buttons of a GraphQL body, per tab
 	grpc       *grpc.Component       // the gRPC method picker, the Stream switch and the Proto pane of each tab
 	auth       *auth.Component       // the Auth pane, the trust prompt and the cookie jar view
 	body       *body.Component       // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab

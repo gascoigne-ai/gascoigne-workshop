@@ -1,91 +1,83 @@
-package app
+package graphql
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 
-	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 var graphQLTemplate = markup.Must("graphql.vml", graphqlSource)
 
-// graphQLBody is the editor of a GraphQL body: the query, the variables as
+// View is the editor of the GraphQL body of tab: the query, the variables as
 // JSON, and a button that asks the server for its schema.
-func (a *App) graphQLBody(tab *reqTab) Node {
-	query := a.body.Area(tab.Tab) // the body component's area is the query editor
+func (c *Component) View(ctx *core.Ctx, tab *tabs.Tab) Node {
+	st := c.state(tab)
+	query := c.deps.Query.Area(tab)
 	syncQuery := func() { editRequest(tab, requestedit.BodyTyped{Text: query.Text}) }
-	syncVars := func() { editRequest(tab, requestedit.VarsTyped{Text: tab.gqlVars.Text}) }
-	status, valid := format.JSONStatus(tab.gqlVars.Text)
-	statusColor := w.Error
+	syncVars := func() { editRequest(tab, requestedit.VarsTyped{Text: st.vars.Text}) }
+	status, valid := format.JSONStatus(st.vars.Text)
+	statusColor := core.Error
 	if valid {
-		statusColor = w.OK
+		statusColor = core.OK
 	}
 	query.Styler = nil
 	operations := 0
-	if tab.schema != nil {
-		operations = len(tab.schema.Operations)
+	if st.schema != nil {
+		operations = len(st.schema.Operations)
 	}
-	return graphQLTemplate.MustBuild(a.scope(markup.Scope{
+	return graphQLTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
 		"hasSchema":   operations > 0,
 		"schemaLabel": fmt.Sprintf("Schema (%d)", operations),
-		"openSchema":  func(posX, posY int) { a.openMenu(posX, posY, a.schemaMenu(tab)) },
-		"loadSchema":  func() { a.loadSchema(tab) },
+		"openSchema":  func(posX, posY int) { c.deps.Window.Open(posX, posY, c.schemaMenu(tab, st)) },
+		"loadSchema":  func() { c.loadSchema(tab) },
 		"query":       query,
 		"queryText":   &query.TextField,
 		"syncQuery":   syncQuery,
-		"hasVars":     tab.gqlVars.Text != "",
+		"hasVars":     st.vars.Text != "",
 		"status":      status,
 		"statusColor": statusColor,
-		"vars":        &tab.gqlVars,
-		"varsText":    &tab.gqlVars.TextField,
+		"vars":        &st.vars,
+		"varsText":    &st.vars.TextField,
 		"syncVars":    syncVars,
 	}))
 }
 
 // loadSchema sends the introspection query to the tab's URL, with its
 // headers and credentials, and shows the answer as the response.
-func (a *App) loadSchema(tab *reqTab) {
+func (c *Component) loadSchema(tab *tabs.Tab) {
 	src := tab.Req.Clone()
 	src.Method, src.BodyType = "POST", request.BodyGraphQL
 	src.Body, src.GraphQLVars = send.IntrospectionQuery, ""
-	a.dispatch(tab, &src)
+	c.deps.Sends.Dispatch(tab, src)
 }
 
 // schemaMenu lists the operations of the loaded schema; picking one
 // replaces the tab's query and variables with a starter for it.
-func (a *App) schemaMenu(tab *reqTab) []MenuItem {
-	if tab.schema == nil {
+func (c *Component) schemaMenu(tab *tabs.Tab, st *state) []widget.MenuItem {
+	if st.schema == nil {
 		return nil
 	}
-	items := make([]MenuItem, 0, len(tab.schema.Operations))
-	for _, op := range tab.schema.Operations {
-		items = append(items, MenuItem{Label: op.Label, Run: func() { a.useOperation(tab, op) }})
+	items := make([]widget.MenuItem, 0, len(st.schema.Operations))
+	for _, op := range st.schema.Operations {
+		items = append(items, widget.MenuItem{Label: op.Label, Run: func() { c.useOperation(tab, st, op) }})
 	}
 	return items
 }
 
 // useOperation puts the starter query and variables of op into the tab.
-func (a *App) useOperation(tab *reqTab, op send.Operation) {
-	*a.body.Area(tab.Tab) = NewTextArea(op.Query)
-	tab.gqlVars = NewTextArea(op.Variables)
+func (c *Component) useOperation(tab *tabs.Tab, st *state, op send.Operation) {
+	*c.deps.Query.Area(tab) = widget.NewTextArea(op.Query)
+	st.vars = widget.NewTextArea(op.Variables)
 	editRequest(tab, requestedit.OperationChosen{Query: op.Query, Variables: op.Variables})
-}
-
-// rememberSchema keeps the schema when resp is an introspection answer;
-// any other answer leaves what the tab already knows.
-func (a *App) rememberSchema(tab *reqTab, resp *request.Response) {
-	if tab.Req.BodyType != request.BodyGraphQL {
-		return
-	}
-	if schema, err := send.ParseSchema(resp.Body); err == nil {
-		tab.schema = schema
-	}
 }
 
 // Templates, parsed once above.

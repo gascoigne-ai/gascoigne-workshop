@@ -156,21 +156,22 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 		writer.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
 	}))
 	defer srv.Close()
-	a := testApp(t)
+	a := openBodyPane(t)
 	tab := a.cur()
 	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
 	*a.body.Area(tab.Tab) = widget.NewTextArea("{ repos { name } }")
 	a.body.ChooseType(tab.Tab, request.BodyGraphQL)
+	a.Step(core.Input{})
 	if tab.Req.Method != "POST" || tab.Req.Body != "{ repos { name } }" {
 		t.Fatalf("method %q body %q", tab.Req.Method, tab.Req.Body)
 	}
-	if d := view.Dump(a.graphQLBody(tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
+	if d := view.Dump(a.graphql.View(a.ctx, tab.Tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
 		t.Fatalf("editor:\n%s", d)
 	}
 	a.send(tab)
 	waitForResponse(t, a, tab)
 	tab.Resp = nil
-	a.loadSchema(tab)
+	click(a, gqlLoadSchemaX, gqlButtonsY)
 	waitForResponse(t, a, tab)
 	if len(queries) != 2 || queries[0] != "{ repos { name } }" || !strings.Contains(queries[1], "__schema") {
 		t.Fatalf("queries %q", queries)

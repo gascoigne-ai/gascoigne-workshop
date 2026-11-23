@@ -511,7 +511,7 @@ func (host bodyHost) FormTable(tab *tabs.Tab, scroll *widget.ScrollState) Node {
 }
 
 // GraphQL is the editor of a GraphQL body.
-func (host bodyHost) GraphQL(tab *tabs.Tab) Node { return host.graphQLBody(host.widgets[tab]) }
+func (host bodyHost) GraphQL(tab *tabs.Tab) Node { return host.graphql.View(host.ctx, tab) }
 
 // Message is a status line in place of the Schema pane.
 func (host bodyHost) Message(text string) Node { return host.messagePane(schemaPane, text, false) }
@@ -567,6 +567,25 @@ func (host bodyHost) ShowBody(tab *tabs.Tab) {
 
 // SetStatus replaces the status line.
 func (host bodyHost) SetStatus(text string) { host.notices.SetStatus(text) }
+
+// graphqlHost is what the GraphQL component asks of the App (graphql.Deps).
+type graphqlHost struct{ *App }
+
+// Current is the tab shown.
+func (host graphqlHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host graphqlHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Dispatch sends req as the request of tab and shows the answer as its response.
+func (host graphqlHost) Dispatch(tab *tabs.Tab, req request.Request) {
+	host.dispatch(host.widgets[tab], &req)
+}
+
+// Open shows a menu of items at the position.
+func (host graphqlHost) Open(posX, posY int, items []widget.MenuItem) {
+	host.openMenu(posX, posY, items)
+}
 
 // grpcHost is what the gRPC component asks of the App (grpc.Deps).
 type grpcHost struct{ *App }

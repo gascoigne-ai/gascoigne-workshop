@@ -100,7 +100,7 @@ func (a *App) apply(result sends.Result) {
 		a.side.Sent().Record(a, a.now(), owner.Dir, path, t.Req, result.Response.Status)
 	}
 	a.calls.Answer(a.now(), t.Req, &result.Response)
-	a.rememberSchema(t, &result.Response)
+	a.graphql.Remember(t.Tab, &result.Response)
 	a.resp.Refresh(t.Tab)
 	if result.Response.Err != "" {
 		a.notices.SetStatus("Request failed")

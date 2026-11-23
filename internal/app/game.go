@@ -140,6 +140,7 @@ func (a *App) endFrame(moved bool) {
 	a.treeStale = a.auth.Tick() || a.treeStale
 	a.treeStale = a.assertions.Tick() || a.treeStale
 	a.treeStale = a.ws.Tick() || a.treeStale
+	a.treeStale = a.graphql.Tick() || a.treeStale
 	a.treeStale = a.grpc.Tick() || a.treeStale
 	a.treeStale = a.resp.Tick() || a.treeStale
 	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
@@ -204,7 +205,6 @@ func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {
-	t := a.cur()
 	return a.side.Filter().Focused || a.urlbar.Typing() || a.resp.Typing() || a.body.Typing() ||
-		t.gqlVars.Focused || a.ws.Typing() || a.kv.Typing() || a.auth.Typing() || a.assertions.Typing()
+		a.graphql.Typing() || a.ws.Typing() || a.kv.Typing() || a.auth.Typing() || a.assertions.Typing()
 }

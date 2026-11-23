@@ -16,9 +16,9 @@
 // other tabs would be lost). Revisit when tabs get stable ids or a draft
 // must outlive its tab.
 //
-// The text area is also the query editor of a GraphQL body, which the app's
-// GraphQL editor draws through Slots.GraphQL; it asks for the area with
-// Area. The Schema pane lives here, not with the Proto pane, because its
+// The text area is also the query editor of a GraphQL body, which
+// ui/editor/graphql draws: the app answers Slots.GraphQL with its View, and
+// that package asks for the area with Area through its Query port. The Schema pane lives here, not with the Proto pane, because its
 // Fill body button edits the text area this package owns; the pane table
 // (which panes a gRPC tab has) stays with the app. The form table is
 // another component's: the app answers Slots.FormTable and the pane asks

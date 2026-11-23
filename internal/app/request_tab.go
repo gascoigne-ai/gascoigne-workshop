@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
@@ -23,11 +22,9 @@ type reqTab struct {
 	paneTab   int
 	bodyView  widget.CodeView    // request body, read-only
 	tests     widget.TextArea    // the assertions editor
-	gqlVars   widget.TextArea    // the variables of a GraphQL body
 	reqScroll widget.ScrollState // scroll of the table and note panes
 	reqTabsX  widget.ScrollState // sideways scroll of the two pane tab strips
 	timeout   widget.TextField   // the request's timeout seconds, as typed
-	schema    *send.Schema       // what a GraphQL introspection answered
 }
 
 // socketBlock holds the state of a socket tab the connection lifecycle owns: the connect in progress and the sends waiting their turn. The message log and the composer are the ws component's.
@@ -106,11 +103,9 @@ func (a *App) openTabs() []*reqTab {
 func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
 
 func newReqTab(tab *tabs.Tab) *reqTab {
-	req := tab.Req
 	t := &reqTab{Tab: tab}
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()
-	t.gqlVars = widget.NewTextArea(req.GraphQLVars)
 	return t
 }
 
