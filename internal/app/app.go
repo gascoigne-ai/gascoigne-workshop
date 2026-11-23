@@ -143,3 +143,8 @@ func (a *App) focusURL() {
 
 // Err is the error that ended the run, if any.
 func (a *App) Err() error { return a.err }
+
+// WaitWrites blocks until the background writes are done, for the paths that
+// must not lose data. It is exported for apptest, whose tests wait for saves
+// before they read files.
+func (a *App) WaitWrites() { a.writes.Wait() }

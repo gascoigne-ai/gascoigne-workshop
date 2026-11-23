@@ -26,6 +26,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
@@ -232,7 +233,7 @@ func (a *App) confirmDeleteCollection(col *request.Collection) {
 // opens, or a new empty one when none is left.
 func (a *App) deleteCollection(col *request.Collection) {
 	a.commitEdit()
-	a.WaitWrites() // a write still in flight would make the folder again
+	a.writes.Wait() // a write still in flight would make the folder again
 	entry, ok := a.cols.Set().ByCollection(col)
 	if !ok {
 		return
@@ -761,6 +762,17 @@ func (host responseHost) CellStyler(req *request.Request) func(string) []widget.
 // PickSave asks for the path of a file to save.
 func (host responseHost) PickSave(title, suggested string, answer func(path string)) {
 	host.pickFile(title, filedialog.SaveFile, suggested, answer)
+}
+
+// writeFile writes data to a file the user named through the Folders
+// port, off the UI goroutine; done gets the outcome on it. Writes are
+// queued by path, so two saves to one file never interleave.
+func (a *App) writeFile(path string, data []byte, done func(error)) {
+	files := a.folders
+	a.writes.Write("file "+path, serial.Job{
+		Run:  func() error { return files.Write(context.Background(), path, data) },
+		Done: done,
+	})
 }
 
 // Write saves body at path off the UI goroutine.

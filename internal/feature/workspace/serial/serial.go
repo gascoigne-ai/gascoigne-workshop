@@ -1,7 +1,9 @@
 // Package serial decides when a write to a file may start: one write per
 // name at a time, and a write asked for while one runs waits and replaces
 // any write already waiting, so the newest data is written last and an
-// older write never lands after a newer one. It does no I/O itself.
+// older write never lands after a newer one. Queue holds that rule and does
+// no I/O; Writer runs the jobs off the UI goroutine and reports their
+// outcomes through the bus.
 package serial
 
 // Job is a write and what to do with its outcome.

@@ -130,7 +130,7 @@ func (a *App) saveCollection(col *request.Collection) {
 	snapshot := col.Clone() // written off the UI goroutine while the UI goes on editing
 	a.markSaved(col)        // an error is reported once, not retried every frame
 	a.markTabsSaved(col)
-	a.write("collection:"+dir, serial.Job{
+	a.writes.Write("collection:"+dir, serial.Job{
 		Run: func() error { return a.store.Save(dir, snapshot) },
 		Done: func(err error) {
 			if err != nil {
@@ -157,7 +157,7 @@ func (a *App) workspaceTick() {
 // passed). Nothing is written for a collection without a folder.
 func (a *App) FlushWorkspace() error {
 	a.commitEdit()
-	a.WaitWrites()
+	a.writes.Wait()
 	var failed []error
 	for _, entry := range a.cols.Set().Entries {
 		if err := a.flushCollection(entry); err != nil {
@@ -173,7 +173,7 @@ func (a *App) flushCollection(entry collections.Entry) error {
 	if entry.Dir == "" {
 		return nil
 	}
-	a.WaitWrites()
+	a.writes.Wait()
 	col := entry.Collection
 	if !a.saveOf(col).Pending(a.collectionKeyNow(col)) {
 		return nil

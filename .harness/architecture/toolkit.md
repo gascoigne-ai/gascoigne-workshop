@@ -80,12 +80,12 @@ state: no diffing and no reactive system. Elements and options are indexed in th
 
 App facts kept here for now; they belong with the app.
 
-- **Background writes** (`app/asyncwrite.go`, `feature/workspace/serial`): autosave clones what
-  it writes on the UI goroutine and runs the write as a Cmd. `serial.Queue` runs one write per file
+- **Background writes** (`feature/workspace/serial`, `serial.Writer`): autosave clones what
+  it writes on the UI goroutine and runs the write as a Cmd. `serial.Writer` (its `Queue` is the rule) runs one write per file
   and keeps only the newest waiting one, so an older write never lands after a newer one; the
   outcome returns on the bus. Files the user names (saved body, Postman export, screenshot) go the
   same way through `workspace.Folders.Write`. `FlushWorkspace`, `SaveState` and `openWorkspaceAt` call
-  `waitWrites`, then write synchronously. The App does no file I/O of its own
+  `Writer.Wait`, then write synchronously. The App does no file I/O of its own
   (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `workspace.Folders` doc).
 - **Socket sends** (`request_send.go`): messages and pings go through `App.sendInOrder`, a per-tab `outbox.Outbox`
   (`internal/feature/send/outbox`: the queue and the in-flight flag, `Enqueue` and `Done`) run by a Cmd, so a slow network never stops a frame and messages keep their order.

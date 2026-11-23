@@ -67,7 +67,7 @@ type persistState struct {
 	statePath        string                                     // where the UI state is remembered
 	stateAccess      storage.Access                             // read-only when a newer build wrote the file
 	saves            map[*request.Collection]*autosave.Debounce // when each open collection was last written
-	writes           serial.Queue                               // the background writes in flight and waiting, by file
+	writes           *serial.Writer                             // the background writes, one per file at a time
 	keys             changeKeys                                 // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
 	stateSave        autosave.Debounce                          // when the remembered state was last written
 	welcomed         string                                     // the version whose welcome dialog was shown

@@ -250,7 +250,7 @@ func (a *App) SaveState() error {
 	if !a.stateWritable() {
 		return nil
 	}
-	a.WaitWrites()
+	a.writes.Wait()
 	s := a.snapshot()
 	err := a.states.Save(a.statePath, s)
 	if err == nil {
@@ -276,7 +276,7 @@ func (a *App) stateTick() {
 	}
 	snapshot, path := a.snapshot(), a.statePath
 	a.stateSave.Saved(key) // an error is reported once, not retried every frame
-	a.write("state:"+path, serial.Job{
+	a.writes.Write("state:"+path, serial.Job{
 		Run: func() error { return a.states.Save(path, snapshot) },
 		Done: func(err error) {
 			if err != nil {
@@ -338,7 +338,7 @@ func (a *App) saveHistory(tab *reqTab) {
 	for _, earlier := range tab.Earlier {
 		entries = append(entries, historyEntry(earlier.Resp, earlier.At))
 	}
-	a.write("history:"+key, serial.Job{ // the entries are values; the bodies are never changed
+	a.writes.Write("history:"+key, serial.Job{ // the entries are values; the bodies are never changed
 		Run: func() error { return store.Save(key, entries) },
 		Done: func(err error) {
 			if err != nil {
