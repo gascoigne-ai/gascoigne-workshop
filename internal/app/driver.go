@@ -11,7 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -103,7 +103,7 @@ func (d *Driver) TypeBody(text string) error {
 	}
 	tab.body.SelectAll()
 	tab.body.Insert(text)
-	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
+	editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text})
 	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }

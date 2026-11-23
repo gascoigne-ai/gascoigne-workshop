@@ -1,6 +1,6 @@
-// Package editor holds the rules of editing a request: each kind of edit is
+// Package requestedit holds the rules of editing a request: each kind of edit is
 // a message and Update returns the request after it.
-package editor
+package requestedit
 
 import (
 	"strings"
@@ -143,7 +143,7 @@ var authFields = map[AuthField]func(*request.Auth) *string{
 func authField(auth *request.Auth, field AuthField) *string {
 	place, ok := authFields[field]
 	if !ok {
-		panic("editor: unknown auth field " + string(field))
+		panic("requestedit: unknown auth field " + string(field))
 	}
 	return place(auth)
 }
@@ -220,7 +220,7 @@ var protoLists = map[ProtoList]func(*request.ProtoSource) *[]string{
 func protoList(source *request.ProtoSource, name ProtoList) *[]string {
 	place, ok := protoLists[name]
 	if !ok {
-		panic("editor: unknown proto list " + string(name))
+		panic("requestedit: unknown proto list " + string(name))
 	}
 	return place(source)
 }

@@ -5,9 +5,9 @@ import (
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
@@ -25,20 +25,20 @@ type reqTab struct {
 	responseBlock
 	url         widget.TextField
 	paneTab     int
-	bodyView    widget.CodeView                        // request body, read-only
-	tests       widget.TextArea                        // the assertions editor
-	gqlVars     widget.TextArea                        // the variables of a GraphQL body
-	file        widget.TextField                       // the path of a file body
-	fileCheck   bodyFileCheck                          // what the file system said about file's path
-	body        widget.TextArea                        // request body editor
-	reqScroll   widget.ScrollState                     // scroll of the table and note panes
-	bodyTypesX  widget.ScrollState                     // sideways scroll of the body type chips
-	reqTabsX    widget.ScrollState                     // sideways scroll of the two pane tab strips
-	timeout     widget.TextField                       // the request's timeout seconds, as typed
-	cancel      context.CancelFunc                     // stops the running request
-	auth        map[editor.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
-	showSecrets bool                                   // show masked credential fields
-	schema      *send.Schema                           // what a GraphQL introspection answered
+	bodyView    widget.CodeView                             // request body, read-only
+	tests       widget.TextArea                             // the assertions editor
+	gqlVars     widget.TextArea                             // the variables of a GraphQL body
+	file        widget.TextField                            // the path of a file body
+	fileCheck   bodyFileCheck                               // what the file system said about file's path
+	body        widget.TextArea                             // request body editor
+	reqScroll   widget.ScrollState                          // scroll of the table and note panes
+	bodyTypesX  widget.ScrollState                          // sideways scroll of the body type chips
+	reqTabsX    widget.ScrollState                          // sideways scroll of the two pane tab strips
+	timeout     widget.TextField                            // the request's timeout seconds, as typed
+	cancel      context.CancelFunc                          // stops the running request
+	auth        map[requestedit.AuthField]*widget.TextField // Auth pane inputs by field id, created on first use
+	showSecrets bool                                        // show masked credential fields
+	schema      *send.Schema                                // what a GraphQL introspection answered
 }
 
 // socketBlock holds the state of a WebSocket tab: the message log, the message being composed and the sends waiting their turn.
@@ -159,7 +159,7 @@ func (a *App) openRequest(req *request.Request) {
 
 // editRequest applies an edit to the request of tab, which is the collection's
 // own, so the sidebar and the autosave see it at once.
-func editRequest(tab *reqTab, msg editor.Msg) { *tab.Req = editor.Update(*tab.Req, msg) }
+func editRequest(tab *reqTab, msg requestedit.Msg) { *tab.Req = requestedit.Update(*tab.Req, msg) }
 
 // dirtyMark is shown on tabs whose request changed since it was opened.
 const dirtyMark = "\u2022"

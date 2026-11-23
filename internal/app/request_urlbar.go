@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -42,16 +42,16 @@ func (a *App) protocolsFor(current request.Protocol) []request.Protocol {
 
 func (a *App) cycleProtocol(tab *reqTab) {
 	a.disconnect(tab) // a connection belongs to the protocol that opened it
-	editRequest(tab, editor.ProtocolChosen{Protocol: next(a.protocolsFor(tab.Req.Protocol), tab.Req.Protocol)})
+	editRequest(tab, requestedit.ProtocolChosen{Protocol: next(a.protocolsFor(tab.Req.Protocol), tab.Req.Protocol)})
 	tab.paneTab, tab.respTab = 0, 0 // the indexes point into the panes of the protocol
 }
 
 func (a *App) cycleMethod(tab *reqTab) {
-	editRequest(tab, editor.MethodChosen{Method: next(methodOrder, tab.Req.Method)})
+	editRequest(tab, requestedit.MethodChosen{Method: next(methodOrder, tab.Req.Method)})
 }
 
 // urlEdited keeps the request and its Params table in step with the URL field.
-func (a *App) urlEdited(tab *reqTab) { editRequest(tab, editor.URLTyped{Text: tab.url.Text}) }
+func (a *App) urlEdited(tab *reqTab) { editRequest(tab, requestedit.URLTyped{Text: tab.url.Text}) }
 
 var urlBarTemplate = markup.Must("urlbar.vml", urlbarSource)
 

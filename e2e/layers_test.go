@@ -184,7 +184,7 @@ func synthetic(importPath string, imports ...string) listedPackage {
 }
 
 func TestCheckLayersRejects(t *testing.T) {
-	xtest := synthetic("internal/feature/send/editor")
+	xtest := synthetic("internal/feature/send/requestedit")
 	xtest.XTestImports = []string{testModule + "/internal/feature/history"}
 	cases := []struct {
 		name string
@@ -195,7 +195,7 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"controller external test imports another feature", xtest},
 		{"ui imports an adapter", synthetic("internal/feature/send/ui/respview", "internal/feature/send/adapter/preview")},
 		{"ui imports another ui", synthetic("internal/feature/send/ui/respview", "internal/feature/send/ui/calltrace")},
-		{"controller imports a toolkit widget", synthetic("internal/feature/send/editor", "uitoolkit/widget")},
+		{"controller imports a toolkit widget", synthetic("internal/feature/send/requestedit", "uitoolkit/widget")},
 		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/feature/history/ui/sentlog")},
 		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
 		{"exampleserver imports the send root", synthetic("internal/exampleserver", "internal/feature/send")},
@@ -212,8 +212,8 @@ func TestCheckLayersRejects(t *testing.T) {
 }
 
 func TestCheckLayersAllows(t *testing.T) {
-	ownXtest := synthetic("internal/feature/send/editor")
-	ownXtest.XTestImports = []string{testModule + "/internal/feature/send/editor", testModule + "/internal/feature/send"}
+	ownXtest := synthetic("internal/feature/send/requestedit")
+	ownXtest.XTestImports = []string{testModule + "/internal/feature/send/requestedit", testModule + "/internal/feature/send"}
 	cases := []struct {
 		name string
 		pkg  listedPackage
@@ -464,6 +464,20 @@ func TestHistoryAndCollectionAdaptersAreNamedForWhatTheyHold(t *testing.T) {
 		if listed[gone] {
 			t.Errorf("%s still holds a package: it moved into a named sub-directory", gone)
 		}
+	}
+}
+
+func TestRequestEditIsNamedForWhatItHolds(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	if !listed["internal/feature/send/requestedit"] {
+		t.Error("internal/feature/send/requestedit is not in the tree")
+	}
+	if listed["internal/feature/send/editor"] {
+		t.Error("internal/feature/send/editor still holds a package: it is renamed requestedit")
 	}
 }
 

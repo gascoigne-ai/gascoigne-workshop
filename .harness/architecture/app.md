@@ -31,7 +31,7 @@ flowchart LR
   so its goroutine dispatches `wsOpened`/`wsFailed` and each `wsReceived` itself and returns
   `wsClosed` as its `Cmd` result; a retry dispatches `wsRetry` from a timer. A dispatched `func()` runs on the UI goroutine (file dialog answers, the
   gRPC method menu, MCP sampling dialogs, `prefs.Later`).
-- **Request edits** (`feature/send/editor`): no code outside `editor` assigns to a field of a
+- **Request edits** (`feature/send/requestedit`): no code outside `requestedit` assigns to a field of a
   tab's request. `editRequest` writes the result into the collection's own request, so the
   sidebar, the autosave and the dirty dot see it at once. The gRPC stream flag is tab state, not
   part of the request. Renames and moves are tree operations (`tree.Update`, `treeops.go`).

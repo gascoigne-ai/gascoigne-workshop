@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -53,8 +53,8 @@ func TestTheSchemaPaneFollowsTheProtoPane(t *testing.T) {
 func grpcTabOnSchemaPane(t *testing.T) (*App, *reqTab) {
 	t.Helper()
 	a, tab, dir := grpcTabOnProtoPane(t)
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
-	editRequest(tab, editor.MethodChosen{Method: "grpc.health.v1.Health/Check"})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
+	editRequest(tab, requestedit.MethodChosen{Method: "grpc.health.v1.Health/Check"})
 	clickText(t, a, "Schema", 0)
 	for range 400 {
 		a.Step(core.Input{})

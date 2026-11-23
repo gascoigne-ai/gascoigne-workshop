@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -33,8 +33,8 @@ func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		"followRedirects":   !tab.Req.NoRedirects,
 		"verifyCertificate": !tab.Req.InsecureTLS,
 		"timeoutEdited":     func() { a.timeoutEdited(tab) },
-		"toggleRedirects":   func() { editRequest(tab, editor.NoRedirectsToggled{}) },
-		"toggleVerify":      func() { editRequest(tab, editor.InsecureTLSToggled{}) },
+		"toggleRedirects":   func() { editRequest(tab, requestedit.NoRedirectsToggled{}) },
+		"toggleVerify":      func() { editRequest(tab, requestedit.InsecureTLSToggled{}) },
 	}))
 }
 
@@ -43,7 +43,7 @@ func (a *App) settingsPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 func (a *App) timeoutEdited(tab *reqTab) {
 	text := strings.TrimSpace(tab.timeout.Text)
 	if text == "" {
-		editRequest(tab, editor.TimeoutSet{Seconds: 0})
+		editRequest(tab, requestedit.TimeoutSet{Seconds: 0})
 		return
 	}
 	n, err := strconv.Atoi(text)
@@ -52,7 +52,7 @@ func (a *App) timeoutEdited(tab *reqTab) {
 		tab.timeout.Focused = true
 		return
 	}
-	editRequest(tab, editor.TimeoutSet{Seconds: n})
+	editRequest(tab, requestedit.TimeoutSet{Seconds: n})
 }
 
 // Templates, parsed once above.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"strings"
 
@@ -36,7 +36,7 @@ func (a *App) pickGRPCMethod(tab *reqTab) {
 			}
 			items := make([]MenuItem, 0, len(methods))
 			for _, method := range methods {
-				items = append(items, MenuItem{Label: method, Run: func() { editRequest(tab, editor.MethodChosen{Method: method}) }})
+				items = append(items, MenuItem{Label: method, Run: func() { editRequest(tab, requestedit.MethodChosen{Method: method}) }})
 			}
 			a.openMenu(x, y, items)
 		}

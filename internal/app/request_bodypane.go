@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/ui/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/format"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
@@ -95,7 +95,7 @@ func (a *App) bodyEditor(tab *reqTab, scroll *ScrollState) Node {
 			"body":     &tab.body,
 			"wrap":     tab.body.Wrap,
 			"bodyText": &tab.body.TextField,
-			"sync":     func() { editRequest(tab, editor.BodyTyped{Text: tab.body.Text}) },
+			"sync":     func() { editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text}) },
 		})
 	case request.BodyForm, request.BodyMultipart:
 		return a.tableView(formPane, tab, scroll, 0)
@@ -114,7 +114,7 @@ func (a *App) toggleBodyWrap(tab *reqTab) { tab.body.Wrap = !tab.body.Wrap }
 
 func (a *App) setBodyType(tab *reqTab, id request.BodyType) {
 	a.commitEdit()
-	editRequest(tab, editor.BodyTypeChosen{Type: id, Text: tab.body.Text, FilePath: tab.file.Text})
+	editRequest(tab, requestedit.BodyTypeChosen{Type: id, Text: tab.body.Text, FilePath: tab.file.Text})
 }
 
 // formatBody re-indents a JSON body. Invalid JSON is left alone.
@@ -126,7 +126,7 @@ func (a *App) formatBody(tab *reqTab) {
 	}
 	tab.body.SelectAll()
 	tab.body.Insert(out) // as an edit, so it can be undone
-	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
+	editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text})
 }
 
 // jsonStyler colors one line of a JSON body.

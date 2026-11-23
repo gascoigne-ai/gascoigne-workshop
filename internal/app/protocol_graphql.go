@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
@@ -18,8 +18,8 @@ var graphQLTemplate = markup.Must("graphql.vml", graphqlSource)
 // graphQLBody is the editor of a GraphQL body: the query, the variables as
 // JSON, and a button that asks the server for its schema.
 func (a *App) graphQLBody(tab *reqTab) Node {
-	syncQuery := func() { editRequest(tab, editor.BodyTyped{Text: tab.body.Text}) }
-	syncVars := func() { editRequest(tab, editor.VarsTyped{Text: tab.gqlVars.Text}) }
+	syncQuery := func() { editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text}) }
+	syncVars := func() { editRequest(tab, requestedit.VarsTyped{Text: tab.gqlVars.Text}) }
 	status, valid := format.JSONStatus(tab.gqlVars.Text)
 	statusColor := w.Error
 	if valid {
@@ -73,7 +73,7 @@ func (a *App) schemaMenu(tab *reqTab) []MenuItem {
 func (a *App) useOperation(tab *reqTab, op send.Operation) {
 	tab.body = NewTextArea(op.Query)
 	tab.gqlVars = NewTextArea(op.Variables)
-	editRequest(tab, editor.OperationChosen{Query: op.Query, Variables: op.Variables})
+	editRequest(tab, requestedit.OperationChosen{Query: op.Query, Variables: op.Variables})
 }
 
 // rememberSchema keeps the schema when resp is an introspection answer;

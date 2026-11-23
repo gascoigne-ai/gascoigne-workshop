@@ -40,7 +40,7 @@ domain directory under `internal/` (root, controllers, `ui/`, `adapter/`) or the
 
 | File | Module | Owns |
 |---|---|---|
-| `internal/feature/send/FEATURE.md` | `internal/feature/send`, `internal/feature/request` | the request model and ports (kernel), protocols (rest, websocket, sse, mcp, grpc), assert, editor, mcpexplorer, response viewer and views, calltrace, mcpform, browser preview |
+| `internal/feature/send/FEATURE.md` | `internal/feature/send`, `internal/feature/request` | the request model and ports (kernel), protocols (rest, websocket, sse, mcp, grpc), assert, requestedit, mcpexplorer, response viewer and views, calltrace, mcpform, browser preview |
 | `internal/feature/collections/FEATURE.md` | `internal/feature/collections` | open set, tree, importers, transfer, store, client config, sample and example server |
 | `internal/feature/environments/FEATURE.md` | `internal/feature/environments` | environments, variables resolution, the chip's menu |
 | `internal/feature/history/FEATURE.md` | `internal/feature/history` | responses kept per request, sent log |

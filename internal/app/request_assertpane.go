@@ -3,7 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -42,7 +42,7 @@ const assertionsHelp = "One assertion per line: status == 200, time < 500ms, hea
 // assertionsPane is where the assertions are written, one per line.
 func (a *App) assertionsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 	sync := func() {
-		editRequest(tab, editor.TestsTyped{Text: tab.tests.Text})
+		editRequest(tab, requestedit.TestsTyped{Text: tab.tests.Text})
 		tab.testResults = assert.Run(tab.Req.Tests, tab.Resp) // live, against the response on screen
 	}
 	return assertionsTemplate.MustBuild(markup.Scope{

@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -67,7 +67,7 @@ func (a *App) checkBodyFile(tab *reqTab) {
 
 // fileBody is the editor of a file body: the path, and a button to pick it.
 func (a *App) fileBody(tab *reqTab) Node {
-	sync := func() { editRequest(tab, editor.BodyTyped{Text: tab.file.Text}) }
+	sync := func() { editRequest(tab, requestedit.BodyTyped{Text: tab.file.Text}) }
 	a.checkBodyFile(tab)
 	look := bodyFileLooks[bodyFileUnknown]
 	if tab.file.Text != "" { // asked about just above

@@ -11,7 +11,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/exampleserver"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -29,7 +29,7 @@ func grpcTabOnProtoPane(t *testing.T) (a *App, tab *reqTab, dir string) {
 	dir = t.TempDir()
 	a.setWorkspace(dir)
 	tab = a.cur()
-	editRequest(tab, editor.ProtocolChosen{Protocol: "grpc"})
+	editRequest(tab, requestedit.ProtocolChosen{Protocol: "grpc"})
 	tab.MarkSaved()
 	clickText(t, a, "Proto", 0)
 	return a, tab, dir
@@ -119,7 +119,7 @@ func TestAddFileListsTheChosenFileRelativeToTheCollection(t *testing.T) {
 	if !reflect.DeepEqual(tab.Req.Proto.Files, []string{health}) || !tab.Dirty() {
 		t.Fatalf("files %v dirty %v, want [%s] and an edited tab", tab.Req.Proto.Files, tab.Dirty(), health)
 	}
-	if input := tab.protoInput(editor.ProtoFiles, 0); input.Text != "protos/health.proto" {
+	if input := tab.protoInput(requestedit.ProtoFiles, 0); input.Text != "protos/health.proto" {
 		t.Errorf("the row shows %q, want the path relative to the collection", input.Text)
 	}
 }
@@ -144,13 +144,13 @@ func TestTypingAPathSetsItFromTheCollectionFolder(t *testing.T) {
 func TestRemoveDropsThatRowOnly(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
 	first, second := protoFileIn(t, dir, "a.proto", nil), protoFileIn(t, dir, "b.proto", nil)
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: first})
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: second})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: first})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: second})
 	clickDumped(t, a, "tip=Remove", 0)
 	if !reflect.DeepEqual(tab.Req.Proto.Files, []string{second}) {
 		t.Fatalf("files %q, want only %s", tab.Req.Proto.Files, second)
 	}
-	if input := tab.protoInput(editor.ProtoFiles, 0); input.Text != "protos/b.proto" {
+	if input := tab.protoInput(requestedit.ProtoFiles, 0); input.Text != "protos/b.proto" {
 		t.Errorf("the remaining row shows %q", input.Text)
 	}
 }
@@ -159,8 +159,8 @@ func TestRemoveDropsThatRowOnly(t *testing.T) {
 // edited and saved without them.
 func TestChoosingReflectionDropsTheFilesAndImportPaths(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ImportPaths, Path: filepath.Join(dir, "protos")})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ImportPaths, Path: filepath.Join(dir, "protos")})
 	tab.MarkSaved()
 	clickText(t, a, "Reflection", 0)
 	if !reflect.DeepEqual(tab.Req.Proto, request.ProtoSource{}) || !tab.Dirty() {
@@ -181,7 +181,7 @@ func TestAParseErrorShowsWithFileLineAndColumn(t *testing.T) {
 	}
 	lines := strings.SplitAfter(string(source), "\n")
 	broken := protoFileIn(t, dir, "broken.proto", []byte(strings.Join(lines[:33], "")))
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: broken})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: broken})
 	want := `text="protos/broken.proto:34:`
 	until(t, a, "the parse error", func() bool { return strings.Contains(layoutDump(a), want) })
 	for _, line := range strings.Split(layoutDump(a), "\n") {
@@ -220,8 +220,8 @@ func TestAServerWithoutReflectionIsCalledFromTheProtoFileAddedInThePane(t *testi
 	a, tab, dir := grpcTabOnProtoPane(t)
 	urls := exampleServerURLs(t)
 	pointTabAt(tab, urls["grpc-no-reflection"])
-	editRequest(tab, editor.MethodChosen{Method: "grpc.health.v1.Health/Check"})
-	editRequest(tab, editor.BodyTyped{Text: `{"service": "example"}`})
+	editRequest(tab, requestedit.MethodChosen{Method: "grpc.health.v1.Health/Check"})
+	editRequest(tab, requestedit.BodyTyped{Text: `{"service": "example"}`})
 
 	tab.Resp = nil
 	a.send(tab)
@@ -255,8 +255,8 @@ func TestSendingWithABrokenProtoFileShowsWhereItBreaks(t *testing.T) {
 	lines := strings.SplitAfter(string(source), "\n")
 	broken := protoFileIn(t, dir, "broken.proto", []byte(strings.Join(lines[:33], "")))
 	pointTabAt(tab, urls["grpc"]) // the port with reflection: the files must still win
-	editRequest(tab, editor.MethodChosen{Method: "grpc.health.v1.Health/Check"})
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: broken})
+	editRequest(tab, requestedit.MethodChosen{Method: "grpc.health.v1.Health/Check"})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: broken})
 	tab.Resp = nil
 	a.send(tab)
 	waitForResponse(t, a, tab)
@@ -270,7 +270,7 @@ func TestSendingWithABrokenProtoFileShowsWhereItBreaks(t *testing.T) {
 func TestPickingAMethodFromProtoFilesNeedsNoServer(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
 	tab.Req.URL = ""
-	editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
+	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
 	a.pickGRPCMethod(tab)
 	until(t, a, "the menu of methods", func() bool { return widget.PopupMenu(a.ctx) != nil })
 	if got := strings.Join(menuLabels(a), " "); !strings.Contains(got, "grpc.health.v1.Health/Check") {

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -175,7 +175,7 @@ func (a *App) fillBody(tab *reqTab, schema *request.MessageSchema) {
 	}
 	tab.body.SelectAll()
 	tab.body.Insert(schema.Skeleton())
-	editRequest(tab, editor.BodyTyped{Text: tab.body.Text})
+	editRequest(tab, requestedit.BodyTyped{Text: tab.body.Text})
 	for i, p := range requestPanesFor(tab) {
 		if p.kind == paneBody {
 			tab.paneTab = i

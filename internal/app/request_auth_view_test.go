@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -80,14 +80,14 @@ func TestTheAuthFieldsEditTheTabsInputs(t *testing.T) {
 		name        string
 		auth        request.Auth
 		showSecrets bool
-		ids         []editor.AuthField
+		ids         []requestedit.AuthField
 		masked      []bool
 	}{
-		{"bearer", request.Auth{Type: request.AuthBearer}, false, []editor.AuthField{"token"}, []bool{true}},
-		{"bearer shown", request.Auth{Type: request.AuthBearer}, true, []editor.AuthField{"token"}, []bool{false}},
-		{"basic", request.Auth{Type: request.AuthBasic}, false, []editor.AuthField{"user", "password"}, []bool{false, true}},
-		{"api key", request.Auth{Type: request.AuthAPIKey}, false, []editor.AuthField{"keyname", "keyvalue"}, []bool{false, true}},
-		{"api key shown", request.Auth{Type: request.AuthAPIKey}, true, []editor.AuthField{"keyname", "keyvalue"}, []bool{false, false}},
+		{"bearer", request.Auth{Type: request.AuthBearer}, false, []requestedit.AuthField{"token"}, []bool{true}},
+		{"bearer shown", request.Auth{Type: request.AuthBearer}, true, []requestedit.AuthField{"token"}, []bool{false}},
+		{"basic", request.Auth{Type: request.AuthBasic}, false, []requestedit.AuthField{"user", "password"}, []bool{false, true}},
+		{"api key", request.Auth{Type: request.AuthAPIKey}, false, []requestedit.AuthField{"keyname", "keyvalue"}, []bool{false, true}},
+		{"api key shown", request.Auth{Type: request.AuthAPIKey}, true, []requestedit.AuthField{"keyname", "keyvalue"}, []bool{false, false}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

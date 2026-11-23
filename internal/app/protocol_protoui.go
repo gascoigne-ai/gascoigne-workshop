@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -36,7 +36,7 @@ type protoState struct {
 
 // protoRowKey names one path row of the Proto pane.
 type protoRowKey struct {
-	list  editor.ProtoList
+	list  requestedit.ProtoList
 	index int
 }
 
@@ -87,7 +87,7 @@ func protoFilesShown(tab *reqTab) bool {
 
 // protoInput is the text field of a path row, made on first use with the
 // path as the collection saves it: relative to its folder when inside.
-func (t *reqTab) protoInput(list editor.ProtoList, index int) *TextField {
+func (t *reqTab) protoInput(list requestedit.ProtoList, index int) *TextField {
 	path := protoPaths(t.Req.Proto, list)[index]
 	key := protoRowKey{list, index}
 	if input, ok := t.proto.inputs[key]; ok && pathFromText(t.proto.dir, input.Text) == path {
@@ -113,8 +113,8 @@ func pathFromText(dir, text string) string {
 	return request.LoadedPath(dir, text)
 }
 
-func protoPaths(source request.ProtoSource, list editor.ProtoList) []string {
-	if list == editor.ImportPaths {
+func protoPaths(source request.ProtoSource, list requestedit.ProtoList) []string {
+	if list == requestedit.ImportPaths {
 		return source.ImportPaths
 	}
 	return source.Files
@@ -132,7 +132,7 @@ func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	chooseReflection := func() {
 		tab.proto.filesChosen = false
 		if !reflect.DeepEqual(tab.Req.Proto, request.ProtoSource{}) {
-			editRequest(tab, editor.ReflectionChosen{})
+			editRequest(tab, requestedit.ReflectionChosen{})
 		}
 	}
 	sources := []protoSourceChip{
@@ -140,9 +140,9 @@ func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 		{Label: "Proto files", Width: protoFilesChipW, Chosen: shown, Pick: func() { tab.proto.filesChosen = true }},
 	}
 	lists := []protoListView{
-		a.protoList(tab, editor.ProtoFiles, "Files", "Add file...", addFileButtonW, func() { a.addProtoFile(tab) }),
-		a.protoList(tab, editor.ImportPaths, "Import paths", "Add path", addPathButtonW, func() {
-			editRequest(tab, editor.ProtoPathAdded{List: editor.ImportPaths})
+		a.protoList(tab, requestedit.ProtoFiles, "Files", "Add file...", addFileButtonW, func() { a.addProtoFile(tab) }),
+		a.protoList(tab, requestedit.ImportPaths, "Import paths", "Add path", addPathButtonW, func() {
+			editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ImportPaths})
 		}),
 	}
 	return protoPaneTemplate.MustBuild(a.scope(markup.Scope{
@@ -155,15 +155,15 @@ func (a *App) protoPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	}))
 }
 
-func (a *App) protoList(tab *reqTab, list editor.ProtoList, caption, addLabel string, addWidth int, add func()) protoListView {
+func (a *App) protoList(tab *reqTab, list requestedit.ProtoList, caption, addLabel string, addWidth int, add func()) protoListView {
 	paths := protoPaths(tab.Req.Proto, list)
 	rows := make([]protoRowView, 0, len(paths))
 	for index := range paths {
 		input := tab.protoInput(list, index)
 		sync := func() {
-			editRequest(tab, editor.ProtoPathSet{List: list, Index: index, Path: pathFromText(tab.proto.dir, input.Text)})
+			editRequest(tab, requestedit.ProtoPathSet{List: list, Index: index, Path: pathFromText(tab.proto.dir, input.Text)})
 		}
-		remove := func() { editRequest(tab, editor.ProtoPathRemoved{List: list, Index: index}) }
+		remove := func() { editRequest(tab, requestedit.ProtoPathRemoved{List: list, Index: index}) }
 		rows = append(rows, protoRowView{Input: input, Sync: sync, Remove: remove})
 	}
 	return protoListView{Caption: caption, Rows: rows, AddLabel: addLabel, AddWidth: addWidth, Add: add}
@@ -173,7 +173,7 @@ func (a *App) protoList(tab *reqTab, list editor.ProtoList, caption, addLabel st
 func (a *App) addProtoFile(tab *reqTab) {
 	a.pickFile("Choose a .proto file", filedialog.OpenFile, "", func(path string) {
 		tab.proto.filesChosen = true
-		editRequest(tab, editor.ProtoPathAdded{List: editor.ProtoFiles, Path: path})
+		editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: path})
 	})
 }
 

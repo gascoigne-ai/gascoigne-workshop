@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/editor"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -19,7 +19,7 @@ type authChoice struct {
 // id names the text field's place in the request's Auth, which the editor
 // package knows.
 type authField struct {
-	id      editor.AuthField
+	id      requestedit.AuthField
 	label   string
 	secret  bool
 	choices []authChoice
@@ -37,15 +37,15 @@ type authType struct {
 var authTypes = []authType{
 	{id: request.AuthNone, label: "None", width: 64},
 	{id: request.AuthBearer, label: "Bearer", width: 72, fields: []authField{
-		{id: editor.AuthToken, label: "Token", secret: true},
+		{id: requestedit.AuthToken, label: "Token", secret: true},
 	}},
 	{id: request.AuthBasic, label: "Basic", width: 64, fields: []authField{
-		{id: editor.AuthUser, label: "User"},
-		{id: editor.AuthPassword, label: "Password", secret: true},
+		{id: requestedit.AuthUser, label: "User"},
+		{id: requestedit.AuthPassword, label: "Password", secret: true},
 	}},
 	{id: request.AuthAPIKey, label: "API key", width: 80, fields: []authField{
-		{id: editor.AuthKeyName, label: "Name"},
-		{id: editor.AuthKeyValue, label: "Value", secret: true},
+		{id: requestedit.AuthKeyName, label: "Name"},
+		{id: requestedit.AuthKeyValue, label: "Value", secret: true},
 		{label: "Add to",
 			choices: []authChoice{{request.KeyInHeader, "Header"}, {request.KeyInQuery, "Query"}}},
 	}},
@@ -62,7 +62,7 @@ func authTypeOf(id request.AuthType) authType {
 }
 
 // authFieldByID finds a field in any type.
-func authFieldByID(id editor.AuthField) (authField, bool) {
+func authFieldByID(id requestedit.AuthField) (authField, bool) {
 	for _, t := range authTypes {
 		for _, f := range t.fields {
 			if f.id == id {
@@ -75,18 +75,18 @@ func authFieldByID(id editor.AuthField) (authField, bool) {
 
 // authInput is the text field of an Auth pane field, created on first
 // use from the request's stored value. Secret fields start masked.
-func (t *reqTab) authInput(id editor.AuthField) *TextField {
+func (t *reqTab) authInput(id requestedit.AuthField) *TextField {
 	if in, ok := t.auth[id]; ok {
 		return in
 	}
 	f, _ := authFieldByID(id)
 	in := new(TextField)
 	if f.id != "" {
-		*in = NewTextField(editor.AuthValue(t.Req.Auth, f.id))
+		*in = NewTextField(requestedit.AuthValue(t.Req.Auth, f.id))
 	}
 	in.Masked = f.secret && !t.showSecrets
 	if t.auth == nil {
-		t.auth = map[editor.AuthField]*TextField{}
+		t.auth = map[requestedit.AuthField]*TextField{}
 	}
 	t.auth[id] = in
 	return in
@@ -129,7 +129,7 @@ func (a *App) authPane(_ pane, tab *reqTab, scroll *ScrollState) Node {
 	current := authTypeOf(tab.Req.Auth.Type)
 	types := make([]authChip, 0, len(authTypes))
 	for _, at := range authTypes {
-		pick := func() { editRequest(tab, editor.AuthTypeChosen{Type: at.id}) }
+		pick := func() { editRequest(tab, requestedit.AuthTypeChosen{Type: at.id}) }
 		types = append(types, authChip{Label: at.label, Width: at.width, Chosen: at.id == current.id, Pick: pick})
 	}
 	hasSecret := false
@@ -157,7 +157,7 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 		stored := tab.Req.Auth.KeyIn
 		chips := make([]authChip, 0, len(field.choices))
 		for _, c := range field.choices {
-			pick := func() { editRequest(tab, editor.AuthKeyInChosen{In: c.id}) }
+			pick := func() { editRequest(tab, requestedit.AuthKeyInChosen{In: c.id}) }
 			lit := stored == c.id || (stored == "" && c.id == request.KeyInHeader)
 			chips = append(chips, authChip{Label: c.label, Width: authChoiceChipWidth, Chosen: lit, Pick: pick})
 		}
@@ -165,7 +165,7 @@ func authFieldRow(tab *reqTab, field authField) authRow {
 	}
 	in := tab.authInput(field.id)
 	in.Masked = field.secret && !tab.showSecrets
-	sync := func() { editRequest(tab, editor.AuthFieldSet{Field: field.id, Value: in.Text}) }
+	sync := func() { editRequest(tab, requestedit.AuthFieldSet{Field: field.id, Value: in.Text}) }
 	return authRow{Label: field.label, Input: in, Sync: sync}
 }
 
