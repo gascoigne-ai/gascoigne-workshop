@@ -6,7 +6,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 )
 
 func TestSendAppliesSettingsMessages(t *testing.T) {

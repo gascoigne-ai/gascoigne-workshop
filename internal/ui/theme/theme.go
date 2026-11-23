@@ -2,13 +2,12 @@
 // (HTTP-method, JSON and collection colors), the color tokens for them
 // and the mapping from settings to a toolkit theme.
 //
-// It sits directly under its domain and imports uitoolkit/core and
-// uitoolkit/theming by written exception to "model imports only model":
-// theme data is toolkit-bound (core.Theme, core.Token). The user chose
-// this over putting it in uitoolkit/theming (the toolkit would learn the
-// app's colors) and over a ui package (ui must not import ui, and
-// settingsui, colorpage and the app all need it). Revisit when the
-// toolkit-free data (tokens as strings) can be split from the build.
+// It sits in the ui zone, which may import the toolkit, so importing
+// uitoolkit/core and uitoolkit/theming (core.Theme, core.Token: theme
+// data is toolkit-bound) needs no written exception. The user rejected
+// putting it in uitoolkit/theming (the toolkit would learn the app's
+// colors). Revisit when the toolkit-free data (tokens as strings) can be
+// split from the build.
 package theme
 
 import (

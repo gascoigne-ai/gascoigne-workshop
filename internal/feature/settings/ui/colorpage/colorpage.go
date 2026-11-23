@@ -6,7 +6,7 @@ package colorpage
 import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/theme"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"image/color"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"

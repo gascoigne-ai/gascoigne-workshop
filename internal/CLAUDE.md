@@ -24,10 +24,9 @@ Layout C, feature slices. Every domain has moved; `internal/workspace` is gone.
 - An adapter imports its root, controllers and adapters of its own domain. It never imports a `ui`.
 - Another domain is reached through the base feature, that is the `request` model. Nothing else crosses between features; `go list` shows it. `app` may import anything.
 - Written exception: `internal/exampleserver` (a dev tool, not a feature) imports `feature/send/adapter/protocol/ws`, the WebSocket framing it serves.
-- Written exception: `feature/settings/theme` imports `uitoolkit/core` and `uitoolkit/theming`, because theme data is toolkit-bound. Its package doc says why.
 - A new package goes into the base feature, `storage`, a domain, or its `ui` or `adapter` zone. No `utils`, `common` or `helpers`.
 
-`make check` enforces these rules: `e2e/layers_test.go` reads the compiler's direct imports (`go list`, both tag sets, test files included) and checks them against the default-deny rule table in `e2e/layers_rules_test.go`. Every written exception is a row there with its reason. Seven test-only rows let a test file import a real adapter or package as a fixture (`exampleserver` tests, `settings/theme` tests (`ui/format`), `history/ui/sentlog`, `settings/ui/formpage`, `settings/ui/settingsui`); a production import never matches them. A new exception is a new row, with the user's approval.
+`make check` enforces these rules: `e2e/layers_test.go` reads the compiler's direct imports (`go list`, both tag sets, test files included) and checks them against the default-deny rule table in `e2e/layers_rules_test.go`. Every written exception is a row there with its reason. Six test-only rows let a test file import a real adapter or package as a fixture (`exampleserver` tests, `history/ui/sentlog`, `settings/ui/formpage`, `settings/ui/settingsui`); a production import never matches them. A new exception is a new row, with the user's approval.
 
 During the reorganization (`.harness/reorg.md`) the table accepts both layouts: `currentLayoutRules` for the tree as it is, `targetLayoutRules` beside them for the target zones (`base`, `uilogic`, `ui`, the `Below` flag for a parent importing its children). A target row may match no import until its packages move. The last reorganization task drops the old rows and zones.
 

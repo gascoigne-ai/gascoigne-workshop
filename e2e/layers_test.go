@@ -199,7 +199,6 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/feature/history/ui/sentlog")},
 		{"toolkit imports internal", synthetic("uitoolkit/widget", "internal/feature/request")},
 		{"exampleserver imports the send root", synthetic("internal/exampleserver", "internal/feature/send")},
-		{"settings theme imports a toolkit widget", synthetic("internal/feature/settings/theme", "uitoolkit/widget")},
 		{"unclassified internal package", synthetic("internal/stuff")},
 	}
 	for _, tc := range cases {
@@ -218,7 +217,7 @@ func TestCheckLayersAllows(t *testing.T) {
 		name string
 		pkg  listedPackage
 	}{
-		{"theme imports toolkit core and theming", synthetic("internal/feature/settings/theme", "uitoolkit/core", "uitoolkit/theming")},
+		{"theme imports toolkit core and theming", synthetic("internal/ui/theme", "uitoolkit/core", "uitoolkit/theming")},
 		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/feature/send/ui/respview")},
 		{"cmd is not checked", synthetic("cmd/workshop", "internal/app", "internal/feature/send")},
 		{"e2e is not checked", synthetic("e2e", "internal/feature/send")},
@@ -478,6 +477,27 @@ func TestRequestEditIsNamedForWhatItHolds(t *testing.T) {
 	}
 	if listed["internal/feature/send/editor"] {
 		t.Error("internal/feature/send/editor still holds a package: it is renamed requestedit")
+	}
+}
+
+// The theme sits in ui, which may import the toolkit, so it needs no written
+// exception: the rule table names no row for it.
+func TestThemeLivesInUIWithoutAnException(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	if !listed["internal/ui/theme"] {
+		t.Error("internal/ui/theme is not in the tree")
+	}
+	if listed["internal/feature/settings/theme"] {
+		t.Error("internal/feature/settings/theme still holds a package: it moved to internal/ui/theme")
+	}
+	for _, rule := range layerRules {
+		if strings.Contains(rule.Name, "settings/theme") {
+			t.Errorf("rule %q still names settings/theme", rule.Name)
+		}
 	}
 }
 
