@@ -184,6 +184,11 @@ func synthetic(importPath string, imports ...string) listedPackage {
 }
 
 func TestCheckLayersRejects(t *testing.T) {
+	windowTest := func(adapter string) listedPackage {
+		pkg := synthetic("internal/ui/window")
+		pkg.TestImports = []string{testModule + "/" + adapter}
+		return pkg
+	}
 	xtest := synthetic("internal/feature/send/requestedit")
 	xtest.XTestImports = []string{testModule + "/internal/feature/history"}
 	cases := []struct {
@@ -194,6 +199,7 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"feature root imports another feature root", synthetic("internal/feature/send", "internal/feature/history")},
 		{"controller external test imports another feature", xtest},
 		{"ui imports an adapter", synthetic("internal/ui/response/respview", "internal/feature/send/adapter/preview")},
+		{"window test imports the preview adapter", windowTest("internal/feature/send/adapter/preview")},
 		{"ui imports another ui", synthetic("internal/ui/response/respview", "internal/ui/overlays/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/requestedit", "uitoolkit/widget")},
 		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/ui/sidebar/sentlog")},
@@ -354,10 +360,15 @@ func TestCheckLayersWindowTestFixtures(t *testing.T) {
 		"internal/feature/workspace/adapter/statefile", "internal/feature/workspace/adapter/folders",
 		"internal/feature/send/adapter/preview", "internal/feature/send/adapter/protocol/ws", "internal/exampleserver",
 	}
+	// The window's tests use a fake preview, so only its production half is checked.
+	testlessAdapters := map[string]bool{"internal/feature/send/adapter/preview": true}
 	for _, adapter := range adapters {
 		production := synthetic("internal/ui/window", adapter)
 		if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
 			t.Errorf("window production code imports %s: must be a violation", adapter)
+		}
+		if testlessAdapters[adapter] {
+			continue
 		}
 		test := synthetic("internal/ui/window")
 		test.TestImports = []string{testModule + "/" + adapter}
