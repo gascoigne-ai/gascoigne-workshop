@@ -352,8 +352,10 @@ func TestCheckLayersFileBrowserTestsMayNotImportFolders(t *testing.T) {
 	}
 }
 
-// The whole-window tests run on the real adapters, as apptest does; the rows
-// are for test files only.
+// The whole-window flow tests run on the real stores, protocols and servers;
+// the rows are for test files only. Production code may import none of the
+// nine adapters; tests may import the seven with a row, while preview and
+// folders (faked in the window's tests) are rejected there too.
 func TestCheckLayersWindowTestFixtures(t *testing.T) {
 	adapters := []string{
 		"internal/feature/collections/adapter/collectionstore", "internal/feature/history/adapter/historyfile",
@@ -361,8 +363,7 @@ func TestCheckLayersWindowTestFixtures(t *testing.T) {
 		"internal/feature/workspace/adapter/statefile", "internal/feature/workspace/adapter/folders",
 		"internal/feature/send/adapter/preview", "internal/feature/send/adapter/protocol/ws", "internal/exampleserver",
 	}
-	// The window's tests use a fake preview and fake folders, so only the production half is checked.
-	testlessAdapters := map[string]bool{
+	rejectedInTests := map[string]bool{
 		"internal/feature/send/adapter/preview":      true,
 		"internal/feature/workspace/adapter/folders": true,
 	}
@@ -371,12 +372,16 @@ func TestCheckLayersWindowTestFixtures(t *testing.T) {
 		if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
 			t.Errorf("window production code imports %s: must be a violation", adapter)
 		}
-		if testlessAdapters[adapter] {
-			continue
-		}
 		test := synthetic("internal/ui/window")
 		test.TestImports = []string{testModule + "/" + adapter}
-		if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) != 0 {
+		got := checkLayers(testModule, layerRules, []listedPackage{test})
+		if rejectedInTests[adapter] {
+			if len(got) == 0 {
+				t.Errorf("window test imports %s: must be a violation", adapter)
+			}
+			continue
+		}
+		if len(got) != 0 {
 			t.Errorf("window test imports %s: must pass, got %v", adapter, got)
 		}
 	}
