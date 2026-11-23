@@ -1,7 +1,10 @@
 ## formal/: claims about the real code
 
-`formal/<area>/` holds test files only, one package per area (`escape`, later `sending`,
-`connection`). Each states claims in domain words (`claims_test.go`), drives the real feature
+`formal/<area>/` holds test files only, one package per area: `escape` (overlay Escape and keyboard
+rules, verified over all layer sets), `sending` (`sends.Sends`: one send per owner, late answers
+dropped, numbers, cancel once; `Conform` against a small oracle) and `connection` (`tabs.Connection`:
+refused events, session, user close, retry, stale connects, leaving Connecting; verified on the
+real value). Each states claims in domain words (`claims_test.go`), drives the real feature
 packages and says how strong the evidence is, using `gascoigne-formal`. The zone `formal` may import
 base, feature roots and controllers, from test files only (`e2e/layers_rules_test.go`).
 
@@ -19,3 +22,6 @@ base, feature roots and controllers, from test files only (`e2e/layers_rules_tes
   `formal.lock` of each package. Change a claim sentence, then `formal accept -m "<reason>"`; first
   write a lock with `go test ./formal/<area> -run TestClaimsMatchTheirLock -update`.
 - The library is private: set `GOPRIVATE=github.com/gascoigne-ai/*` and give git ssh access.
+- `Conform` walks end with chance one half at each step; set `MinSteps` so a bug that needs a run of
+  steps (begin, cancel, begin, late answer) is reached. Each broken use of the real code is a test
+  that the walk diverges, which also shows the walk is long enough.
