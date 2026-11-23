@@ -14,7 +14,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 		t.Fatalf("title %q", got)
 	}
 	a.cur().Req.URL = "https://changed.test"
-	a.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
+	a.keys.MarkStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	if got := a.Title(); !strings.HasPrefix(got, dirtyMark+" ") {
 		t.Fatalf("an edited request in the in-memory sample is unsaved: %q", got)
 	}
@@ -27,7 +27,7 @@ func TestTitleShowsTheCollectionAndAnUnsavedMark(t *testing.T) {
 		t.Fatalf("a fresh workspace is saved: %q", w.Title())
 	}
 	w.cur().Req.URL = "https://typed.test"
-	w.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
+	w.keys.MarkStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	if !strings.HasPrefix(w.Title(), dirtyMark) {
 		t.Fatalf("a pending edit shows: %q", w.Title())
 	}

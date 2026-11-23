@@ -3,10 +3,28 @@ package app
 import (
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
+
+// countingSources is the app's key sources with the builds and the
+// comparisons counted.
+type countingSources struct {
+	keysHost
+	builds, compares *int
+}
+
+func (sources countingSources) CollectionKey(col request.Collection) string {
+	*sources.builds++
+	return sources.keysHost.CollectionKey(col)
+}
+
+func (sources countingSources) Dirty(tab *tabs.Tab) bool {
+	*sources.compares++
+	return sources.keysHost.Dirty(tab)
+}
 
 // An idle frame (no input, no message, no window change) must not build
 // the JSON form of the collection: that costs time in proportion to its
@@ -15,7 +33,7 @@ func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 	a := testApp(t)
 	a.setWorkspace(t.TempDir())
 	var calls int
-	a.keys.collectionOf = func(col request.Collection) string { calls++; return tree.Key(col) }
+	a.keys = autosave.NewKeys(countingSources{keysHost{a}, &calls, new(int)})
 	for range 30 {
 		a.Step(core.Input{})
 	}
@@ -34,7 +52,7 @@ func TestIdleFramesDoNotRebuildTheChangeKeys(t *testing.T) {
 func TestIdleFramesDoNotRecompareTheTabsWithTheirSavedCopies(t *testing.T) {
 	a := testApp(t)
 	var calls int
-	a.keys.dirtyOf = func(tab *reqTab) bool { calls++; return dirty(tab) }
+	a.keys = autosave.NewKeys(countingSources{keysHost{a}, new(int), &calls})
 	a.Step(core.Input{})
 	before := calls
 	for range 30 {

@@ -59,7 +59,7 @@ func titleMarked(app *App) bool { return strings.HasPrefix(app.Title(), dirtyMar
 func autosaveAfterPause(app *App) {
 	now := time.Now()
 	app.now = func() time.Time { return now }
-	app.markStale() // the tests edit the model directly, with no input to mark the keys stale
+	app.keys.MarkStale() // the tests edit the model directly, with no input to mark the keys stale
 	app.Step(core.Input{})
 	now = now.Add(2 * saveDebounce)
 	app.Step(core.Input{})
@@ -80,7 +80,7 @@ func TestTheUnsavedMarksFollowTheCollectionOfEachTab(t *testing.T) {
 	alphaCall, betaCall := alpha.Requests[0], beta.Requests[0]
 
 	alphaCall.URL = "http://alpha.edited"
-	a.markStale() // the test edits the model directly
+	a.keys.MarkStale() // the test edits the model directly
 	if !shownTab(t, a, alphaCall).Dirty || shownTab(t, a, betaCall).Dirty {
 		t.Fatalf("after editing Alpha: Alpha's tab %v, Beta's %v", shownTab(t, a, alphaCall).Dirty, shownTab(t, a, betaCall).Dirty)
 	}
@@ -94,7 +94,7 @@ func TestTheUnsavedMarksFollowTheCollectionOfEachTab(t *testing.T) {
 	}
 
 	betaCall.URL = "http://beta.edited"
-	a.markStale()
+	a.keys.MarkStale()
 	a.saveCollection(beta)
 	a.WaitWrites()
 	if !shownTab(t, a, alphaCall).Dirty || shownTab(t, a, betaCall).Dirty {
@@ -192,7 +192,7 @@ func TestRenamingACollectionMovesOnlyItsFolderAndClearsWhatItSaved(t *testing.T)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	alphaCall, betaCall := alpha.Requests[0], beta.Requests[0]
 	alphaCall.URL = "http://alpha.pending"
-	a.markStale()
+	a.keys.MarkStale()
 
 	a.renameCollection(beta, "Gamma")
 	gammaDir := filepath.Join(filepath.Dir(betaDir), "gamma")

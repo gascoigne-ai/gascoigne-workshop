@@ -35,6 +35,7 @@ flowchart LR
   tab's request. `editRequest` writes the result into the collection's own request, so the
   sidebar, the autosave and the dirty dot see it at once. The gRPC stream flag is tab state, not
   part of the request: it is kept by `ui/editor/grpc`. Renames and moves are tree operations (`tree.Update`, `treeops.go`).
+- **Change keys** (`feature/workspace/autosave.Keys`, `App.keys`): the cached comparable forms the autosave timers and the window title read. `keysHost` (`window_hosts.go`) builds them; `beginFrame` marks them stale on input, a bus message or a geometry change, and code that saves or compares at once asks `CollectionNow`.
 - **Tab list** (`feature/workspace/tabs`): is `App.tabs`, a `tabs.Set` (owner of the open tabs and the current one; `Current()` is nil only before
   the first `Open`, closing the last tab leaves a blank one). It changes only through `Set.Apply` (a
   wrapper of the pure `tabs.Update`), and `App.updateTabs` is its only mutating caller: after each

@@ -146,7 +146,7 @@ func (a *App) saveCollection(col *request.Collection) {
 // saveDebounce. A collection without a folder is not saved by itself.
 func (a *App) workspaceTick() {
 	for _, entry := range a.cols.Set().Entries {
-		if entry.Dir != "" && a.saveOf(entry.Collection).Due(a.collectionKey(entry.Collection), a.now()) {
+		if entry.Dir != "" && a.saveOf(entry.Collection).Due(a.keys.Collection(entry.Collection), a.now()) {
 			a.saveCollection(entry.Collection)
 		}
 	}
@@ -175,7 +175,7 @@ func (a *App) flushCollection(entry collections.Entry) error {
 	}
 	a.writes.Wait()
 	col := entry.Collection
-	if !a.saveOf(col).Pending(a.collectionKeyNow(col)) {
+	if !a.saveOf(col).Pending(a.keys.CollectionNow(col)) {
 		return nil
 	}
 	if err := a.store.Save(entry.Dir, *col); err != nil {
@@ -307,7 +307,7 @@ func (a *App) forget(col *request.Collection) {
 		a.side.Tree().Select(request.Node{})
 	}
 	delete(a.saves, col)
-	a.markStale()
+	a.keys.MarkStale()
 }
 
 // The open collections: a.cols holds them in tree order, each with the
@@ -370,7 +370,7 @@ func (a *App) saveOf(col *request.Collection) *autosave.Debounce {
 }
 
 // markSaved records that col is on disk as it is now.
-func (a *App) markSaved(col *request.Collection) { a.saveOf(col).Saved(a.collectionKeyNow(col)) }
+func (a *App) markSaved(col *request.Collection) { a.saveOf(col).Saved(a.keys.CollectionNow(col)) }
 
 // librarySettings is where the open set keeps its remembered list: the
 // settings (collections.Settings).

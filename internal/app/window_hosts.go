@@ -287,7 +287,7 @@ func (a *App) promptWorkspace() {
 // tab keeps its edits in the collection, but one without a folder keeps
 // them nowhere, so it asks the way deleting does.
 func (a *App) requestCloseCollection(col *request.Collection) {
-	pending := a.saveOf(col).Pending(a.collectionKeyNow(col))
+	pending := a.saveOf(col).Pending(a.keys.CollectionNow(col))
 	if !a.cols.AsksToClose(col, pending) {
 		a.closeCollection(col)
 		return
@@ -427,7 +427,7 @@ func (host tabstripHost) Active() int { return host.tabs.Active() }
 func (host tabstripHost) Update(msg tabs.Msg) { host.updateTabs(msg) }
 
 // Dirty reports whether tab's request differs from its saved copy.
-func (host tabstripHost) Dirty(tab *tabs.Tab) bool { return host.tabDirty(host.widgets[tab]) }
+func (host tabstripHost) Dirty(tab *tabs.Tab) bool { return host.keys.TabDirty(tab) }
 
 // Stripe is the color of the collection holding req.
 func (host tabstripHost) Stripe(req *request.Request) w.Token {
@@ -1098,3 +1098,26 @@ func (a *App) networkSettings() networkSettings {
 	s := a.settings
 	return networkSettings{s.Proxy, s.CACert, s.ClientCert, s.ClientKey}
 }
+
+// keysHost answers autosave.Sources: it builds the comparable forms the
+// change-key cache keeps.
+type keysHost struct{ *App }
+
+// Collections are the open collections.
+func (host keysHost) Collections() []*request.Collection {
+	entries := host.cols.Set().Entries
+	open := make([]*request.Collection, len(entries))
+	for i, entry := range entries {
+		open[i] = entry.Collection
+	}
+	return open
+}
+
+// CollectionKey is the comparable form of col.
+func (host keysHost) CollectionKey(col request.Collection) string { return tree.Key(col) }
+
+// StateKey is the comparable form of the state to save.
+func (host keysHost) StateKey() string { return stateKey(host.snapshot()) }
+
+// Dirty reports whether tab's request differs from its saved copy.
+func (host keysHost) Dirty(tab *tabs.Tab) bool { return tab.Dirty() }

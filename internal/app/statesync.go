@@ -270,7 +270,7 @@ func (a *App) stateTick() {
 	if !a.stateWritable() {
 		return
 	}
-	key := a.stateNow()
+	key := a.keys.State()
 	if !a.stateSave.Due(key, a.now()) {
 		return
 	}

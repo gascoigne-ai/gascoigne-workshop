@@ -86,7 +86,7 @@ func (d *Driver) ChooseBodyType(id string) error {
 		return fmt.Errorf("body type %q is not one of the body chips", id)
 	}
 	d.app.body.ChooseType(d.app.cur().Tab, request.BodyType(id))
-	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	d.app.keys.MarkStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
 
@@ -98,14 +98,14 @@ func (d *Driver) TypeBody(text string) error {
 		return fmt.Errorf("body text needs a JSON or Text body, the open request's is %q", tab.Req.BodyType)
 	}
 	d.app.body.Replace(tab.Tab, text)
-	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	d.app.keys.MarkStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
 
 // TypeURL types text into the open request's URL, so its tab is marked changed.
 func (d *Driver) TypeURL(text string) {
 	d.app.urlbar.Type(d.app.cur().Tab, text)
-	d.app.markStale() // no input reports this edit, so the cached unsaved marks would not see it
+	d.app.keys.MarkStale() // no input reports this edit, so the cached unsaved marks would not see it
 }
 
 // WrapOn turns on Wrap for the open request's response and body, as their two

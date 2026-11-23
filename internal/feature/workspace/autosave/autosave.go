@@ -1,6 +1,7 @@
 // Package autosave decides when something that changes by the frame, such
 // as the collection or the remembered window state, is written: once its
-// content has stayed the same for a pause.
+// content has stayed the same for a pause. Keys caches the comparable
+// forms the pause is measured on, so a frame without a change builds none.
 package autosave
 
 import "time"

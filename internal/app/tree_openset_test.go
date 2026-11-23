@@ -113,7 +113,7 @@ func TestEachCollectionIsSavedToItsOwnFolderAfterAPause(t *testing.T) {
 	a.Step(core.Input{})
 	entryNamed(t, a, "Alpha").Collection.Requests[0].Name = "Alpha renamed"
 	entryNamed(t, a, "Beta").Collection.Folders[0].Name = "Beta folder"
-	a.markStale() // the test edits the model directly
+	a.keys.MarkStale() // the test edits the model directly
 	a.Step(core.Input{})
 	now = now.Add(2 * time.Second)
 	a.Step(core.Input{})

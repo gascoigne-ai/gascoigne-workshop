@@ -38,7 +38,7 @@ func TestDragOntoAnotherCollectionsFolderMovesTheRequest(t *testing.T) {
 	req := alpha.Requests[0]
 	a.openRequest(req)
 	a.cur().Req.URL = "http://edited.test"
-	a.markStale()
+	a.keys.MarkStale()
 
 	release(a, request.Of(req), request.Of(beta.Folders[0]), false)
 

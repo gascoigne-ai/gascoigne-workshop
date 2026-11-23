@@ -45,7 +45,7 @@ func TestTheAutosaveOfTheCollectionDoesNotBlockTheFrame(t *testing.T) {
 	a.now = func() time.Time { return now }
 	a.Step(core.Input{})
 	a.cur().Req.Name = "Renamed"
-	a.markStale() // the test edits the model directly
+	a.keys.MarkStale() // the test edits the model directly
 	a.Step(core.Input{})
 	now = now.Add(2 * time.Second)
 

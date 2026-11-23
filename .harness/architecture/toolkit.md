@@ -89,10 +89,10 @@ App facts kept here for now; they belong with the app.
   (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `workspace.Folders` doc).
 - **Socket sends** (`request_send.go`): messages and pings go through `App.sendInOrder`, a per-tab `outbox.Outbox`
   (`internal/feature/send/outbox`: the queue and the in-flight flag, `Enqueue` and `Done`) run by a Cmd, so a slow network never stops a frame and messages keep their order.
-- **Change keys** (`changekeys.go`): autosave and the window title compare JSON forms. `changeKeys`
-  caches them and marks them stale only on input, a bus message, a toast change or a geometry
-  change. Save, load and flush use `collectionKeyNow`; a test that edits the model directly calls
-  `markStale`.
+- **Change keys** (`workspace/autosave.Keys`, held by `App.keys`): autosave and the window title compare JSON forms.
+  `Keys` caches them and marks them stale only on input, a bus message, a toast change or a geometry
+  change. Save, load and flush use `CollectionNow`; a test that edits the model directly calls
+  `keys.MarkStale`.
 
 ## Toolkit: API and templates
 

@@ -69,9 +69,9 @@ func (a *App) beginFrame(in core.Input) bool {
 	drained := a.drain()
 	pruned := a.over.Toasts.Prune()
 	active := engine.InputActive(a.lastIn, in)
-	a.noteGeometry()
+	a.keys.NoteGeometry([4]int{a.w, a.h, a.winX, a.winY})
 	if active || drained || pruned {
-		a.markStale()
+		a.keys.MarkStale()
 	}
 	if in.RestartsCaret() {
 		a.ctx.RestartCaret()

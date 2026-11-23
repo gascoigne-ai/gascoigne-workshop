@@ -148,6 +148,7 @@ func NewApp(opts Options) (*App, error) {
 		settingsState: settingsState{settings: st},
 	}
 	a.writes = serial.NewWriter(a.bus, a.drain)
+	a.keys = autosave.NewKeys(keysHost{a})
 	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
 	a.driver.app = a
 	a.notices.SetStatus("Ready")

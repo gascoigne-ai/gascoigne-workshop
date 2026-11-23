@@ -75,7 +75,7 @@ func TestEditsAreSavedAfterAPause(t *testing.T) {
 	a.now = func() time.Time { return now }
 	a.Step(core.Input{})
 	a.cur().Req.Name = "Renamed"
-	a.markStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
+	a.keys.MarkStale() // the test edits the model directly; in the app an edit comes with input, which marks the keys stale
 	a.Step(core.Input{})
 	if got, _ := storeDisk.Load(dir); len(got.Requests) > 0 && got.Requests[0].Name == "Renamed" {
 		t.Fatal("saved before the pause")

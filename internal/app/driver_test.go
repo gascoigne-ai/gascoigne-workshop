@@ -205,7 +205,7 @@ func bodyTypeIs(want request.BodyType) func(t *testing.T, a *App) {
 		if got := a.cur().Req.BodyType; got != want {
 			t.Errorf("body type %q, want %q", got, want)
 		}
-		if !a.tabDirty(a.cur()) {
+		if !a.keys.TabDirty(a.cur().Tab) {
 			t.Error("the tab should be marked as changed on the frame of the choice")
 		}
 	}
@@ -286,14 +286,14 @@ func TestDriverOpensEveryRequestInATab(t *testing.T) {
 func TestDriverTypesIntoTheURL(t *testing.T) {
 	a := driverApp(t, Options{})
 	url := a.cur().Req.URL
-	if a.tabDirty(a.cur()) {
+	if a.keys.TabDirty(a.cur().Tab) {
 		t.Fatal("test setup: the tab must be unchanged before the edit")
 	}
 	a.Driver().TypeURL("?page=2")
 	if got := a.cur().Req.URL; !strings.Contains(got, "?page=2") || len(got) != len(url)+len("?page=2") {
 		t.Errorf("URL %q, want %q typed into %q", got, "?page=2", url)
 	}
-	if !a.tabDirty(a.cur()) {
+	if !a.keys.TabDirty(a.cur().Tab) {
 		t.Error("the tab should be marked as changed on the frame of the edit")
 	}
 }
@@ -311,7 +311,7 @@ func TestDriverTypesTheBody(t *testing.T) {
 	if a.body.Area(tab.Tab).Text != typed || tab.Req.Body != typed {
 		t.Errorf("editor %q, request %q, want both %q", a.body.Area(tab.Tab).Text, tab.Req.Body, typed)
 	}
-	if !a.tabDirty(tab) {
+	if !a.keys.TabDirty(tab.Tab) {
 		t.Error("the tab should be marked as changed on the frame of the edit")
 	}
 }
