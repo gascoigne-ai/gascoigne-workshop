@@ -13,7 +13,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 )
 
 // The checklist of failures a user can meet. Each row triggers one and
@@ -73,10 +72,12 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			app.saveSettings(func(*settings.Settings) {})
 		}, "Could not save settings", "", blockedDir, nil},
 		{"a response body cannot be written", func(t *testing.T, app *Component) {
-			app.folders = folders.Disk{} // the real disk, so the blocked folder is what fails
+			fake := newFakeFolders()
+			fake.writeErr = errors.New("is a directory")
+			app.folders = fake
 			tab := app.cur()
 			tab.Resp = &request.Response{Status: 200, Body: []byte("x")}
-			saveBodyAs(t, app, tab, blockedDir(t))
+			saveBodyAs(t, app, tab, "/home/user/blocked")
 		}, "Saving failed", "", nil, nil},
 		{"a history was written by a newer version", func(t *testing.T, app *Component) {
 			req := app.cur().Req

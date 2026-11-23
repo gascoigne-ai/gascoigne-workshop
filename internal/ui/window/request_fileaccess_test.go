@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -26,6 +28,7 @@ type fakeFolders struct {
 	mu       sync.Mutex
 	home     string
 	files    map[string][]byte
+	listing  map[string][]workspace.FolderEntry // opt-in folder listings; nil lists nothing
 	writeErr error
 	checked  []string      // the paths IsFile was asked about, in order
 	release  chan struct{} // when set, Write waits for it to close
@@ -35,8 +38,18 @@ func newFakeFolders() *fakeFolders {
 	return &fakeFolders{home: "/home/user", files: map[string][]byte{}}
 }
 
-func (f *fakeFolders) List(string) ([]workspace.FolderEntry, error) { return nil, nil }
-func (f *fakeFolders) Home() (string, error)                        { return f.home, nil }
+func (f *fakeFolders) List(dir string) ([]workspace.FolderEntry, error) {
+	if f.listing == nil {
+		return nil, nil
+	}
+	entries, ok := f.listing[dir]
+	if !ok {
+		return nil, fmt.Errorf("list %s: %w", dir, fs.ErrNotExist)
+	}
+	return entries, nil
+}
+
+func (f *fakeFolders) Home() (string, error) { return f.home, nil }
 
 func (f *fakeFolders) Write(_ context.Context, path string, data []byte) error {
 	if f.release != nil {

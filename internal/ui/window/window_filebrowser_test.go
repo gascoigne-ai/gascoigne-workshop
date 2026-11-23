@@ -1,47 +1,33 @@
 package window
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 )
 
 // browsingApp is a test app without a dialog program whose file browser
-// lists the disk; its home is a temporary folder holding a folder and two
-// files, and its working directory another one.
+// lists a fake folder tree; its home holds a folder and two files.
 func browsingApp(t *testing.T) (*Component, string) {
 	t.Helper()
-	dir := t.TempDir()
-	for _, name := range []string{"api.json", "notes.txt"} {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("HOME", dir)
-	t.Chdir(t.TempDir())
+	home := "/home/user"
 	a := testApp(t)
 	a.files = fakeDialog{suggest: "zenity"} // no dialog program, zenity would give one
-	a.folders = folders.Disk{}
-	return a, dir
-}
-
-func evalLinks(t *testing.T, path string) string {
-	t.Helper()
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		t.Fatal(err)
+	fake := newFakeFolders()
+	fake.listing = map[string][]workspace.FolderEntry{home: {
+		{Name: "sub", Dir: true}, {Name: "api.json"}, {Name: "notes.txt"},
+	}}
+	for _, name := range []string{"api.json", "notes.txt"} {
+		fake.files[filepath.Join(home, name)] = []byte("{}")
 	}
-	return resolved
+	a.folders = fake
+	return a, home
 }
 
 // typePath puts path in the open browser's field as the user would: the field
@@ -90,7 +76,7 @@ func TestSavingOverAFileAsksFirst(t *testing.T) {
 	}
 	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	a.dialogDefault()
-	if a.over.Browser.Shown() || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
+	if a.over.Browser.Shown() || got != filepath.Join(dir, "api.json") {
 		t.Fatalf("Replace takes the path: %q, browser %v", got, a.over.Browser.Shown())
 	}
 }

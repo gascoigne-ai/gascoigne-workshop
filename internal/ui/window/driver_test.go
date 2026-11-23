@@ -12,7 +12,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -87,7 +87,9 @@ func TestDriverActionsThatCannotApplyReturnTheirMessage(t *testing.T) {
 
 // Actions that apply: each row runs them and checks the state the window is in.
 func TestDriverActionsApply(t *testing.T) {
-	browseDir := t.TempDir()
+	browseDir := "/home/user/project"
+	fake := newFakeFolders()
+	fake.listing = map[string][]workspace.FolderEntry{browseDir: {{Name: "api.json"}}}
 	cases := []struct {
 		name  string
 		opts  startOptions
@@ -126,7 +128,7 @@ func TestDriverActionsApply(t *testing.T) {
 				t.Error("the Log dialog should be open")
 			}
 		}},
-		{"open the file browser on a folder", startOptions{Folders: folders.Disk{}}, func(driver *Driver) error { return driver.BrowseFiles(browseDir) }, func(t *testing.T, a *Component) {
+		{"open the file browser on a folder", startOptions{Folders: fake}, func(driver *Driver) error { return driver.BrowseFiles(browseDir) }, func(t *testing.T, a *Component) {
 			if !a.over.Browser.Shown() || filepath.Clean(a.over.Browser.Path()) != browseDir {
 				t.Fatalf("browser shown %v on %q, want it open on %s", a.over.Browser.Shown(), a.over.Browser.Path(), browseDir)
 			}

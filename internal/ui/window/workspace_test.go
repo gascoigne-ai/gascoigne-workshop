@@ -2,7 +2,6 @@ package window
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 	"os"
 	"path/filepath"
 	"strings"
@@ -254,18 +253,19 @@ func TestImportPostmanAddsAFolderAndItsVariables(t *testing.T) {
 
 func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	a := testApp(t) // no dialog program: the in-app file browser asks
-	a.folders = folders.Disk{}
+	fake := newFakeFolders()
+	a.folders = fake
 	a.exportPostman(&a.col().Folder)
 	if !a.over.Browser.Shown() || !strings.HasSuffix(a.over.Browser.Path(), ".postman_collection.json") {
 		t.Fatalf("browser shown %v", a.over.Browser.Shown())
 	}
-	path := filepath.Join(t.TempDir(), "out.json")
+	path := filepath.Join(fake.home, "out.json")
 	typePath(a, path)
 	pressEnter(a)
 	a.WaitWrites() // written in the background
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
+	data, ok := fake.file(path)
+	if !ok {
+		t.Fatalf("%s was not written", path)
 	}
 	res, err := postman.Parse(data)
 	if err != nil || res.Folder.Name != a.col().Name || len(res.Folder.Folders) == 0 {

@@ -1,13 +1,12 @@
 package window
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -44,11 +43,11 @@ func TestTypingAFilePathSetsTheBody(t *testing.T) {
 // and the chosen file becomes the field's text and the request's body.
 func TestChooseAsksForTheFileAndSetsThePath(t *testing.T) {
 	a := openFileBody(t)
-	a.folders = folders.Disk{}
-	picked := filepath.Join(t.TempDir(), "picked.bin")
-	if err := os.WriteFile(picked, nil, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	fake := newFakeFolders()
+	picked := filepath.Join(fake.home, "picked.bin")
+	fake.files[picked] = nil
+	fake.listing = map[string][]workspace.FolderEntry{fake.home: {{Name: "picked.bin"}}}
+	a.folders = fake
 	click(a, fileChooseX, fileBodyRowY)
 	if !a.over.Browser.Shown() || !strings.Contains(layoutDump(a), `"Choose the file to send"`) {
 		t.Fatalf("browser shown %v, want the file browser", a.over.Browser.Shown())

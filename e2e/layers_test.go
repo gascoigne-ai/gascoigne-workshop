@@ -200,6 +200,7 @@ func TestCheckLayersRejects(t *testing.T) {
 		{"controller external test imports another feature", xtest},
 		{"ui imports an adapter", synthetic("internal/ui/response/respview", "internal/feature/send/adapter/preview")},
 		{"window test imports the preview adapter", windowTest("internal/feature/send/adapter/preview")},
+		{"window test imports the folders adapter", windowTest("internal/feature/workspace/adapter/folders")},
 		{"ui imports another ui", synthetic("internal/ui/response/respview", "internal/ui/overlays/calltrace")},
 		{"controller imports a toolkit widget", synthetic("internal/feature/send/requestedit", "uitoolkit/widget")},
 		{"adapter imports a ui", synthetic("internal/feature/history/adapter/historyfile", "internal/ui/sidebar/sentlog")},
@@ -360,8 +361,11 @@ func TestCheckLayersWindowTestFixtures(t *testing.T) {
 		"internal/feature/workspace/adapter/statefile", "internal/feature/workspace/adapter/folders",
 		"internal/feature/send/adapter/preview", "internal/feature/send/adapter/protocol/ws", "internal/exampleserver",
 	}
-	// The window's tests use a fake preview, so only its production half is checked.
-	testlessAdapters := map[string]bool{"internal/feature/send/adapter/preview": true}
+	// The window's tests use a fake preview and fake folders, so only the production half is checked.
+	testlessAdapters := map[string]bool{
+		"internal/feature/send/adapter/preview":      true,
+		"internal/feature/workspace/adapter/folders": true,
+	}
 	for _, adapter := range adapters {
 		production := synthetic("internal/ui/window", adapter)
 		if got := checkLayers(testModule, layerRules, []listedPackage{production}); len(got) == 0 {
