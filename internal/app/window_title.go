@@ -12,7 +12,7 @@ func (a *App) Title() string {
 		return appName
 	}
 	col := entry.Collection
-	unsaved := entry.Dir != "" && a.saveOf(col).Pending(a.keys.Collection(col))
+	unsaved := entry.Dir != "" && a.saves.Pending(col, a.keys.Collection(col))
 	for _, t := range a.openTabs() {
 		if entry.Dir != "" || unsaved || !a.keys.TabDirty(t.Tab) {
 			continue // the owner is looked up last: it walks the tree

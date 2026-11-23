@@ -64,16 +64,16 @@ type frameState struct {
 
 // persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the trust list.
 type persistState struct {
-	statePath        string                                     // where the UI state is remembered
-	stateAccess      storage.Access                             // read-only when a newer build wrote the file
-	saves            map[*request.Collection]*autosave.Debounce // when each open collection was last written
-	writes           *serial.Writer                             // the background writes, one per file at a time
-	keys             *autosave.Keys                             // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
-	stateSave        autosave.Debounce                          // when the remembered state was last written
-	welcomed         string                                     // the version whose welcome dialog was shown
-	initial          state.Window                               // window geometry of the last run
-	defaultWorkspace string                                     // beside it is the collections folder, where a first save goes
-	trusted          request.AccessSet                          // what the user allowed; remembered in the state file
+	statePath        string                // where the UI state is remembered
+	stateAccess      storage.Access        // read-only when a newer build wrote the file
+	saves            *autosave.Collections // when each open collection was last written, and its writing
+	writes           *serial.Writer        // the background writes, one per file at a time
+	keys             *autosave.Keys        // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
+	stateSave        autosave.Debounce     // when the remembered state was last written
+	welcomed         string                // the version whose welcome dialog was shown
+	initial          state.Window          // window geometry of the last run
+	defaultWorkspace string                // beside it is the collections folder, where a first save goes
+	trusted          request.AccessSet     // what the user allowed; remembered in the state file
 }
 
 // settingsState holds the settings in effect; the dialog that edits them (over.Settings) owns the file, its path and what is unsaved.

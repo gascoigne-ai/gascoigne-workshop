@@ -36,6 +36,7 @@ flowchart LR
   sidebar, the autosave and the dirty dot see it at once. The gRPC stream flag is tab state, not
   part of the request: it is kept by `ui/editor/grpc`. Renames and moves are tree operations (`tree.Update`, `treeops.go`).
 - **Change keys** (`feature/workspace/autosave.Keys`, `App.keys`): the cached comparable forms the autosave timers and the window title read. `keysHost` (`window_hosts.go`) builds them; `beginFrame` marks them stale on input, a bus message or a geometry change, and code that saves or compares at once asks `CollectionNow`.
+- **Collection autosave** (`feature/workspace/autosave.Collections`, `App.saves`): one `Debounce` per open collection, made on first use and dropped by `Forget` when the collection leaves the set. `workspaceTick` asks `Due` with the cached key; `saveCollection` marks the collection saved, then `Write` clones it and queues the write on `App.writes` (the toast and the status line are the App's callback). `FlushWorkspace` uses `WriteNow` after `Writer.Wait`. The open set's queries (`collections.Set.PathOf`, `Dirs`, `ExpandedPaths`, `FoldersAt`, `HistoryKey`, `LegacyHistoryKey`) serve the state snapshot and the response history; the App holds no copy of them.
 - **Tab list** (`feature/workspace/tabs`): is `App.tabs`, a `tabs.Set` (owner of the open tabs and the current one; `Current()` is nil only before
   the first `Open`, closing the last tab leaves a blank one). It changes only through `Set.Apply` (a
   wrapper of the pure `tabs.Update`), and `App.updateTabs` is its only mutating caller: after each

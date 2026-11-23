@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/collectionstore"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
@@ -16,7 +17,7 @@ import (
 // gateStore is a collection store whose Save waits to be released and
 // keeps what it was given, so a test can see a frame does not wait for a write.
 type gateStore struct {
-	noStore
+	collectionstore.Files
 	release chan struct{}
 	mu      sync.Mutex
 	saved   []request.Collection
@@ -37,9 +38,8 @@ func (s *gateStore) count() int {
 }
 
 func TestTheAutosaveOfTheCollectionDoesNotBlockTheFrame(t *testing.T) {
-	a := testApp(t)
 	gate := &gateStore{release: make(chan struct{})}
-	a.store = gate
+	a := testApp(t, withOptions(Options{Store: gate}))
 	a.setWorkspace(t.TempDir())
 	now := time.Now()
 	a.now = func() time.Time { return now }

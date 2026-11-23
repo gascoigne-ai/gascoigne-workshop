@@ -5,24 +5,17 @@ import (
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 )
-
-// saveDebounce is how long a collection must stay unchanged before it is
-// saved by itself.
-const saveDebounce = time.Second
 
 // openWorkspace opens the collection in dir, or, when dir is empty, the
 // collections remembered in the settings (an older file's single workspace
@@ -126,19 +119,15 @@ func (a *App) saveCollection(col *request.Collection) {
 			return
 		}
 	}
-	a.treeStale = true      // the tabs of col are marked saved
-	snapshot := col.Clone() // written off the UI goroutine while the UI goes on editing
-	a.markSaved(col)        // an error is reported once, not retried every frame
+	a.treeStale = true // the tabs of col are marked saved
+	a.markSaved(col)   // an error is reported once, not retried every frame
 	a.markTabsSaved(col)
-	a.writes.Write("collection:"+dir, serial.Job{
-		Run: func() error { return a.store.Save(dir, snapshot) },
-		Done: func(err error) {
-			if err != nil {
-				a.toast("Saving failed: "+err.Error(), severity.Error)
-				return
-			}
-			a.notices.SetStatus(fmt.Sprintf("Saved %s", snapshot.Name))
-		},
+	a.saves.Write(dir, col, func(name string, err error) {
+		if err != nil {
+			a.toast("Saving failed: "+err.Error(), severity.Error)
+			return
+		}
+		a.notices.SetStatus(fmt.Sprintf("Saved %s", name))
 	})
 }
 
@@ -146,7 +135,7 @@ func (a *App) saveCollection(col *request.Collection) {
 // saveDebounce. A collection without a folder is not saved by itself.
 func (a *App) workspaceTick() {
 	for _, entry := range a.cols.Set().Entries {
-		if entry.Dir != "" && a.saveOf(entry.Collection).Due(a.keys.Collection(entry.Collection), a.now()) {
+		if entry.Dir != "" && a.saves.Due(entry.Collection, a.keys.Collection(entry.Collection), a.now()) {
 			a.saveCollection(entry.Collection)
 		}
 	}
@@ -175,13 +164,13 @@ func (a *App) flushCollection(entry collections.Entry) error {
 	}
 	a.writes.Wait()
 	col := entry.Collection
-	if !a.saveOf(col).Pending(a.keys.CollectionNow(col)) {
+	key := a.keys.CollectionNow(col)
+	if !a.saves.Pending(col, key) {
 		return nil
 	}
-	if err := a.store.Save(entry.Dir, *col); err != nil {
+	if err := a.saves.WriteNow(entry.Dir, col, key); err != nil {
 		return err
 	}
-	a.markSaved(col)
 	// renaming another collection flushes this one too, and once it is
 	// saved no autosave runs again to clear the marks of its tabs
 	a.markTabsSaved(col)
@@ -306,7 +295,7 @@ func (a *App) forget(col *request.Collection) {
 	if col.Folder.Contains(a.side.Tree().Selected()) {
 		a.side.Tree().Select(request.Node{})
 	}
-	delete(a.saves, col)
+	a.saves.Forget(col)
 	a.keys.MarkStale()
 }
 
@@ -358,19 +347,8 @@ func (a *App) eachRoot(visit func(root *request.Folder)) {
 	}
 }
 
-// saveOf is when col was last written.
-func (a *App) saveOf(col *request.Collection) *autosave.Debounce {
-	debounce := a.saves[col]
-	if debounce == nil {
-		fresh := autosave.New(saveDebounce, "")
-		debounce = &fresh
-		a.saves[col] = debounce
-	}
-	return debounce
-}
-
 // markSaved records that col is on disk as it is now.
-func (a *App) markSaved(col *request.Collection) { a.saveOf(col).Saved(a.keys.CollectionNow(col)) }
+func (a *App) markSaved(col *request.Collection) { a.saves.Saved(col, a.keys.CollectionNow(col)) }
 
 // librarySettings is where the open set keeps its remembered list: the
 // settings (collections.Settings).

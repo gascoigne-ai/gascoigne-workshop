@@ -287,7 +287,7 @@ func (a *App) promptWorkspace() {
 // tab keeps its edits in the collection, but one without a folder keeps
 // them nowhere, so it asks the way deleting does.
 func (a *App) requestCloseCollection(col *request.Collection) {
-	pending := a.saveOf(col).Pending(a.keys.CollectionNow(col))
+	pending := a.saves.Pending(col, a.keys.CollectionNow(col))
 	if !a.cols.AsksToClose(col, pending) {
 		a.closeCollection(col)
 		return

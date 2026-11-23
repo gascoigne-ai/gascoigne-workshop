@@ -402,7 +402,7 @@ func withAdapters(opts Options) Options {
 	opts.GRPCMethods = protocol.ListGRPCMethods
 	opts.GRPCSchema = protocol.GRPCInputSchema
 	opts.Curl = protocol.Curl
-	opts.Store = collectionstore.Files{}
+	opts.Store = cmp.Or[collection.Store](opts.Store, collectionstore.Files{})
 	opts.States = statefile.Files{}
 	opts.SettingsFiles = settingsfile.Files{}
 	return opts

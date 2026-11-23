@@ -96,7 +96,7 @@ func (a *App) apply(result sends.Result) {
 	t.Remember(t.Resp, a.now())
 	t.Resp = &result.Response
 	a.saveHistory(t)
-	if owner, path, _ := a.holderOf(t.Req); path != "" {
+	if owner, path, _ := a.cols.Set().PathOf(t.Req); path != "" {
 		a.side.Sent().Record(a, a.now(), owner.Dir, path, t.Req, result.Response.Status)
 	}
 	a.over.Calls().Answer(a.now(), t.Req, &result.Response)

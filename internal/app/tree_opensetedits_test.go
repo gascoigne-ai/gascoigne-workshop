@@ -10,6 +10,7 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -61,7 +62,7 @@ func autosaveAfterPause(app *App) {
 	app.now = func() time.Time { return now }
 	app.keys.MarkStale() // the tests edit the model directly, with no input to mark the keys stale
 	app.Step(core.Input{})
-	now = now.Add(2 * saveDebounce)
+	now = now.Add(2 * autosave.SaveDebounce)
 	app.Step(core.Input{})
 	app.WaitWrites()
 }

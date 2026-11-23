@@ -38,7 +38,8 @@ type Settings interface {
 }
 
 // Saves is the autosave bookkeeping of the open collections, which the
-// workspace feature and the App own and this controller may not import.
+// workspace feature (autosave.Collections) owns and this controller may not
+// import; the App answers it.
 // Saved marks col as written as it is now; FlushAll writes every collection
 // that changed.
 type Saves interface {
@@ -84,9 +85,9 @@ type Failure struct {
 // error worded for the user in lower case (the App upper-cases its first
 // letter and shows it), so the text a user reads is decided where the
 // failure is known and shown where the window is. Saving a collection to its
-// folder in the background stays in the App for now (it runs on the write
-// queue of the workspace feature), so the App still holds the Store for
-// Save; moving it is a task of the workspace feature.
+// folder in the background is the workspace feature's (autosave.Collections,
+// built over the same Store); this controller only asks it, through Saves,
+// to mark a collection written and to flush.
 type Library struct {
 	store      collection.Store
 	deps       Deps

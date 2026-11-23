@@ -2,6 +2,8 @@
 // as the collection or the remembered window state, is written: once its
 // content has stayed the same for a pause. Keys caches the comparable
 // forms the pause is measured on, so a frame without a change builds none.
+// Collections keeps one pause per open collection and writes it through a
+// Saver, in the background on a serial.Writer or at once.
 package autosave
 
 import "time"

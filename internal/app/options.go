@@ -144,11 +144,12 @@ func NewApp(opts Options) (*App, error) {
 			settingFiles: opts.SettingsFiles, previews: opts.Previews,
 		},
 		frameState:    frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
-		persistState:  persistState{saves: map[*request.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
+		persistState:  persistState{defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
 		settingsState: settingsState{settings: st},
 	}
 	a.writes = serial.NewWriter(a.bus, a.drain)
 	a.keys = autosave.NewKeys(keysHost{a})
+	a.saves = autosave.NewCollections(opts.Store, a.writes)
 	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
 	a.driver.app = a
 	a.notices.SetStatus("Ready")

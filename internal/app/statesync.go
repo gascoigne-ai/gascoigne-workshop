@@ -23,64 +23,20 @@ import (
 // before it is written, so a drag does not write on every frame.
 const stateDebounce = time.Second
 
-// holderOf is the open collection that holds req and req's remembered path in
-// it; ok is false when it is in no open collection.
-func (a *App) holderOf(req *request.Request) (entry collections.Entry, path string, ok bool) {
-	entry, ok = a.cols.Set().Owner(request.Node{Req: req})
-	if !ok {
-		return collections.Entry{}, "", false
-	}
-	return entry, tree.PathOf(&entry.Collection.Folder, req), true
-}
-
 // requestPath is the remembered path of req in its collection, "" when it
 // is in no open collection.
 func (a *App) requestPath(req *request.Request) string {
-	_, path, _ := a.holderOf(req)
+	_, path, _ := a.cols.Set().PathOf(req)
 	return path
 }
 
-// historyKeySep joins a collection's folder and a request path in a
-// history key. A key is never split again, and the folder is absolute, so
-// it cannot be mistaken for a bare path.
-const historyKeySep = "#"
-
-// historyKey is what req's saved responses are kept under: its
-// collection's folder and its path, since two collections can hold the
-// same path. A collection not saved yet has no folder, so its key is the
-// bare path. "" when req is in no open collection.
-func (a *App) historyKey(req *request.Request) string {
-	owner, path, ok := a.holderOf(req)
-	if path == "" || !ok || owner.Dir == "" {
-		return path
-	}
-	return owner.Dir + historyKeySep + path
-}
-
-// legacyHistoryKey is the bare path req's responses were kept under while
-// one collection was open at a time, for a request of the first open
-// collection, which is where that one collection is now; "" otherwise.
-func (a *App) legacyHistoryKey(req *request.Request) string {
-	owner, ok := a.cols.Set().Owner(request.Node{Req: req})
-	if !ok || owner.Dir == "" || a.cols.Set().Entries[0].Collection != owner.Collection {
-		return ""
-	}
-	return a.requestPath(req)
-}
-
-// openDirs are the folders of the open collections in tree order, "" for
-// one not saved, as state.CollectionAt takes them.
-func (a *App) openDirs() []string {
-	dirs := make([]string, len(a.cols.Set().Entries))
-	for i, entry := range a.cols.Set().Entries {
-		dirs[i] = entry.Dir
-	}
-	return dirs
-}
+// historyKey is what req's saved responses are kept under: the open set's
+// key for it.
+func (a *App) historyKey(req *request.Request) string { return a.cols.Set().HistoryKey(req) }
 
 // remembered is the open collection a state reference names, nil for none.
 func (a *App) remembered(ref string) *request.Collection {
-	at := state.CollectionAt(ref, a.openDirs())
+	at := state.CollectionAt(ref, a.cols.Set().Dirs())
 	if at < 0 {
 		return nil
 	}
@@ -104,7 +60,7 @@ func (a *App) snapshot() state.State {
 	}
 	var kept []int // tab index -> remembered index, -1 when not in the tree
 	for _, t := range a.openTabs() {
-		if owner, p, _ := a.holderOf(t.Req); p != "" {
+		if owner, p, _ := a.cols.Set().PathOf(t.Req); p != "" {
 			s.Tabs = append(s.Tabs, state.Tab{Collection: owner.Dir, Path: p, Pane: t.paneTab, PaneLabel: requestPaneLabel(t), Resp: t.respTab})
 			kept = append(kept, len(s.Tabs)-1)
 		} else {
@@ -128,12 +84,7 @@ func (a *App) snapshot() state.State {
 // snapshotExpanded records the open folders of entry's collection: under
 // its folder, or, for the collection that is not saved, in Expanded.
 func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
-	var paths []string
-	tree.WalkFolders(&entry.Collection.Folder, "", func(name string, folder *request.Folder) {
-		if a.side.Tree().Expanded()[folder] {
-			paths = append(paths, name)
-		}
-	})
+	paths := a.cols.Set().ExpandedPaths(entry, func(folder *request.Folder) bool { return a.side.Tree().Expanded()[folder] })
 	if len(paths) == 0 {
 		return
 	}
@@ -149,15 +100,8 @@ func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
 
 // expandPaths opens the folders of col at the remembered paths.
 func (a *App) expandPaths(col *request.Collection, paths []string) {
-	if col == nil {
-		return
-	}
-	for _, p := range paths {
-		tree.WalkFolders(&col.Folder, "", func(path string, folder *request.Folder) {
-			if path == p {
-				a.side.Tree().Expand(folder)
-			}
-		})
+	for _, folder := range a.cols.Set().FoldersAt(col, paths) {
+		a.side.Tree().Expand(folder)
 	}
 }
 
@@ -355,7 +299,7 @@ func (a *App) loadHistory(req *request.Request) []tabs.PastResponse {
 		return nil
 	}
 	saved, err := store.Load(key)
-	if legacy := a.legacyHistoryKey(req); err == nil && len(saved) == 0 && legacy != "" {
+	if legacy := a.cols.Set().LegacyHistoryKey(req); err == nil && len(saved) == 0 && legacy != "" {
 		saved, err = store.Load(legacy)
 	}
 	if err != nil {
