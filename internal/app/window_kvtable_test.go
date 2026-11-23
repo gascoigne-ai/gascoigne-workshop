@@ -11,17 +11,17 @@ import (
 
 // tableEditing, tableBulk and typeBulk read the table state the way the
 // window sees it, so the pins below do not name where it lives.
-func tableEditing(a *App) bool { return a.kv.Editing() }
+func tableEditing(a *App) bool { return a.editor.Tables.Editing() }
 
 // editCell is the cell being edited, the zero cell when none.
 func editCell(a *App) kvlogic.Cell {
-	cell, _ := a.kv.EditCell()
+	cell, _ := a.editor.Tables.EditCell()
 	return cell
 }
-func tableBulk(a *App) bool { return a.kv.BulkArea() != nil }
+func tableBulk(a *App) bool { return a.editor.Tables.BulkArea() != nil }
 func typeBulk(a *App, text string) {
-	a.kv.BulkArea().SelectAll()
-	a.kv.BulkArea().Insert(text)
+	a.editor.Tables.BulkArea().SelectAll()
+	a.editor.Tables.BulkArea().Insert(text)
 }
 
 // A second tab, and the first one active again, so closing the first one

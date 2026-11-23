@@ -157,8 +157,8 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		{Name: "host", Value: "h", Enabled: true}, {Name: "hostname", Value: "n", Enabled: true},
 		{Name: "token", Value: "t", Enabled: true}, {Name: "off", Value: "x"},
 	}
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField("https://{{ho")
-	a.urlbar.Field(tab.Tab).Focused = true
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField("https://{{ho")
+	a.editor.URLBar.Field(tab.Tab).Focused = true
 	names, from := a.variableCompletion(tab)
 	if from != len("https://") || len(names) != 2 || names[0] != "host" || names[1] != "hostname" {
 		t.Fatalf("names %v from %d", names, from)
@@ -168,22 +168,22 @@ func TestCtrlSpaceCompletesVariablesInTheURLField(t *testing.T) {
 		t.Fatal("no completion menu")
 	}
 	widget.PopupMenu(a.ctx).Items[1].Run() // hostname
-	if a.urlbar.Field(tab.Tab).Text != "https://{{hostname}}" || tab.Req.URL != "https://{{hostname}}" || a.urlbar.Field(tab.Tab).Cursor != len("https://{{hostname}}") {
-		t.Fatalf("url %q req %q cursor %d", a.urlbar.Field(tab.Tab).Text, tab.Req.URL, a.urlbar.Field(tab.Tab).Cursor)
+	if a.editor.URLBar.Field(tab.Tab).Text != "https://{{hostname}}" || tab.Req.URL != "https://{{hostname}}" || a.editor.URLBar.Field(tab.Tab).Cursor != len("https://{{hostname}}") {
+		t.Fatalf("url %q req %q cursor %d", a.editor.URLBar.Field(tab.Tab).Text, tab.Req.URL, a.editor.URLBar.Field(tab.Tab).Cursor)
 	}
 
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField("https://x/")
-	a.urlbar.Field(tab.Tab).Focused = true
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField("https://x/")
+	a.editor.URLBar.Field(tab.Tab).Focused = true
 	names, from = a.variableCompletion(tab)
 	if from != -1 || len(names) != 3 { // outside braces every enabled variable fits, and only enabled ones
 		t.Fatalf("names %v from %d", names, from)
 	}
 	a.insertVariable(tab, "token", from)
-	if a.urlbar.Field(tab.Tab).Text != "https://x/{{token}}" {
-		t.Fatalf("url %q", a.urlbar.Field(tab.Tab).Text)
+	if a.editor.URLBar.Field(tab.Tab).Text != "https://x/{{token}}" {
+		t.Fatalf("url %q", a.editor.URLBar.Field(tab.Tab).Text)
 	}
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField("a")
-	a.urlbar.Field(tab.Tab).Focused = false
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField("a")
+	a.editor.URLBar.Field(tab.Tab).Focused = false
 	a.closeMenu()
 	a.completeVariable()
 	if widget.PopupMenu(a.ctx) != nil {

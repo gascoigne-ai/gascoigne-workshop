@@ -20,7 +20,7 @@ func TestTheResultsListScrollsWithTheTabsResponseScroll(t *testing.T) {
 	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
 	tab.Req.Tests, tab.Resp = "status == 200", pinnedResponse
-	a.assertions.Run(tab.Tab)
+	a.editor.Assertions.Run(tab.Tab)
 	root := a.responsePaneView(responsePanes[3], tab, &widget.ScrollState{})
 	if got := fmt.Sprintf("%+v", root.Behavior()); !strings.Contains(got, fmt.Sprintf("%p", &tab.respScroll)) {
 		t.Fatalf("scroll %s, want the state %p", got, &tab.respScroll)
@@ -55,7 +55,7 @@ func TestTypingAnAssertionChecksItLive(t *testing.T) {
 	if tab.Req.Tests != "status == 200" {
 		t.Fatalf("tests %q, want the typed line", tab.Req.Tests)
 	}
-	if results := a.assertions.Results(tab.Tab); len(results) != 1 || !results[0].OK {
+	if results := a.editor.Assertions.Results(tab.Tab); len(results) != 1 || !results[0].OK {
 		t.Fatalf("results %+v, want one passed", results)
 	}
 }

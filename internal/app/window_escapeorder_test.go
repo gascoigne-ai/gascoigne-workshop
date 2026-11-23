@@ -55,7 +55,7 @@ func TestEscapeClosesOneLayerPerPressInOrder(t *testing.T) {
 	}
 
 	a.resp.OpenFind() // opening the find bar ends a cell edit, so the edit comes after
-	a.kv.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: kvlogic.Params}, 0, 1)
+	a.editor.Tables.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: kvlogic.Params}, 0, 1)
 	pressEscapeFor(t, a, overlay.CellEdit)
 	pressEscapeFor(t, a, overlay.FindBar)
 	if top, _ := a.openLayers().Top(); top != overlay.Request {

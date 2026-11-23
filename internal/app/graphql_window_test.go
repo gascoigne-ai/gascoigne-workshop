@@ -29,7 +29,7 @@ func openGraphQLBody(t *testing.T, url string) *App {
 	a := openBodyPane(t)
 	t.Cleanup(a.WaitWrites)
 	a.cur().Req.URL = url
-	a.body.ChooseType(a.cur().Tab, request.BodyGraphQL)
+	a.editor.Body.ChooseType(a.cur().Tab, request.BodyGraphQL)
 	a.Step(core.Input{})
 	return a
 }

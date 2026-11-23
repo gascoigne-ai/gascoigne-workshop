@@ -43,7 +43,7 @@ func TestKeysTheTreeTakesLeaveTheShortcutsRunning(t *testing.T) {
 			findReq(a, "Repository Tags").URL = jsonServer(t).URL
 			click(a, 100, treeRowY(rowInfo)) // the tree has the keyboard, Repository Info is open
 			a.cur().Req.Params = []request.KV{{Name: "q", Enabled: true}, {Name: "order", Enabled: true}}
-			a.kv.Select(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params}, 0)
+			a.editor.Tables.Select(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params}, 0)
 			a.Step(combo(ebiten.KeyArrowDown, false, false, false)) // selects the next row, opens nothing
 			if a.cur().Req.Name != "Repository Info" {
 				t.Fatal("test setup: an arrow only selects")
@@ -63,7 +63,7 @@ func TestAUserBindingOnUndoStillFires(t *testing.T) {
 		setup func(a *App)
 		undo  bool // whether the table undoes too
 	}{
-		{"a URL field has the focus", func(a *App) { a.urlbar.Field(a.cur().Tab).Focused = true }, false},
+		{"a URL field has the focus", func(a *App) { a.editor.URLBar.Field(a.cur().Tab).Focused = true }, false},
 		{"a table shows and no text has the focus", func(a *App) { click(a, 739, paramsRow0Y) }, true},
 	}
 	for _, tt := range tests {

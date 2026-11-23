@@ -50,12 +50,12 @@ func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 		name  string
 		focus func(*App, *reqTab)
 	}{
-		{"url", func(a *App, tab *reqTab) { a.urlbar.Field(tab.Tab).Focused = true }},
+		{"url", func(a *App, tab *reqTab) { a.editor.URLBar.Field(tab.Tab).Focused = true }},
 		{"find", func(a *App, tab *reqTab) { a.resp.Field(tab.Tab).Focused = true }},
-		{"body", func(a *App, tab *reqTab) { a.body.Area(tab.Tab).Focused = true }},
-		{"file path", func(a *App, tab *reqTab) { a.body.File(tab.Tab).Focused = true }},
-		{"message composer", func(a *App, tab *reqTab) { a.ws.Composer(tab.Tab).Focused = true }},
-		{"auth token", func(a *App, tab *reqTab) { a.auth.Field(tab.Tab, "token").Focused = true }},
+		{"body", func(a *App, tab *reqTab) { a.editor.Body.Area(tab.Tab).Focused = true }},
+		{"file path", func(a *App, tab *reqTab) { a.editor.Body.File(tab.Tab).Focused = true }},
+		{"message composer", func(a *App, tab *reqTab) { a.editor.WS.Composer(tab.Tab).Focused = true }},
+		{"auth token", func(a *App, tab *reqTab) { a.editor.Auth.Field(tab.Tab, "token").Focused = true }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

@@ -54,8 +54,8 @@ func openBodyType(t *testing.T, bodyType request.BodyType, text string) (*App, *
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	tab := a.cur()
-	*a.body.Area(tab.Tab) = widget.NewTextArea(text)
-	a.body.ChooseType(tab.Tab, bodyType)
+	*a.editor.Body.Area(tab.Tab) = widget.NewTextArea(text)
+	a.editor.Body.ChooseType(tab.Tab, bodyType)
 	return a, tab
 }
 

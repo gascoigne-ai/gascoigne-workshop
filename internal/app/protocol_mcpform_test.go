@@ -29,7 +29,7 @@ func TestDialogsWithAndWithoutAFormDrawWithoutPanicking(t *testing.T) {
 	a.prompt("Name", "x", "OK", func(string) {})
 	a.Step(core.Input{})
 	a.over.CloseDialog()
-	a.mcp.OpenToolForm(a.cur().Tab, searchTool())
+	a.editor.MCP.OpenToolForm(a.cur().Tab, searchTool())
 	a.Step(core.Input{})
 	if a.over.Dialog() == nil {
 		t.Fatal("the form closed by itself")

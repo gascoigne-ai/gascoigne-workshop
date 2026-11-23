@@ -157,14 +157,14 @@ func TestDriverActionsApply(t *testing.T) {
 			if tab.Req.Name != "Echo" {
 				t.Fatalf("open request %q, want Echo: wrap must apply after the request is opened", tab.Req.Name)
 			}
-			if !a.resp.Code(tab.Tab).Wrap || !a.body.Area(tab.Tab).Wrap {
-				t.Errorf("response wrap %v, body wrap %v, want both on", a.resp.Code(tab.Tab).Wrap, a.body.Area(tab.Tab).Wrap)
+			if !a.resp.Code(tab.Tab).Wrap || !a.editor.Body.Area(tab.Tab).Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both on", a.resp.Code(tab.Tab).Wrap, a.editor.Body.Area(tab.Tab).Wrap)
 			}
 		}},
 		// Without WrapOn both stay off, the default the user decided.
 		{"leave wrap off by default", Options{}, func(driver *Driver) error { return driver.OpenRequest("Echo") }, func(t *testing.T, a *App) {
-			if tab := a.cur(); a.resp.Code(tab.Tab).Wrap || a.body.Area(tab.Tab).Wrap {
-				t.Errorf("response wrap %v, body wrap %v, want both off", a.resp.Code(tab.Tab).Wrap, a.body.Area(tab.Tab).Wrap)
+			if tab := a.cur(); a.resp.Code(tab.Tab).Wrap || a.editor.Body.Area(tab.Tab).Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both off", a.resp.Code(tab.Tab).Wrap, a.editor.Body.Area(tab.Tab).Wrap)
 			}
 		}},
 		// Each text is an error toast, oldest first.
@@ -308,8 +308,8 @@ func TestDriverTypesTheBody(t *testing.T) {
 		t.Fatal(err)
 	}
 	tab := a.cur()
-	if a.body.Area(tab.Tab).Text != typed || tab.Req.Body != typed {
-		t.Errorf("editor %q, request %q, want both %q", a.body.Area(tab.Tab).Text, tab.Req.Body, typed)
+	if a.editor.Body.Area(tab.Tab).Text != typed || tab.Req.Body != typed {
+		t.Errorf("editor %q, request %q, want both %q", a.editor.Body.Area(tab.Tab).Text, tab.Req.Body, typed)
 	}
 	if !a.keys.TabDirty(tab.Tab) {
 		t.Error("the tab should be marked as changed on the frame of the edit")
@@ -443,7 +443,7 @@ func TestDriverSendOnASocketIsAnsweredByAFailedConnect(t *testing.T) {
 	tab.Req.URL = "ws://127.0.0.1:1/"
 	a.Driver().Send()
 	until(t, a, "the failure", func() bool {
-		return tab.State() != tabs.ConnConnecting && tab.Session() == nil && len(a.ws.Lines(tab.Tab)) > 0
+		return tab.State() != tabs.ConnConnecting && tab.Session() == nil && len(a.editor.WS.Lines(tab.Tab)) > 0
 	})
 	if !a.Driver().AllAnswered() {
 		t.Fatal("the error is what the shot should show")

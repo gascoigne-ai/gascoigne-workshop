@@ -55,7 +55,7 @@ func (p pane) captionOf(app *App) string {
 
 func paramsChanged(app *App, tab *reqTab) {
 	editRequest(tab, requestedit.ParamsChanged{})
-	app.urlbar.Reload(tab.Tab)
+	app.editor.URLBar.Reload(tab.Tab)
 }
 
 var (
@@ -190,7 +190,7 @@ func responseBadge(app *App, shown response.Pane, tab *reqTab) int {
 		return len(tab.Resp.Headers)
 	case response.Tests:
 		failed := 0
-		for _, result := range app.assertions.Results(tab.Tab) {
+		for _, result := range app.editor.Assertions.Results(tab.Tab) {
 			if !result.OK {
 				failed++
 			}
@@ -247,28 +247,28 @@ func (a *App) responsePanesFor(tab *reqTab) []pane {
 // explorerPaneView is the MCP explorer, drawn by the mcp component. It
 // ignores the scroll it is handed: the explorer scrolls its own lists.
 func (a *App) explorerPaneView(_ pane, tab *reqTab, _ *ScrollState) Node {
-	return a.mcp.View(a.ctx, tab.Tab)
+	return a.editor.MCP.View(a.ctx, tab.Tab)
 }
 
 // messagesPane is the Messages pane, drawn by the ws component. It ignores
 // the scroll it is handed: the log scrolls itself.
 func (a *App) messagesPane(_ pane, tab *reqTab, _ *ScrollState) Node {
-	return a.ws.View(a.ctx, tab.Tab)
+	return a.editor.WS.View(a.ctx, tab.Tab)
 }
 
 // bodyPaneView is the Body pane, drawn by the body component.
 func (a *App) bodyPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.body.View(a.ctx, tab.Tab, scroll)
+	return a.editor.Body.View(a.ctx, tab.Tab, scroll)
 }
 
 // authPaneView is the Auth pane, drawn by the auth component.
 func (a *App) authPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.auth.View(a.ctx, tab.Tab, scroll)
+	return a.editor.Auth.View(a.ctx, tab.Tab, scroll)
 }
 
 // assertionsPaneView is the request's Tests pane, drawn by the assertions component.
 func (a *App) assertionsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.assertions.View(a.ctx, tab.Tab, scroll)
+	return a.editor.Assertions.View(a.ctx, tab.Tab, scroll)
 }
 
 // responsePaneView is a pane of the response area, drawn by the response
@@ -281,12 +281,12 @@ func (a *App) responsePaneView(panel pane, tab *reqTab, scroll *ScrollState) Nod
 
 // settingsPaneView is the request's Settings pane, drawn by the assertions component.
 func (a *App) settingsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.assertions.SettingsView(a.ctx, tab.Tab, scroll)
+	return a.editor.Assertions.SettingsView(a.ctx, tab.Tab, scroll)
 }
 
 // schemaPaneView is the Schema pane of a gRPC tab, drawn by the body component.
 func (a *App) schemaPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.body.SchemaView(a.ctx, tab.Tab, scroll)
+	return a.editor.Body.SchemaView(a.ctx, tab.Tab, scroll)
 }
 
 // schemaLoading reports whether tab shows its Schema pane while the message
@@ -296,12 +296,12 @@ func (a *App) schemaLoading(tab *reqTab) bool {
 	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneSchema {
 		return false
 	}
-	return a.body.SchemaPending(tab.Tab)
+	return a.editor.Body.SchemaPending(tab.Tab)
 }
 
 // protoPaneView is the Proto pane of a gRPC tab, drawn by the gRPC component.
 func (a *App) protoPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.grpc.View(a.ctx, tab.Tab, scroll)
+	return a.editor.GRPC.View(a.ctx, tab.Tab, scroll)
 }
 
 // protoReading reports whether tab shows its Proto pane while the files are
@@ -311,7 +311,7 @@ func (a *App) protoReading(tab *reqTab) bool {
 	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneProto {
 		return false
 	}
-	return a.grpc.ProtoPending(tab.Tab)
+	return a.editor.GRPC.ProtoPending(tab.Tab)
 }
 
 // paneBody is what fills the area under a pane's tab strip.

@@ -24,7 +24,7 @@ const (
 func openFileBody(t *testing.T) *App {
 	a := openBodyPane(t)
 	t.Cleanup(a.WaitWrites)
-	a.body.ChooseType(a.cur().Tab, request.BodyFile)
+	a.editor.Body.ChooseType(a.cur().Tab, request.BodyFile)
 	a.Step(core.Input{})
 	return a
 }
@@ -35,8 +35,8 @@ func TestTypingAFilePathSetsTheBody(t *testing.T) {
 	click(a, filePathFieldX, fileBodyRowY)
 	a.typeText("data.bin")
 	tab := a.cur()
-	if a.body.File(tab.Tab).Text != "data.bin" || tab.Req.Body != "data.bin" {
-		t.Fatalf("field %q body %q, want data.bin in both", a.body.File(tab.Tab).Text, tab.Req.Body)
+	if a.editor.Body.File(tab.Tab).Text != "data.bin" || tab.Req.Body != "data.bin" {
+		t.Fatalf("field %q body %q, want data.bin in both", a.editor.Body.File(tab.Tab).Text, tab.Req.Body)
 	}
 }
 
@@ -56,8 +56,8 @@ func TestChooseAsksForTheFileAndSetsThePath(t *testing.T) {
 	typePath(a, picked)
 	a.Step(core.Input{Enter: true})
 	tab := a.cur()
-	if a.body.File(tab.Tab).Text != picked || tab.Req.Body != picked {
-		t.Fatalf("field %q body %q, want %q in both", a.body.File(tab.Tab).Text, tab.Req.Body, picked)
+	if a.editor.Body.File(tab.Tab).Text != picked || tab.Req.Body != picked {
+		t.Fatalf("field %q body %q, want %q in both", a.editor.Body.File(tab.Tab).Text, tab.Req.Body, picked)
 	}
 }
 

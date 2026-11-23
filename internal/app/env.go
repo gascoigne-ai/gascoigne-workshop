@@ -185,7 +185,7 @@ func (a *App) editVars(dir *request.Folder) {
 // variableCompletion is what Ctrl+Space in the URL field offers (see
 // request.VarCompletion).
 func (a *App) variableCompletion(tab *reqTab) (names []string, from int) {
-	field := a.urlbar.Field(tab.Tab)
+	field := a.editor.URLBar.Field(tab.Tab)
 	return request.VarCompletion(field.Text, field.Cursor, a.varsFor(tab.Req))
 }
 
@@ -198,7 +198,7 @@ func (a *App) completeVariable() {
 		return
 	}
 	t := a.cur()
-	if !a.urlbar.Typing() {
+	if !a.editor.URLBar.Typing() {
 		a.toast(w.PlatformKeyText(a.ctx.HostOS, "Ctrl+Space")+" completes a {{variable}} in the URL field", severity.Info)
 		return
 	}
@@ -217,7 +217,7 @@ func (a *App) completeVariable() {
 // insertVariable writes {{name}} at the cursor of the URL field, replacing
 // the partly typed name that starts at rune from (-1 for none).
 func (a *App) insertVariable(tab *reqTab, name string, from int) {
-	field := a.urlbar.Field(tab.Tab)
+	field := a.editor.URLBar.Field(tab.Tab)
 	runes := []rune(field.Text)
 	cur := min(field.Cursor, len(runes))
 	if from < 0 || from > cur {
@@ -228,7 +228,7 @@ func (a *App) insertVariable(tab *reqTab, name string, from int) {
 	field.Cursor = from + len([]rune("{{"+name+"}}"))
 	field.HasSel = false
 	field.Focused = true
-	a.urlbar.Edited(tab.Tab)
+	a.editor.URLBar.Edited(tab.Tab)
 }
 
 // setVariable stores a value captured from the response to req in the

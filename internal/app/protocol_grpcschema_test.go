@@ -62,8 +62,8 @@ func TestTheSchemaPaneAsksForAMethodFirst(t *testing.T) {
 func TestFillBodyWritesTheSkeletonIntoTheBodyAndShowsIt(t *testing.T) {
 	a, tab := grpcTabOnSchemaPane(t)
 	clickText(t, a, "Fill body", 0)
-	if want := `{"service":""}`; tab.Req.Body != want || a.body.Area(tab.Tab).Text != want {
-		t.Errorf("body = %q, editor = %q, want %q", tab.Req.Body, a.body.Area(tab.Tab).Text, want)
+	if want := `{"service":""}`; tab.Req.Body != want || a.editor.Body.Area(tab.Tab).Text != want {
+		t.Errorf("body = %q, editor = %q, want %q", tab.Req.Body, a.editor.Body.Area(tab.Tab).Text, want)
 	}
 	if !tab.Dirty() {
 		t.Error("filling the body did not mark the request edited")

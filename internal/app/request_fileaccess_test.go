@@ -168,12 +168,12 @@ func TestTheFileBodyAsksAboutEachPathOnce(t *testing.T) {
 			files.files["/data/found.bin"] = []byte("data")
 			a.folders = files
 			tab := a.cur()
-			*a.body.File(tab.Tab) = widget.NewTextField(test.path)
+			*a.editor.Body.File(tab.Tab) = widget.NewTextField(test.path)
 			until(t, a, test.want, func() bool {
-				return strings.Contains(view.Dump(a.body.View(a.ctx, tab.Tab, &widget.ScrollState{})), test.want)
+				return strings.Contains(view.Dump(a.editor.Body.View(a.ctx, tab.Tab, &widget.ScrollState{})), test.want)
 			})
 			for range 5 {
-				view.Dump(a.body.View(a.ctx, tab.Tab, &widget.ScrollState{}))
+				view.Dump(a.editor.Body.View(a.ctx, tab.Tab, &widget.ScrollState{}))
 				a.Step(core.Input{})
 			}
 			if n := files.checks(test.path); n != 1 {

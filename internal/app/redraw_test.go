@@ -149,7 +149,7 @@ func TestTheFloorRateKeepsRedrawingWithAndWithoutAFocusedField(t *testing.T) {
 		return
 	}
 	unfocused := draws(120)
-	a.urlbar.Field(a.cur().Tab).Focused = true
+	a.editor.URLBar.Field(a.cur().Tab).Focused = true
 	focused := draws(120)
 	if unfocused < 120*engine.MinFPS/engine.ActiveTPS || focused < 120*engine.MinFPS/engine.ActiveTPS {
 		t.Fatalf("draws in 120 frames: unfocused %d, focused %d, want at least %d each", unfocused, focused, 120*engine.MinFPS/engine.ActiveTPS)

@@ -16,7 +16,7 @@ import (
 	"time"
 
 	wire "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol/ws"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -45,7 +45,7 @@ func echoServer(t *testing.T) string {
 
 func logText(a *App, tab *reqTab) string {
 	var b strings.Builder
-	for _, l := range a.ws.Lines(tab.Tab) {
+	for _, l := range a.editor.WS.Lines(tab.Tab) {
 		for _, s := range l.Spans {
 			b.WriteString(s.Text)
 		}
@@ -59,7 +59,7 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField(tab.Req.URL)
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField(tab.Req.URL)
 
 	a.send(tab) // the Send button of a socket connects
 	until(t, a, "connection", func() bool { return strings.Contains(logText(a, tab), "Connected") })
@@ -67,14 +67,14 @@ func TestWebSocketTabConnectsSendsAndDisconnects(t *testing.T) {
 		t.Fatal("no session after connecting")
 	}
 
-	*a.ws.Composer(tab.Tab) = widget.NewTextField("hello")
-	a.ws.SendMessage(tab.Tab)
+	*a.editor.WS.Composer(tab.Tab) = widget.NewTextField("hello")
+	a.editor.WS.SendMessage(tab.Tab)
 	until(t, a, "echo", func() bool { return strings.Contains(logText(a, tab), "↓ hello") })
 	if !strings.Contains(logText(a, tab), "↑ hello") {
 		t.Fatalf("sent message missing:\n%s", logText(a, tab))
 	}
-	if a.ws.Composer(tab.Tab).Text != "" {
-		t.Fatalf("composer keeps %q after sending", a.ws.Composer(tab.Tab).Text)
+	if a.editor.WS.Composer(tab.Tab).Text != "" {
+		t.Fatalf("composer keeps %q after sending", a.editor.WS.Composer(tab.Tab).Text)
 	}
 
 	a.send(tab) // connected: the same button disconnects
@@ -88,7 +88,7 @@ func TestWebSocketConnectFailureShowsInTheLog(t *testing.T) {
 	tab.Req.URL = "ws://127.0.0.1:1/"
 	a.send(tab)
 	until(t, a, "failure", func() bool {
-		return tab.Session() == nil && tab.State() != tabs.ConnConnecting && len(a.ws.Lines(tab.Tab)) > 0
+		return tab.Session() == nil && tab.State() != tabs.ConnConnecting && len(a.editor.WS.Lines(tab.Tab)) > 0
 	})
 	if tab.Session() != nil {
 		t.Fatal("session after a failed connect")
@@ -104,9 +104,9 @@ func TestClearEmptiesTheMessageLog(t *testing.T) {
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
-	until(t, a, "connection", func() bool { return tab.Session() != nil && len(a.ws.Lines(tab.Tab)) > 0 })
-	a.ws.Clear(tab.Tab)
-	if len(a.ws.Lines(tab.Tab)) != 0 {
+	until(t, a, "connection", func() bool { return tab.Session() != nil && len(a.editor.WS.Lines(tab.Tab)) > 0 })
+	a.editor.WS.Clear(tab.Tab)
+	if len(a.editor.WS.Lines(tab.Tab)) != 0 {
 		t.Fatal("log not cleared")
 	}
 	a.disconnect(tab)
@@ -155,7 +155,7 @@ func TestReconnectDelayBelongsToEachApp(t *testing.T) {
 	for _, delay := range []time.Duration{10 * time.Millisecond, 20 * time.Millisecond} {
 		t.Run(delay.String(), func(t *testing.T) {
 			t.Parallel()
-			a := &App{retryDelay: delay, bus: bus.New(), ws: ws.New(ws.Deps{})}
+			a := &App{retryDelay: delay, bus: bus.New(), editor: editor.New(editor.Deps{})}
 			tab := newTab(&request.Request{})
 			tab.Reconnect = true
 			tab.Begin()
@@ -198,11 +198,11 @@ func TestComposerSendsHexAsABinaryMessage(t *testing.T) {
 	tab.Req.URL = echoServer(t)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.Session() != nil })
-	*a.ws.Composer(tab.Tab) = widget.NewTextField("hex: de ad BE ef")
-	a.ws.SendMessage(tab.Tab)
+	*a.editor.WS.Composer(tab.Tab) = widget.NewTextField("hex: de ad BE ef")
+	a.editor.WS.SendMessage(tab.Tab)
 	until(t, a, "sent bytes", func() bool { return strings.Contains(logText(a, tab), "↑ deadbeef") })
-	*a.ws.Composer(tab.Tab) = widget.NewTextField("hex: xyz")
-	a.ws.SendMessage(tab.Tab)
+	*a.editor.WS.Composer(tab.Tab) = widget.NewTextField("hex: xyz")
+	a.editor.WS.SendMessage(tab.Tab)
 	if !strings.Contains(logText(a, tab), "hex:") {
 		t.Fatalf("a bad hex message must be explained:\n%s", logText(a, tab))
 	}
@@ -218,7 +218,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if len(tab.Tools) != 2 {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
-	a.mcp.OpenToolForm(tab.Tab, tab.Tools[0]) // a tool with properties opens its form; its defaults make the call
+	a.editor.MCP.OpenToolForm(tab.Tab, tab.Tools[0]) // a tool with properties opens its form; its defaults make the call
 	if a.over.Dialog() == nil || !strings.Contains(dialogDump(a), `text="limit"`) {
 		t.Fatal("picking a tool with arguments opens the form")
 	}
@@ -227,11 +227,11 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 			button.Run()
 		}
 	}
-	if got := a.ws.Composer(tab.Tab).Text; got != `call search {"q":"","limit":5}` {
+	if got := a.editor.WS.Composer(tab.Tab).Text; got != `call search {"q":"","limit":5}` {
 		t.Fatalf("composer %q", got)
 	}
-	a.mcp.OpenToolForm(tab.Tab, tab.Tools[1])
-	if got := a.ws.Composer(tab.Tab).Text; got != "call ping {}" {
+	a.editor.MCP.OpenToolForm(tab.Tab, tab.Tools[1])
+	if got := a.editor.WS.Composer(tab.Tab).Text; got != "call ping {}" {
 		t.Fatalf("composer %q", got)
 	}
 	openSession(tab, &fakeSession{})
@@ -342,11 +342,11 @@ func TestSendingAndPingingDoNotBlockTheFrameAndKeepTheirOrder(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		*a.ws.Composer(tab.Tab) = widget.NewTextField("one")
-		a.ws.SendMessage(tab.Tab)
-		a.ws.Ping(tab.Tab)
-		*a.ws.Composer(tab.Tab) = widget.NewTextField("two")
-		a.ws.SendMessage(tab.Tab)
+		*a.editor.WS.Composer(tab.Tab) = widget.NewTextField("one")
+		a.editor.WS.SendMessage(tab.Tab)
+		a.editor.WS.Ping(tab.Tab)
+		*a.editor.WS.Composer(tab.Tab) = widget.NewTextField("two")
+		a.editor.WS.SendMessage(tab.Tab)
 		close(done)
 	}()
 	select {

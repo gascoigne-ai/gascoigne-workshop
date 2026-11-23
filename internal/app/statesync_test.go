@@ -19,7 +19,7 @@ func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 	a.cur().paneTab, a.cur().respTab = 2, 1
 	a.sidebarSplit.Size = 310
 	a.paneSplit.Size = 0.4
-	a.kv.Widths(kvlogic.Params).Weights = []float64{1, 2, 3}
+	a.editor.Tables.Widths(kvlogic.Params).Weights = []float64{1, 2, 3}
 	s := a.stateFile.Snapshot()
 	if len(s.Tabs) != 2 || s.Active != 1 {
 		t.Fatalf("tabs %+v active %d", s.Tabs, s.Active)

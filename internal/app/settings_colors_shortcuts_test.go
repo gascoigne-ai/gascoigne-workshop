@@ -99,7 +99,7 @@ func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
 	a := testApp(t)
 	click(a, 1100, 600) // click on empty space so nothing is focused
 	a.Step(combo(ebiten.KeyL, true, false, false))
-	url := a.urlbar.Field(a.cur().Tab)
+	url := a.editor.URLBar.Field(a.cur().Tab)
 	if !url.Focused || url.SelectedText() != url.Text {
 		t.Fatalf("focused %v selection %q", url.Focused, url.SelectedText())
 	}

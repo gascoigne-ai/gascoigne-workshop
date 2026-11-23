@@ -326,13 +326,13 @@ func (a *App) tablePane(panel pane, tab *reqTab, scroll *widget.ScrollState) Nod
 // tableView is the pane's table with the given padding around it.
 func (a *App) tableView(panel pane, tab *reqTab, scroll *widget.ScrollState, pad int) Node {
 	look := kvtable.Look{Caption: panel.captionOf(a), FlagDuplicates: panel.flagDuplicates}
-	return a.kv.View(a.ctx, kvlogic.Table{Tab: tab.Tab, Kind: panel.table}, look, scroll, pad)
+	return a.editor.Tables.View(a.ctx, kvlogic.Table{Tab: tab.Tab, Kind: panel.table}, look, scroll, pad)
 }
 
 // commitEdit writes a cell edit in progress into its row, before whatever
 // the caller does next could change the rows or the tab.
 func (a *App) commitEdit() {
-	if a.kv.Commit() {
+	if a.editor.Tables.Commit() {
 		a.treeStale = true
 	}
 }
@@ -343,7 +343,7 @@ func (a *App) deleteRow() {
 	if a.textFocused() || a.side.Tree().Focused() {
 		return
 	}
-	a.kv.DeleteRow()
+	a.editor.Tables.DeleteRow()
 }
 
 // kvtableHost is what the key-value tables ask of the App (kvtable.Deps).
@@ -520,13 +520,13 @@ func (host urlbarHost) Socket(tab *tabs.Tab) bool { return host.isSocket(host.wi
 func (host urlbarHost) ToggleConnection(tab *tabs.Tab) { host.toggleConnection(host.widgets[tab]) }
 
 // PickMethod lists the methods of the server of tab in a menu.
-func (host urlbarHost) PickMethod(tab *tabs.Tab) { host.grpc.PickMethod(host.ctx, tab) }
+func (host urlbarHost) PickMethod(tab *tabs.Tab) { host.editor.GRPC.PickMethod(host.ctx, tab) }
 
 // Streaming reports whether tab streams instead of making single calls.
-func (host urlbarHost) Streaming(tab *tabs.Tab) bool { return host.grpc.Streaming(tab) }
+func (host urlbarHost) Streaming(tab *tabs.Tab) bool { return host.editor.GRPC.Streaming(tab) }
 
 // ToggleStream switches tab between single calls and a stream.
-func (host urlbarHost) ToggleStream(tab *tabs.Tab) { host.grpc.ToggleStream(tab) }
+func (host urlbarHost) ToggleStream(tab *tabs.Tab) { host.editor.GRPC.ToggleStream(tab) }
 
 // Offered are the protocols the chip cycles through for a request on current.
 func (host urlbarHost) Offered(current request.Protocol) []request.Protocol {
@@ -581,7 +581,7 @@ func (host bodyHost) FormTable(tab *tabs.Tab, scroll *widget.ScrollState) Node {
 }
 
 // GraphQL is the editor of a GraphQL body.
-func (host bodyHost) GraphQL(tab *tabs.Tab) Node { return host.graphql.View(host.ctx, tab) }
+func (host bodyHost) GraphQL(tab *tabs.Tab) Node { return host.editor.GraphQL.View(host.ctx, tab) }
 
 // Message is a status line in place of the Schema pane.
 func (host bodyHost) Message(text string) Node { return host.messagePane(schemaPane, text, false) }
@@ -797,12 +797,14 @@ func (host responseHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(hos
 
 // Results is the Tests pane, which the assertions component draws.
 func (host responseHost) Results(tab *tabs.Tab, scroll *widget.ScrollState) Node {
-	return host.assertions.ResultsView(host.ctx, tab, scroll)
+	return host.editor.Assertions.ResultsView(host.ctx, tab, scroll)
 }
 
 // Widths is the column widths of the response headers table, kept with the
 // widths of the other key-value tables.
-func (host responseHost) Widths() *widget.TableState { return host.kv.Widths(kvlogic.ResponseHeaders) }
+func (host responseHost) Widths() *widget.TableState {
+	return host.editor.Tables.Widths(kvlogic.ResponseHeaders)
+}
 
 // CellStyler marks the {{variables}} of a cell of req.
 func (host responseHost) CellStyler(req *request.Request) func(string) []widget.Span {
@@ -891,11 +893,11 @@ func (host mcpHost) Run(work func() (answer func())) {
 func (host mcpHost) Dispatch(run func()) { host.bus.Dispatch(run) }
 
 // SetComposer replaces the text of the composer of tab.
-func (host mcpHost) SetComposer(tab *tabs.Tab, text string) { host.ws.SetComposer(tab, text) }
+func (host mcpHost) SetComposer(tab *tabs.Tab, text string) { host.editor.WS.SetComposer(tab, text) }
 
 // ComposeCall puts the call of tool into the composer of tab.
 func (host mcpHost) ComposeCall(tab *tabs.Tab, tool request.MCPTool) {
-	host.ws.ComposeCall(tab, tool)
+	host.editor.WS.ComposeCall(tab, tool)
 }
 
 // Open shows state as the dialog of the window, with content as its own
@@ -933,7 +935,7 @@ func (host wsHost) Queue(tab *tabs.Tab, send outbox.Send) { host.sendInOrder(hos
 
 // OpenToolForm shows the form of tool; its answer fills the composer of tab.
 func (host wsHost) OpenToolForm(tab *tabs.Tab, tool request.MCPTool) {
-	host.mcp.OpenToolForm(tab, tool)
+	host.editor.MCP.OpenToolForm(tab, tool)
 }
 
 // Open shows a menu at the pointer.
@@ -1204,7 +1206,7 @@ func (host stateHost) Snapshot() state.State {
 	}
 	snapshot.Tabs, snapshot.Active = state.Remember(remembered, host.tabs.Active())
 	for kind := kvlogic.Params; kind < kvlogic.KindCount; kind++ {
-		if weights := host.kv.Widths(kind).Weights; len(weights) > 0 {
+		if weights := host.editor.Tables.Widths(kind).Weights; len(weights) > 0 {
 			if snapshot.Columns == nil {
 				snapshot.Columns = map[string][]float64{}
 			}
@@ -1247,7 +1249,7 @@ func (host stateHost) Restore(saved state.State) {
 			continue
 		}
 		if kind, ok := kvlogic.KindOfKey(name); ok {
-			*host.kv.Widths(kind) = widget.TableState{Weights: append([]float64(nil), weights...)}
+			*host.editor.Tables.Widths(kind) = widget.TableState{Weights: append([]float64(nil), weights...)}
 		}
 	}
 }

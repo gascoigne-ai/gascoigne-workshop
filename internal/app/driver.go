@@ -82,10 +82,10 @@ func (d *Driver) ShowResponsePane(label string) error {
 
 // ChooseBodyType chooses the body type id on the open request, as its chip does.
 func (d *Driver) ChooseBodyType(id string) error {
-	if !d.app.body.Offers(request.BodyType(id)) {
+	if !d.app.editor.Body.Offers(request.BodyType(id)) {
 		return fmt.Errorf("body type %q is not one of the body chips", id)
 	}
-	d.app.body.ChooseType(d.app.cur().Tab, request.BodyType(id))
+	d.app.editor.Body.ChooseType(d.app.cur().Tab, request.BodyType(id))
 	d.app.keys.MarkStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
@@ -97,14 +97,14 @@ func (d *Driver) TypeBody(text string) error {
 	if tab.Req.BodyType != request.BodyJSON && tab.Req.BodyType != request.BodyText {
 		return fmt.Errorf("body text needs a JSON or Text body, the open request's is %q", tab.Req.BodyType)
 	}
-	d.app.body.Replace(tab.Tab, text)
+	d.app.editor.Body.Replace(tab.Tab, text)
 	d.app.keys.MarkStale() // no input reports this edit, so the cached unsaved marks would not see it
 	return nil
 }
 
 // TypeURL types text into the open request's URL, so its tab is marked changed.
 func (d *Driver) TypeURL(text string) {
-	d.app.urlbar.Type(d.app.cur().Tab, text)
+	d.app.editor.URLBar.Type(d.app.cur().Tab, text)
 	d.app.keys.MarkStale() // no input reports this edit, so the cached unsaved marks would not see it
 }
 
@@ -112,7 +112,7 @@ func (d *Driver) TypeURL(text string) {
 // Wrap chips would.
 func (d *Driver) WrapOn() {
 	d.app.resp.Code(d.app.cur().Tab).Wrap = true
-	d.app.body.Area(d.app.cur().Tab).Wrap = true
+	d.app.editor.Body.Area(d.app.cur().Tab).Wrap = true
 }
 
 // OpenDialog opens the dialog of this kind (rename, delete, or the move and
@@ -240,7 +240,7 @@ func (d *Driver) OpenToolForm(name string) (opened bool, err error) {
 	tab := d.app.cur()
 	for _, tool := range tab.Tools {
 		if tool.Name == name {
-			d.app.mcp.OpenToolForm(tab.Tab, tool)
+			d.app.editor.MCP.OpenToolForm(tab.Tab, tool)
 			return true, nil
 		}
 	}
@@ -310,7 +310,7 @@ func (a *App) answered(tab *reqTab) bool {
 		return false
 	}
 	if tab.Session() == nil {
-		return len(a.ws.Lines(tab.Tab)) > 0 // the error is in the log
+		return len(a.editor.WS.Lines(tab.Tab)) > 0 // the error is in the log
 	}
 	explores := slices.ContainsFunc(viewOf(tab.Req.Protocol).streamPanes, func(panel pane) bool { return panel.kind == paneExplorer })
 	return !explores || tab.Server != nil // an explorer waits for the server to say who it is

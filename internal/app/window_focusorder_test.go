@@ -16,11 +16,11 @@ func focusName(app *App) string {
 	switch {
 	case app.side.Filter().Focused:
 		return "filter"
-	case app.urlbar.Field(t.Tab).Focused:
+	case app.editor.URLBar.Field(t.Tab).Focused:
 		return "url"
 	case app.resp.Field(t.Tab).Focused:
 		return "find"
-	case app.body.Area(t.Tab).Focused:
+	case app.editor.Body.Area(t.Tab).Focused:
 		return "body"
 	case app.resp.Code(t.Tab).Focused:
 		return "response"

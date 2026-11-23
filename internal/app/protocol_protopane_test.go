@@ -165,7 +165,7 @@ func TestPickingAMethodFromProtoFilesNeedsNoServer(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
 	tab.Req.URL = ""
 	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
-	a.grpc.PickMethod(a.ctx, tab.Tab)
+	a.editor.GRPC.PickMethod(a.ctx, tab.Tab)
 	until(t, a, "the menu of methods", func() bool { return widget.PopupMenu(a.ctx) != nil })
 	if got := strings.Join(menuLabels(a), " "); !strings.Contains(got, "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %s", got)

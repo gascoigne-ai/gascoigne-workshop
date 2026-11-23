@@ -288,8 +288,8 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 		"a toast":            func(a *App) { a.toast("Saved", severity.Info) },
 		"a settings message": func(a *App) { a.over.Settings.Send(prefs.Toast{Text: "hi", Level: severity.Info}) },
 		"bulk text turned to rows": func(a *App) {
-			a.kv.ToggleBulk(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params})
-			*a.kv.BulkArea() = widget.NewTextArea("a: b")
+			a.editor.Tables.ToggleBulk(kvlogic.Table{Tab: a.cur().Tab, Kind: kvlogic.Params})
+			*a.editor.Tables.BulkArea() = widget.NewTextArea("a: b")
 			a.cur().paneTab = headersTabIdx // another table shows: the next step applies the text
 			a.Step(core.Input{X: 5000, Y: 5000})
 		},

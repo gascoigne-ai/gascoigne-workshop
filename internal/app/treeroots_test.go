@@ -255,7 +255,7 @@ func TestClosingACollectionDisconnectsItsSockets(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "websocket"
 	tab.Req.URL = "ws" + strings.TrimPrefix(srv.URL, "http")
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField(tab.Req.URL)
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField(tab.Req.URL)
 	a.send(tab)
 	until(t, a, "connection", func() bool { return tab.Session() != nil })
 	a.closeCollection(beta)

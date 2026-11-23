@@ -66,7 +66,7 @@ func TestAnUndoClaimInTextStillRunsAUserBindingOnIt(t *testing.T) {
 	a := testApp(t)
 	a.settings.Shortcuts = map[string]string{"new-request": "Ctrl+Z"}
 	tabs := len(a.tabs.Tabs())
-	a.urlbar.Field(a.cur().Tab).Focused = true
+	a.editor.URLBar.Field(a.cur().Tab).Focused = true
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyZ}, Ctrl: true, Undo: true})
 	if len(a.tabs.Tabs()) != tabs+1 {
 		t.Fatalf("tabs %d, want %d: the binding on Ctrl+Z must run", len(a.tabs.Tabs()), tabs+1)

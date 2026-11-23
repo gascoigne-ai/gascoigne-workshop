@@ -39,8 +39,8 @@ var messagesPaneStates = []struct {
 		openSession(tab, &fakeSession{})
 		tab.Reconnect = true
 		sentAt := time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC)
-		app.ws.Log(tab.Tab, request.Event{Time: sentAt, Dir: request.Sent, Kind: request.KindText, Text: `{"op":"ping"}`})
-		app.ws.Log(tab.Tab, request.Event{Time: sentAt, Dir: request.Received, Kind: request.KindText, Text: `{"op":"ping"}`})
+		app.editor.WS.Log(tab.Tab, request.Event{Time: sentAt, Dir: request.Sent, Kind: request.KindText, Text: `{"op":"ping"}`})
+		app.editor.WS.Log(tab.Tab, request.Event{Time: sentAt, Dir: request.Received, Kind: request.KindText, Text: `{"op":"ping"}`})
 	}},
 	{"sse", "", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "sse"
@@ -54,7 +54,7 @@ var messagesPaneStates = []struct {
 	}},
 	{"grpc-stream", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "grpc"
-		app.grpc.ToggleStream(tab.Tab)
+		app.editor.GRPC.ToggleStream(tab.Tab)
 		openSession(tab, &fakeSession{})
 	}},
 }
@@ -113,7 +113,7 @@ func TestTheComposerEditsTheTabsMessage(t *testing.T) {
 				t.Fatal("no composer")
 			}
 			settings := fmt.Sprintf("%+v", field.Behavior())
-			for _, want := range []string{"field:" + fmt.Sprintf("%p", a.ws.Composer(tab.Tab)), "placeholder:" + state.placeholder + " segments:"} {
+			for _, want := range []string{"field:" + fmt.Sprintf("%p", a.editor.WS.Composer(tab.Tab)), "placeholder:" + state.placeholder + " segments:"} {
 				if !strings.Contains(settings, want) {
 					t.Errorf("the composer lacks %q: %s", want, settings)
 				}
@@ -167,7 +167,7 @@ func TestTheComposerSendsOnEnterAndOnSend(t *testing.T) {
 			if got := session.log()[0]; got != "hello" {
 				t.Fatalf("sent %q, want hello", got)
 			}
-			if text := a.ws.Composer(a.cur().Tab).Text; text != "" {
+			if text := a.editor.WS.Composer(a.cur().Tab).Text; text != "" {
 				t.Fatalf("composer keeps %q after sending", text)
 			}
 		})
@@ -177,9 +177,9 @@ func TestTheComposerSendsOnEnterAndOnSend(t *testing.T) {
 // The { } button makes indented JSON in the composer one line.
 func TestTheFormatButtonCompactsTheComposersJSON(t *testing.T) {
 	a, _ := openConnectedEcho(t)
-	*a.ws.Composer(a.cur().Tab) = widget.NewTextField("{\n  \"op\": \"ping\"\n}")
+	*a.editor.WS.Composer(a.cur().Tab) = widget.NewTextField("{\n  \"op\": \"ping\"\n}")
 	click(a, formatButtonX, composerY)
-	if got := a.ws.Composer(a.cur().Tab).Text; got != `{"op":"ping"}` {
+	if got := a.editor.WS.Composer(a.cur().Tab).Text; got != `{"op":"ping"}` {
 		t.Fatalf("composer = %q", got)
 	}
 }
@@ -201,7 +201,7 @@ func TestComposerFocusCountsAsTyping(t *testing.T) {
 	if a.textFocused() {
 		t.Fatal("typing with nothing focused")
 	}
-	a.ws.Composer(a.cur().Tab).Focused = true
+	a.editor.WS.Composer(a.cur().Tab).Focused = true
 	if !a.textFocused() {
 		t.Fatal("a focused composer is not typing")
 	}

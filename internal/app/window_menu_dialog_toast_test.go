@@ -207,7 +207,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 	a.prompt("Rename", "x", "Rename", func(string) {})
 	a.Step(core.Input{})
 	a.Step(core.Input{Tab: true})
-	if !a.over.Dialog().Input.Focused || a.urlbar.Field(a.cur().Tab).Focused {
+	if !a.over.Dialog().Input.Focused || a.editor.URLBar.Field(a.cur().Tab).Focused {
 		t.Fatal("Tab must stay inside the dialog")
 	}
 	a.Step(combo(ebiten.KeyT, true, false, false))
@@ -323,7 +323,7 @@ func TestTextFieldMenuStatesAndActions(t *testing.T) {
 	}
 
 	pickMenu(t, a, "Select all")
-	url := a.urlbar.Field(a.cur().Tab)
+	url := a.editor.URLBar.Field(a.cur().Tab)
 	if url.SelectedText() != url.Text {
 		t.Fatal("Select all")
 	}
@@ -362,7 +362,7 @@ func TestSecretFieldsCannotBeCutOrCopiedFromTheMenu(t *testing.T) {
 	click(a, authBearerX, chipsY)
 	click(a, authFieldX, authRow1Y)
 	a.typeText("s3cret")
-	a.auth.Field(a.cur().Tab, "token").SelectAll()
+	a.editor.Auth.Field(a.cur().Tab, "token").SelectAll()
 	rightClick(a, authFieldX, authRow1Y)
 	if !itemByLabel(t, a, "Cut").Disabled || !itemByLabel(t, a, "Copy").Disabled {
 		t.Fatal("a masked field must not offer Cut or Copy")
@@ -388,7 +388,7 @@ func TestBodyEditorMenuPastesLinesAndKeepsTheModelInSync(t *testing.T) {
 	click(a, jsonChipX, chipsY)
 	rightClick(a, editorX, editorY)
 	pickMenu(t, a, "Paste")
-	if a.cur().Req.Body != "{\n  \"a\": 1\n}" || a.body.Area(a.cur().Tab).LineCount() != 3 {
+	if a.cur().Req.Body != "{\n  \"a\": 1\n}" || a.editor.Body.Area(a.cur().Tab).LineCount() != 3 {
 		t.Fatalf("Body = %q", a.cur().Req.Body)
 	}
 }

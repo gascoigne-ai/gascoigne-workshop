@@ -16,7 +16,7 @@ func (a *App) grabbing() bool {
 	if !a.ctx.In.Held && !a.ctx.In.MiddleHeld {
 		return false
 	}
-	return a.tabs.Drag() >= 0 || a.kv.Dragging() || a.treeDragging()
+	return a.tabs.Drag() >= 0 || a.editor.Tables.Dragging() || a.treeDragging()
 }
 
 // showGrab turns the cursor into the move shape while something is held,

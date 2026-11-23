@@ -48,7 +48,7 @@ func TestTheGRPCStripSeparatesItsChips(t *testing.T) {
 			t.Cleanup(a.WaitWrites)
 			tab := a.cur()
 			stateNamed(t, state).setUp(t, a, tab)
-			root := a.urlbar.View(a.ctx)
+			root := a.editor.URLBar.View(a.ctx)
 			Layout(a.ctx, root, urlWideW, urlH)
 			dump := Dump(root)
 			dividers := dividerXs(dump)
@@ -85,7 +85,7 @@ func TestTheStreamChipShowsItsState(t *testing.T) {
 }
 
 func layoutBar(app *App, tab *reqTab) Node {
-	root := app.urlbar.View(app.ctx)
+	root := app.editor.URLBar.View(app.ctx)
 	Layout(app.ctx, root, urlWideW, urlH)
 	return root
 }

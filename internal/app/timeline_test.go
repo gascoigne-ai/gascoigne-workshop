@@ -32,8 +32,8 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 func TestTypingAColonSegmentAddsAPathParameterRowThatFillsTheSentURL(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField("https://api.test/users/:id")
-	a.urlbar.Edited(tab.Tab)
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField("https://api.test/users/:id")
+	a.editor.URLBar.Edited(tab.Tab)
 	var row *request.KV
 	for i := range tab.Req.Params {
 		if tab.Req.Params[i].Name == ":id" {
@@ -53,14 +53,14 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
 	tab.Req.URL = "https://api.test/x"
-	a.auth.ShowCookies(tab.Tab)
+	a.editor.Auth.ShowCookies(tab.Tab)
 	if a.over.Dialog() == nil || !strings.Contains(a.over.Dialog().Body, "No cookies for api.test") {
 		t.Fatalf("dialog %+v", a.over.Dialog())
 	}
 	a.over.CloseDialog()
 	u, _ := url.Parse("https://api.test/x")
 	a.jar.SetCookies(u, []*http.Cookie{{Name: "session", Value: "abc", Path: "/"}})
-	a.auth.ShowCookies(tab.Tab)
+	a.editor.Auth.ShowCookies(tab.Tab)
 	if !strings.Contains(a.over.Dialog().Body, "session=abc") {
 		t.Fatalf("body %q", a.over.Dialog().Body)
 	}
@@ -71,7 +71,7 @@ func TestCookiesDialogListsWhatTheJarHoldsForTheURL(t *testing.T) {
 	}
 	tab.Req.URL = "not a url"
 	a.over.CloseDialog()
-	a.auth.ShowCookies(tab.Tab)
+	a.editor.Auth.ShowCookies(tab.Tab)
 	if a.over.Dialog() != nil {
 		t.Fatal("no dialog for a URL without a host")
 	}

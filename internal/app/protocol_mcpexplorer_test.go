@@ -28,11 +28,11 @@ func TestExplorerAndTrafficPanesDrawWithoutPanicking(t *testing.T) {
 	announce(a, tab)
 	openSession(tab, &fakeSession{result: `{"content":[]}`})
 	for _, kind := range []mcpexplorer.Kind{mcpexplorer.Tools, mcpexplorer.Resources, mcpexplorer.Prompts} {
-		a.mcp.Choose(tab.Tab, kind)
+		a.editor.MCP.Choose(tab.Tab, kind)
 		a.Step(core.Input{})
-		a.mcp.Open(tab.Tab, 0)
-		a.mcp.Call(tab.Tab)
-		until(t, a, "the answer", func() bool { return !a.mcp.Calling(tab.Tab) })
+		a.editor.MCP.Open(tab.Tab, 0)
+		a.editor.MCP.Call(tab.Tab)
+		until(t, a, "the answer", func() bool { return !a.editor.MCP.Calling(tab.Tab) })
 	}
 	tab.respTab = 1 // the JSON-RPC traffic
 	a.Step(core.Input{})
@@ -48,7 +48,7 @@ func TestLeavingMCPShowsTheFirstResponsePane(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "mcp"
 	tab.respTab = 1
-	a.urlbar.CycleProtocol(tab.Tab) // mcp -> sse
+	a.editor.URLBar.CycleProtocol(tab.Tab) // mcp -> sse
 	if tab.respTab != 0 {
 		t.Fatalf("respTab %d", tab.respTab)
 	}

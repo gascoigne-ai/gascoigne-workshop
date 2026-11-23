@@ -34,7 +34,7 @@ func TestTheResponseHostDrawsTheResultsWithTheScrollItIsGiven(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "status == 200"
 	tab.Resp = &request.Response{Status: 200, StatusText: "OK"}
-	a.assertions.Run(tab.Tab)
+	a.editor.Assertions.Run(tab.Tab)
 	var scroll widget.ScrollState
 	results := responseHost{a}.Results(tab.Tab, &scroll)
 	if results == nil {
@@ -53,7 +53,7 @@ func TestTheResponseHostDrawsTheResultsWithTheScrollItIsGiven(t *testing.T) {
 // record, so they persist with the others.
 func TestTheResponseHostGivesTheHeadersWidthsOfTheKeyValueTables(t *testing.T) {
 	a := testApp(t)
-	if got := (responseHost{a}).Widths(); got == nil || got != a.kv.Widths(kvlogic.ResponseHeaders) {
-		t.Fatalf("widths %p, want the record of the response headers %p", got, a.kv.Widths(kvlogic.ResponseHeaders))
+	if got := (responseHost{a}).Widths(); got == nil || got != a.editor.Tables.Widths(kvlogic.ResponseHeaders) {
+		t.Fatalf("widths %p, want the record of the response headers %p", got, a.editor.Tables.Widths(kvlogic.ResponseHeaders))
 	}
 }

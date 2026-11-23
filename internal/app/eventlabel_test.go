@@ -10,7 +10,7 @@ import (
 // lastLine is the text of the last log line.
 func lastLine(t *testing.T, a *App, tab *reqTab) string {
 	t.Helper()
-	lines := a.ws.Lines(tab.Tab)
+	lines := a.editor.WS.Lines(tab.Tab)
 	if len(lines) == 0 {
 		t.Fatal("nothing was logged")
 	}
@@ -23,15 +23,15 @@ func lastLine(t *testing.T, a *App, tab *reqTab) string {
 func TestAnSSEEventNamedInitializeIsLogged(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.ws.Log(tab.Tab, request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "initialize", Text: "hello"})
+	a.editor.WS.Log(tab.Tab, request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "initialize", Text: "hello"})
 	if got := lastLine(t, a, tab); got != "hello" {
 		t.Errorf("last line %q, want the event's data", got)
 	}
 
-	before := len(a.ws.Lines(tab.Tab))
+	before := len(a.editor.WS.Lines(tab.Tab))
 	result := `{"protocolVersion":"2025-06-18","serverInfo":{"name":"mock","version":"1"}}`
 	a.applyWS(wsReceived{wsTarget{tab: tab}, request.Event{Dir: request.Info, Kind: request.KindInitialize, Text: result}})
-	if len(a.ws.Lines(tab.Tab)) != before {
+	if len(a.editor.WS.Lines(tab.Tab)) != before {
 		t.Errorf("the MCP initialize note was logged")
 	}
 	if tab.Server == nil || tab.Server.Name != "mock" {
@@ -55,7 +55,7 @@ func TestAnEmptyEventShowsItsLabel(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a := testApp(t)
 			tab := a.cur()
-			a.ws.Log(tab.Tab, tc.event)
+			a.editor.WS.Log(tab.Tab, tc.event)
 			if got := lastLine(t, a, tab); got != tc.want {
 				t.Errorf("line %q, want %q", got, tc.want)
 			}
@@ -68,8 +68,8 @@ func TestAnEmptyEventShowsItsLabel(t *testing.T) {
 func TestAnEventNamedErrorRendersAsNormalText(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	a.ws.Log(tab.Tab, request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "error", Text: "boom"})
-	lines := a.ws.Lines(tab.Tab)
+	a.editor.WS.Log(tab.Tab, request.Event{Dir: request.Received, Kind: request.KindMessage, Name: "error", Text: "boom"})
+	lines := a.editor.WS.Lines(tab.Tab)
 	spans := lines[len(lines)-1].Spans
 	if got := spans[len(spans)-1]; got.Text != "boom" || got.Style != w.Text {
 		t.Errorf("span %+v, want plain text", got)

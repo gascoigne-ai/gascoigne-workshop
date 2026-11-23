@@ -18,6 +18,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/assertions"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/auth"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
@@ -173,15 +174,17 @@ func NewApp(opts Options) (*App, error) {
 		Folders: sidebarHost{a}, Extras: sidebarHost{a}, Collection: collectionHost{a}, Workspace: sidebarHost{a},
 		Menus: sidebarHost{a}, Sent: a,
 	})
-	a.kv = kvtable.New(kvtable.Deps{Tables: kvtableHost{a}, Tabs: kvtableHost{a}, Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}})
-	a.urlbar = urlbar.New(urlbar.Deps{Tabs: urlbarHost{a}, Sends: urlbarHost{a}, Connections: urlbarHost{a}, GRPC: urlbarHost{a}, Protocols: urlbarHost{a}, Styles: urlbarHost{a}, Hints: urlbarHost{a}})
-	a.body = body.New(body.Deps{Tabs: bodyHost{a}, Slots: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}, Window: bodyHost{a}})
-	a.graphql = graphql.New(graphql.Deps{Tabs: graphqlHost{a}, Query: a.body, Sends: graphqlHost{a}, Window: graphqlHost{a}})
-	a.auth = auth.New(auth.Deps{Tabs: authHost{a}, Vars: authHost{a}, Trust: authHost{a}, Cookies: authHost{a}, Window: authHost{a}})
-	a.assertions = assertions.New(assertions.Deps{Tabs: assertionsHost{a}, Vars: assertionsHost{a}, Status: assertionsHost{a}, Defaults: assertionsHost{a}})
-	a.grpc = grpc.New(grpc.Deps{Tabs: grpcHost{a}, Methods: grpcHost{a}, Vars: grpcHost{a}, Files: grpcHost{a}, Connections: grpcHost{a}, Window: grpcHost{a}})
-	a.mcp = mcp.New(mcp.Deps{Tabs: mcpHost{a}, Bus: mcpHost{a}, Composer: mcpHost{a}, Dialogs: mcpHost{a}, Looks: mcpHost{a}})
-	a.ws = ws.New(ws.Deps{Tabs: wsHost{a}, Outbox: wsHost{a}, Tools: wsHost{a}, Window: wsHost{a}, Composers: wsHost{a}})
+	a.editor = editor.New(editor.Deps{
+		URLBar:     urlbar.Deps{Tabs: urlbarHost{a}, Sends: urlbarHost{a}, Connections: urlbarHost{a}, GRPC: urlbarHost{a}, Protocols: urlbarHost{a}, Styles: urlbarHost{a}, Hints: urlbarHost{a}},
+		Body:       body.Deps{Tabs: bodyHost{a}, Slots: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}, Window: bodyHost{a}},
+		GraphQL:    graphql.Deps{Tabs: graphqlHost{a}, Sends: graphqlHost{a}, Window: graphqlHost{a}},
+		Auth:       auth.Deps{Tabs: authHost{a}, Vars: authHost{a}, Trust: authHost{a}, Cookies: authHost{a}, Window: authHost{a}},
+		Assertions: assertions.Deps{Tabs: assertionsHost{a}, Vars: assertionsHost{a}, Status: assertionsHost{a}, Defaults: assertionsHost{a}},
+		GRPC:       grpc.Deps{Tabs: grpcHost{a}, Methods: grpcHost{a}, Vars: grpcHost{a}, Files: grpcHost{a}, Connections: grpcHost{a}, Window: grpcHost{a}},
+		MCP:        mcp.Deps{Tabs: mcpHost{a}, Bus: mcpHost{a}, Composer: mcpHost{a}, Dialogs: mcpHost{a}, Looks: mcpHost{a}},
+		WS:         ws.Deps{Tabs: wsHost{a}, Outbox: wsHost{a}, Tools: wsHost{a}, Window: wsHost{a}, Composers: wsHost{a}},
+		Tables:     kvtable.Deps{Tables: kvtableHost{a}, Tabs: kvtableHost{a}, Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}},
+	})
 	a.resp = response.New(response.Deps{Tabs: responseHost{a}, Slots: responseHost{a}, Headers: responseHost{a}, Files: responseHost{a}, Exports: responseHost{a}, Window: responseHost{a}, Hints: responseHost{a}, Defaults: responseHost{a}})
 	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})
 	a.header = header.New(header.Deps{Title: headerHost{a}, Settings: headerHost{a}, Hints: headerHost{a}, Env: envchip.Deps{Envs: envchipHost{a}, Menus: envchipHost{a}, Dialogs: envchipHost{a}}})
@@ -258,5 +261,5 @@ func (a *App) newRegistry() request.Registry {
 		return request.Registry{}
 	}
 	s := a.settings
-	return a.protocols(request.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.mcp.Sample})
+	return a.protocols(request.ProtocolConfig{Jar: a.jar, Proxy: s.Proxy, CACert: s.CACert, ClientCert: s.ClientCert, ClientKey: s.ClientKey, Sampler: a.editor.MCP.Sample})
 }

@@ -23,12 +23,12 @@ func TestTheToolbarPingSendsAPing(t *testing.T) {
 func TestTheToolbarClearEmptiesTheLog(t *testing.T) {
 	a, _ := openConnectedEcho(t)
 	tab := a.cur()
-	a.ws.Log(tab.Tab, request.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: request.Received, Kind: request.KindText, Text: "hi"})
-	if len(a.ws.Lines(tab.Tab)) == 0 {
+	a.editor.WS.Log(tab.Tab, request.Event{Time: time.Date(2026, 11, 14, 10, 30, 0, 0, time.UTC), Dir: request.Received, Kind: request.KindText, Text: "hi"})
+	if len(a.editor.WS.Lines(tab.Tab)) == 0 {
 		t.Fatal("the log is empty before Clear")
 	}
 	clickText(t, a, "Clear", 0)
-	if n := len(a.ws.Lines(tab.Tab)); n != 0 {
+	if n := len(a.editor.WS.Lines(tab.Tab)); n != 0 {
 		t.Fatalf("the log keeps %d lines", n)
 	}
 }

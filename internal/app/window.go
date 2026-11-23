@@ -45,7 +45,7 @@ func (a *App) view() Node {
 		"sidebar":        a.side.View(a.ctx),
 		"header":         a.header.View(a.ctx),
 		"requestTabs":    a.strip.View(a.ctx),
-		"urlBar":         a.urlbar.View(a.ctx),
+		"urlBar":         a.editor.URLBar.View(a.ctx),
 		"paneSplit":      &a.paneSplit,
 		"minPaneSize":    minPaneSize,
 		"stacked":        a.settings.Layout == "stacked",

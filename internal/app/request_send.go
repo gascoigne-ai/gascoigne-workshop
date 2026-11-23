@@ -27,7 +27,7 @@ func (a *App) send(tab *reqTab) {
 // helper one such as a GraphQL schema query that uses the tab's URL and
 // credentials.
 func (a *App) dispatch(tab *reqTab, source *request.Request) {
-	if !a.auth.Allowed(tab.Tab, source, func() { a.dispatch(tab, source) }) {
+	if !a.editor.Auth.Allowed(tab.Tab, source, func() { a.dispatch(tab, source) }) {
 		return
 	}
 	req := source.Expanded(a.varsFor(tab.Req))
@@ -100,15 +100,15 @@ func (a *App) apply(result sends.Result) {
 		a.side.Sent().Record(a, a.now(), owner.Dir, path, t.Req, result.Response.Status)
 	}
 	a.over.Calls().Answer(a.now(), t.Req, &result.Response)
-	a.graphql.Remember(t.Tab, &result.Response)
+	a.editor.GraphQL.Remember(t.Tab, &result.Response)
 	a.resp.Refresh(t.Tab)
 	if result.Response.Err != "" {
 		a.notices.SetStatus("Request failed")
-		a.assertions.Run(t.Tab)
+		a.editor.Assertions.Run(t.Tab)
 		return
 	}
 	a.notices.SetStatus(fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.Response.Status, result.Response.StatusText, format.Duration(result.Response.Duration)))
-	a.assertions.Run(t.Tab)
+	a.editor.Assertions.Run(t.Tab)
 }
 
 // A WebSocket or MCP tab keeps a session open instead of making one send.
@@ -154,7 +154,7 @@ const defaultRetryDelay = 2 * time.Second
 // or on a stream the gRPC component says the tab has turned on.
 func (a *App) isSocket(tab *reqTab) bool {
 	connection := tab.Req.Protocol.Info().Connection
-	return connection == request.Always || (connection == request.OnStream && a.grpc.Streaming(tab.Tab))
+	return connection == request.Always || (connection == request.OnStream && a.editor.GRPC.Streaming(tab.Tab))
 }
 
 // toggleConnection connects a disconnected socket tab and closes a
@@ -169,7 +169,7 @@ func (a *App) toggleConnection(tab *reqTab) {
 
 // connect dials in the background; the outcome arrives as a wsOpened or wsFailed.
 func (a *App) connect(tab *reqTab) {
-	if !a.auth.Allowed(tab.Tab, tab.Req, func() { a.connect(tab) }) {
+	if !a.editor.Auth.Allowed(tab.Tab, tab.Req, func() { a.connect(tab) }) {
 		return
 	}
 	gen, ok := tab.Begin()
@@ -240,7 +240,7 @@ func (a *App) runOutbox(tab *reqTab, send outbox.Send) {
 		err := send(ctx)
 		return func() { // on the UI goroutine
 			if err != nil {
-				a.ws.Note(tab.Tab, err.Error(), severity.Error)
+				a.editor.WS.Note(tab.Tab, err.Error(), severity.Error)
 			}
 			if next, more := tab.outbox.Done(); more {
 				a.runOutbox(tab, next)
@@ -271,7 +271,7 @@ func (a *App) applyWS(msg wsMessage) {
 		a.applyFailed(msg)
 	case wsReceived:
 		msg.tab.Received(msg.event)
-		a.ws.Log(msg.tab.Tab, msg.event)
+		a.editor.WS.Log(msg.tab.Tab, msg.event)
 	case wsClosed:
 		a.applyClosed(msg)
 	case wsRetry:
@@ -297,7 +297,7 @@ func (a *App) applyFailed(msg wsFailed) {
 		return
 	}
 	a.over.Calls().Error(a.now(), fmt.Sprintf("✗ %s: %s", tab.Req.URL, msg.err))
-	a.ws.Note(tab.Tab, msg.err.Error(), severity.Error)
+	a.editor.WS.Note(tab.Tab, msg.err.Error(), severity.Error)
 	a.notices.SetStatus("Connection failed")
 	a.scheduleRetry(tab)
 }
@@ -318,7 +318,7 @@ func (a *App) scheduleRetry(tab *reqTab) {
 	if !tab.Retrying() {
 		return
 	}
-	a.ws.Note(tab.Tab, "Reconnecting in "+a.retryDelay.String(), severity.Info)
+	a.editor.WS.Note(tab.Tab, "Reconnecting in "+a.retryDelay.String(), severity.Info)
 	gen := tab.Gen
 	time.AfterFunc(a.retryDelay, func() { a.bus.Dispatch(wsRetry{wsTarget{tab: tab, gen: gen}}) })
 }

@@ -24,7 +24,7 @@ func TestTypingInTheURLFieldUpdatesParams(t *testing.T) {
 	if last.Name != "page" || last.Value != "2" || !last.Enabled {
 		t.Fatalf("params = %+v", req.Params)
 	}
-	if got := a.urlbar.Field(a.cur().Tab).Text; got != req.URL {
+	if got := a.editor.URLBar.Field(a.cur().Tab).Text; got != req.URL {
 		t.Fatalf("field %q and request %q disagree", got, req.URL)
 	}
 }
@@ -83,7 +83,7 @@ func TestEditingAParamValueUpdatesTheURL(t *testing.T) {
 	if tableEditing(a) || req.Params[0].Value != "rust" || !strings.Contains(req.URL, "q=rust") {
 		t.Fatalf("edit %+v params %+v url %q", editCell(a), req.Params, req.URL)
 	}
-	if a.urlbar.Field(a.cur().Tab).Text != req.URL {
+	if a.editor.URLBar.Field(a.cur().Tab).Text != req.URL {
 		t.Fatal("the URL field must show the rewritten URL")
 	}
 }
@@ -385,11 +385,11 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 	req := a.cur().Req
 	req.Params[1].Enabled = false
 	click(a, bulkBtnX, chipsY)
-	if !tableBulk(a) || a.kv.BulkArea().Text != "q: gioui\n# order: desc\nsort: stars" {
-		t.Fatalf("bulk = %+v", a.kv.BulkArea())
+	if !tableBulk(a) || a.editor.Tables.BulkArea().Text != "q: gioui\n# order: desc\nsort: stars" {
+		t.Fatalf("bulk = %+v", a.editor.Tables.BulkArea())
 	}
-	a.kv.BulkArea().SelectAll()
-	a.kv.BulkArea().Insert("q: rust\npage: 2\n# off: 1")
+	a.editor.Tables.BulkArea().SelectAll()
+	a.editor.Tables.BulkArea().Insert("q: rust\npage: 2\n# off: 1")
 	click(a, bulkBtnX, chipsY) // back to the table
 	if tableBulk(a) {
 		t.Fatal("the button leaves bulk mode")
@@ -411,8 +411,8 @@ func TestBulkEditShowsLinesAndAppliesThemBack(t *testing.T) {
 func TestLeavingTheTabWhileBulkEditingAppliesTheText(t *testing.T) {
 	a := testApp(t)
 	click(a, bulkBtnX, chipsY)
-	a.kv.BulkArea().SelectAll()
-	a.kv.BulkArea().Insert("only: one")
+	a.editor.Tables.BulkArea().SelectAll()
+	a.editor.Tables.BulkArea().Insert("only: one")
 	a.cur().paneTab = headersTabIdx // as clicking the Headers tab does
 	a.Step(core.Input{})
 	if tableBulk(a) || !reflect.DeepEqual(paramNames(a), []string{"only"}) {
@@ -483,7 +483,7 @@ const (
 func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
-	w := a.kv.Widths(kvlogic.Params)
+	w := a.editor.Tables.Widths(kvlogic.Params)
 	if w == nil || len(w.Weights) != 3 || w.Weights[0] <= 28 || w.Weights[1] >= 40 {
 		t.Fatalf("weights = %+v", w)
 	}
@@ -499,16 +499,16 @@ func TestDraggingAParamsDividerResizesItsColumns(t *testing.T) {
 func TestEachTableKeepsItsOwnColumnWidths(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
-	if a.kv.Widths(kvlogic.Params).Weights == nil {
+	if a.editor.Tables.Widths(kvlogic.Params).Weights == nil {
 		t.Fatal("test setup")
 	}
-	if a.kv.Widths(kvlogic.Headers).Weights != nil {
+	if a.editor.Tables.Widths(kvlogic.Headers).Weights != nil {
 		t.Fatal("the Headers table must keep its default widths")
 	}
-	if a.kv.Widths(kvlogic.ResponseHeaders) == a.kv.Widths(kvlogic.Headers) {
+	if a.editor.Tables.Widths(kvlogic.ResponseHeaders) == a.editor.Tables.Widths(kvlogic.Headers) {
 		t.Fatal("the response Headers table is not the request Headers table")
 	}
-	if a.kv.Widths(kvlogic.Params) != a.kv.Widths(kvlogic.Params) {
+	if a.editor.Tables.Widths(kvlogic.Params) != a.editor.Tables.Widths(kvlogic.Params) {
 		t.Fatal("asking twice must give the same state")
 	}
 }
@@ -518,7 +518,7 @@ func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 	drag(a, nameValueDividerX, 480, paramsHeaderY)
 	a.Step(core.Input{X: 480, Y: paramsHeaderY, Click: true, Held: true, Clicks: 2})
 	a.Step(core.Input{})
-	if a.kv.Widths(kvlogic.Params).Weights != nil {
+	if a.editor.Tables.Widths(kvlogic.Params).Weights != nil {
 		t.Fatal("double click resets the widths")
 	}
 }
@@ -526,7 +526,7 @@ func TestDoubleClickOnAParamsDividerResetsIt(t *testing.T) {
 func TestNarrowColumnsKeepAMinimum(t *testing.T) {
 	a := testApp(t)
 	drag(a, nameValueDividerX, 300, paramsHeaderY) // far left
-	w := a.kv.Widths(kvlogic.Params)
+	w := a.editor.Tables.Widths(kvlogic.Params)
 	// the name column is at least MinColumnPx of the 393px of columns
 	if min := float64(widget.MinColumnPx) / 393 * 100; w.Weights[0] < min-0.5 {
 		t.Fatalf("name weight %v is below the minimum share %v", w.Weights[0], min)

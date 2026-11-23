@@ -23,7 +23,7 @@ func (a *App) tabMenuItems(index int) []MenuItem {
 		menuSeparator,
 		{Label: "Duplicate", Run: func() { a.duplicateTab(index) }},
 		{Label: "Copy URL", Run: func() { a.copyRequestURL(t.Req) }},
-		{Label: "Cookies...", Run: func() { a.auth.ShowCookies(t.Tab) }},
+		{Label: "Cookies...", Run: func() { a.editor.Auth.ShowCookies(t.Tab) }},
 	}
 }
 

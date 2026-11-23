@@ -427,7 +427,7 @@ func jsonServer(t *testing.T) *httptest.Server {
 // pointTabAt makes the open request target url, as if typed into the field.
 func (a *App) pointTabAt(tab *reqTab, url string) {
 	tab.Req.URL = url
-	*a.urlbar.Field(tab.Tab) = widget.NewTextField(url)
+	*a.editor.URLBar.Field(tab.Tab) = widget.NewTextField(url)
 }
 
 // Cells of the Params table at 1280x800: request pane starts at x=260,

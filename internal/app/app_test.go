@@ -63,8 +63,8 @@ func TestParamsChangedRewritesURL(t *testing.T) {
 		},
 	}
 	paramsChanged(a, tab)
-	if tab.Req.URL != "http://x/s?q=a" || a.urlbar.Field(tab.Tab).Text != tab.Req.URL {
-		t.Fatalf("url = %q field = %q", tab.Req.URL, a.urlbar.Field(tab.Tab).Text)
+	if tab.Req.URL != "http://x/s?q=a" || a.editor.URLBar.Field(tab.Tab).Text != tab.Req.URL {
+		t.Fatalf("url = %q field = %q", tab.Req.URL, a.editor.URLBar.Field(tab.Tab).Text)
 	}
 }
 

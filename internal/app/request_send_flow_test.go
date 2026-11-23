@@ -41,7 +41,7 @@ func TestSwitchingToRESTRestoresAMethod(t *testing.T) {
 	a := testApp(t)
 	req := a.cur().Req
 	req.Protocol, req.Method = "grpc", ""
-	a.urlbar.CycleProtocol(a.cur().Tab)
+	a.editor.URLBar.CycleProtocol(a.cur().Tab)
 	if req.Protocol != "rest" || req.Method != "GET" {
 		t.Fatalf("got %q %q, want rest GET", req.Protocol, req.Method)
 	}
@@ -262,9 +262,9 @@ func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 	req := a.cur().Req
 	click(a, jsonChipX, chipsY)
 	req.Body = `{"a":1,"b":[1,2]}`
-	a.body.Area(a.cur().Tab).SelectAll()
-	a.body.Area(a.cur().Tab).Insert(req.Body)
-	req.Body = a.body.Area(a.cur().Tab).Text
+	a.editor.Body.Area(a.cur().Tab).SelectAll()
+	a.editor.Body.Area(a.cur().Tab).Insert(req.Body)
+	req.Body = a.editor.Body.Area(a.cur().Tab).Text
 
 	click(a, formatX, chipsY)
 	if want := "{\n  \"a\": 1,\n  \"b\": [\n    1,\n    2\n  ]\n}"; req.Body != want {
@@ -272,8 +272,8 @@ func TestFormatButtonIndentsValidJSONOnly(t *testing.T) {
 	}
 
 	req.Body = `{"a":`
-	a.body.Area(a.cur().Tab).SelectAll()
-	a.body.Area(a.cur().Tab).Insert(req.Body)
+	a.editor.Body.Area(a.cur().Tab).SelectAll()
+	a.editor.Body.Area(a.cur().Tab).Insert(req.Body)
 	click(a, formatX, chipsY)
 	if req.Body != `{"a":` || !strings.Contains(a.notices.Status(), "Cannot format") {
 		t.Fatalf("Body %q status %q: invalid JSON must be left alone and reported", req.Body, a.notices.Status())
@@ -285,8 +285,8 @@ func TestFormatButtonOnlyExistsForJSON(t *testing.T) {
 	req := a.cur().Req
 	click(a, textChipX, chipsY)
 	req.Body = `{"a":1}`
-	a.body.Area(a.cur().Tab).SelectAll()
-	a.body.Area(a.cur().Tab).Insert(req.Body)
+	a.editor.Body.Area(a.cur().Tab).SelectAll()
+	a.editor.Body.Area(a.cur().Tab).Insert(req.Body)
 	click(a, formatX, chipsY)
 	if req.Body != `{"a":1}` {
 		t.Fatalf("a text body must not be reformatted, Body = %q", req.Body)

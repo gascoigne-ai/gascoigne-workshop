@@ -55,7 +55,7 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
 	answer(a, tab, request.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)})
-	if results := a.assertions.Results(tab.Tab); len(results) != 3 || !results[0].OK || !results[1].OK || results[2].OK {
+	if results := a.editor.Assertions.Results(tab.Tab); len(results) != 3 || !results[0].OK || !results[1].OK || results[2].OK {
 		t.Fatalf("%+v", results)
 	}
 	if !strings.Contains(a.notices.Status(), "Tests: 2/3 passed") {
@@ -105,20 +105,20 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 func TestFileBodyTypeKeepsItsPathSeparateFromTheTextBody(t *testing.T) {
 	a := testApp(t)
 	tab := a.cur()
-	*a.body.Area(tab.Tab) = widget.NewTextArea("typed text")
+	*a.editor.Body.Area(tab.Tab) = widget.NewTextArea("typed text")
 	tab.Req.Body = "typed text"
-	a.body.ChooseType(tab.Tab, request.BodyFile)
+	a.editor.Body.ChooseType(tab.Tab, request.BodyFile)
 	if tab.Req.BodyType != request.BodyFile || tab.Req.Body != "" {
 		t.Fatalf("type %q body %q", tab.Req.BodyType, tab.Req.Body)
 	}
-	*a.body.File(tab.Tab) = widget.NewTextField("/tmp/x.bin")
-	tab.Req.Body = a.body.File(tab.Tab).Text
-	a.body.ChooseType(tab.Tab, request.BodyText)
+	*a.editor.Body.File(tab.Tab) = widget.NewTextField("/tmp/x.bin")
+	tab.Req.Body = a.editor.Body.File(tab.Tab).Text
+	a.editor.Body.ChooseType(tab.Tab, request.BodyText)
 	if tab.Req.Body != "typed text" {
 		t.Fatalf("the text body must come back: %q", tab.Req.Body)
 	}
-	a.body.ChooseType(tab.Tab, request.BodyFile) // the file editor is shown for a File body only
-	if d := view.Dump(a.body.View(a.ctx, tab.Tab, &widget.ScrollState{})); !strings.Contains(d, "Choose...") {
+	a.editor.Body.ChooseType(tab.Tab, request.BodyFile) // the file editor is shown for a File body only
+	if d := view.Dump(a.editor.Body.View(a.ctx, tab.Tab, &widget.ScrollState{})); !strings.Contains(d, "Choose...") {
 		t.Fatalf("file editor:\n%s", d)
 	}
 }
@@ -159,13 +159,13 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 	a := openBodyPane(t)
 	tab := a.cur()
 	tab.Req.URL, tab.Req.Method = srv.URL, "GET"
-	*a.body.Area(tab.Tab) = widget.NewTextArea("{ repos { name } }")
-	a.body.ChooseType(tab.Tab, request.BodyGraphQL)
+	*a.editor.Body.Area(tab.Tab) = widget.NewTextArea("{ repos { name } }")
+	a.editor.Body.ChooseType(tab.Tab, request.BodyGraphQL)
 	a.Step(core.Input{})
 	if tab.Req.Method != "POST" || tab.Req.Body != "{ repos { name } }" {
 		t.Fatalf("method %q body %q", tab.Req.Method, tab.Req.Body)
 	}
-	if d := view.Dump(a.graphql.View(a.ctx, tab.Tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
+	if d := view.Dump(a.editor.GraphQL.View(a.ctx, tab.Tab)); !strings.Contains(d, "Load schema") || !strings.Contains(d, "VARIABLES") {
 		t.Fatalf("editor:\n%s", d)
 	}
 	a.send(tab)
@@ -231,12 +231,12 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 		t.Fatalf("the form is a table with a caption: %v %q", ok, p.captionOf(a))
 	}
 	table := shown
-	a.kv.ToggleBulk(table)
-	if a.kv.BulkArea() == nil || a.kv.BulkArea().Text != "user: ann" {
-		t.Fatalf("bulk text %v", a.kv.BulkArea())
+	a.editor.Tables.ToggleBulk(table)
+	if a.editor.Tables.BulkArea() == nil || a.editor.Tables.BulkArea().Text != "user: ann" {
+		t.Fatalf("bulk text %v", a.editor.Tables.BulkArea())
 	}
-	*a.kv.BulkArea() = widget.NewTextArea("user: bob\nrole: admin")
-	a.kv.ToggleBulk(table)
+	*a.editor.Tables.BulkArea() = widget.NewTextArea("user: bob\nrole: admin")
+	a.editor.Tables.ToggleBulk(table)
 	if len(tab.Req.Form) != 2 || tab.Req.Form[0].Value != "bob" || tab.Req.Form[1].Name != "role" {
 		t.Fatalf("form %+v", tab.Req.Form)
 	}
@@ -249,7 +249,7 @@ func TestAFailedSendIsCheckedButNotSummedUpInTheStatus(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "status == 200"
 	answer(a, tab, request.Response{Err: "connection refused"})
-	if results := a.assertions.Results(tab.Tab); len(results) != 1 || results[0].OK {
+	if results := a.editor.Assertions.Results(tab.Tab); len(results) != 1 || results[0].OK {
 		t.Fatalf("results %+v, want one failed", results)
 	}
 	if got := a.notices.Status(); got != "Request failed" {

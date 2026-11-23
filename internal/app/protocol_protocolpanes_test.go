@@ -57,7 +57,7 @@ func TestChoosingAProtocolShowsItsFirstRequestPane(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol = "rest"
 	tab.paneTab = len(requestPanes) - 1
-	a.urlbar.CycleProtocol(tab.Tab) // rest -> websocket
+	a.editor.URLBar.CycleProtocol(tab.Tab) // rest -> websocket
 	if tab.Req.Protocol != "websocket" || tab.paneTab != 0 {
 		t.Fatalf("protocol %q paneTab %d", tab.Req.Protocol, tab.paneTab)
 	}

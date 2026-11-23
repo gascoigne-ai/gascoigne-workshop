@@ -65,7 +65,7 @@ func (a *App) beginFrame(in core.Input) bool {
 	a.ctx.In = in
 	a.ctx.Cursor = core.CursorDefault
 	a.strip.BeginFrame(in)
-	a.kv.BeginFrame(in)
+	a.editor.Tables.BeginFrame(in)
 	drained := a.drain()
 	pruned := a.over.Toasts.Prune()
 	active := engine.InputActive(a.lastIn, in)
@@ -94,7 +94,7 @@ func (a *App) routeKeys(in core.Input) {
 	if !hadOverlay && !a.over.HoldsKeyboard() && !wasRecording {
 		a.side.Keys(in, a.textFocused(), a.sidebarWidth())
 	}
-	textKeys := !a.over.HoldsKeyboard() && (a.urlbar.Keys(in) || a.body.Keys(in) || a.resp.Keys(in))
+	textKeys := !a.over.HoldsKeyboard() && (a.editor.Keys(in) || a.resp.Keys(in))
 	if !a.over.Settings.Keys(in) && !a.over.HoldsKeyboard() && !typedInText(textKeys, in) {
 		a.runKeymap(in)
 	}
@@ -102,7 +102,7 @@ func (a *App) routeKeys(in core.Input) {
 		a.escape()
 	}
 	if !a.over.HoldsKeyboard() && !textKeys {
-		a.kv.Keys(in, a.textFocused())
+		a.editor.TableKeys(in, a.textFocused())
 	}
 }
 
@@ -110,7 +110,7 @@ func (a *App) routeKeys(in core.Input) {
 // and the window's.
 func (a *App) openLayers() overlay.Open {
 	open := a.over.Layers()
-	open[overlay.CellEdit] = a.kv.Editing()
+	open[overlay.CellEdit] = a.editor.Tables.Editing()
 	open[overlay.FindBar] = a.resp.Look(a.cur().Tab).FindOpen
 	open[overlay.Request] = true // the last resort: cancel what is being sent
 	return open
@@ -125,7 +125,7 @@ func (a *App) escape() {
 		return
 	}
 	closers := map[overlay.Layer]func(){
-		overlay.CellEdit: a.kv.CancelEdit,
+		overlay.CellEdit: a.editor.Tables.CancelEdit,
 		overlay.FindBar:  func() { a.resp.CloseFind(a.cur().Tab) },
 		overlay.Request:  func() { a.cancelSend(a.cur()) },
 	}
@@ -151,16 +151,8 @@ func (a *App) endFrame(moved bool) {
 	// what the view shows sets a.treeStale itself (commitEdit, the kv Tick,
 	// dragHover, saveCollection and the settings Poll do); the others only
 	// read state or touch the cursor, the clock or a write queue.
-	a.treeStale = a.urlbar.Tick() || a.treeStale
-	a.treeStale = a.body.Tick() || a.treeStale
-	a.treeStale = a.auth.Tick() || a.treeStale
-	a.treeStale = a.assertions.Tick() || a.treeStale
-	a.treeStale = a.ws.Tick() || a.treeStale
-	a.treeStale = a.graphql.Tick() || a.treeStale
-	a.treeStale = a.grpc.Tick() || a.treeStale
-	a.treeStale = a.mcp.Tick() || a.treeStale
+	a.treeStale = a.editor.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	a.treeStale = a.resp.Tick() || a.treeStale
-	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
 		a.over.Settings.Poll()
@@ -222,6 +214,5 @@ func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {
-	return a.side.Filter().Focused || a.urlbar.Typing() || a.resp.Typing() || a.body.Typing() ||
-		a.graphql.Typing() || a.ws.Typing() || a.kv.Typing() || a.auth.Typing() || a.assertions.Typing()
+	return a.side.Filter().Focused || a.editor.Typing() || a.resp.Typing()
 }

@@ -35,11 +35,11 @@ var dialogKinds = []struct {
 	{"prompt", func(_ *testing.T, app *App) {
 		app.prompt("Rename", "Search Repos", "Rename", func(string) {})
 	}},
-	{"toolform", func(_ *testing.T, app *App) { app.mcp.OpenToolForm(app.cur().Tab, searchTool()) }},
+	{"toolform", func(_ *testing.T, app *App) { app.editor.MCP.OpenToolForm(app.cur().Tab, searchTool()) }},
 	{"sampling", func(t *testing.T, app *App) {
 		ctx, cancel := context.WithCancel(context.Background())
 		t.Cleanup(cancel)
-		go app.mcp.Sample(ctx, samplingAsked)
+		go app.editor.MCP.Sample(ctx, samplingAsked)
 		until(t, app, "the sampling dialog", func() bool { return app.over.Dialog() != nil })
 	}},
 }

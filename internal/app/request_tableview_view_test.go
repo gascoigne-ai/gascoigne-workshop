@@ -47,10 +47,10 @@ var tableViewStates = []tableViewState{
 		tab.Req.Params = nil
 	}},
 	{"params-selected", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.kv.Select(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 1)
+		app.editor.Tables.Select(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 1)
 	}},
 	{"params-editing", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.kv.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 0, 1)
+		app.editor.Tables.BeginEdit(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table}, 0, 1)
 	}},
 	{"headers-duplicate", headersPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Headers = []request.KV{
@@ -64,7 +64,7 @@ var tableViewStates = []tableViewState{
 		tab.Req.Form = []request.KV{{Name: "name", Value: "gopher", Enabled: true}}
 	}},
 	{"bulk", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		app.kv.ToggleBulk(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table})
+		app.editor.Tables.ToggleBulk(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table})
 	}},
 }
 
