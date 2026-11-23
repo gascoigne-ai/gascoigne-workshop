@@ -109,7 +109,7 @@ func (c *Component) SchemaView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollS
 			rows = append(rows, schemaRowView{Pad: row.Depth * schemaIndent, Text: row.Text})
 		}
 	}
-	return schemaTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, schemaTemplate, markup.Scope{
 		"scroll":  scroll,
 		"fillW":   fillBodyW,
 		"reloadW": reloadButtonW,
@@ -121,7 +121,7 @@ func (c *Component) SchemaView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollS
 		"rows":    rows,
 		"fill":    func() { c.fill(tab, state.schema) },
 		"reload":  func() { c.reload(tab) },
-	}))
+	})
 }
 
 // SchemaPending reports whether the message of tab's method is still being

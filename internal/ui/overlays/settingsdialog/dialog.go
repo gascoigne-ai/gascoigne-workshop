@@ -42,16 +42,6 @@ const (
 // navGap is the gap between two pages in the list beside the form.
 const navGap = w.StepHair
 
-// scope is the sizes of the faces the context draws with plus the view's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // Host is what the dialog needs from the application: reads, and Send for
 // everything it asks to be done.
 type Host interface {
@@ -157,7 +147,7 @@ func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 	if d.Raw {
 		raw = d.rawView(ctx, host)
 	}
-	return dialogTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return dialogTemplate.MustBuild(markup.Scope{
 		"size":     &d.Size,
 		"move":     &d.Move,
 		"minW":     min(MinWidth, maxW),
@@ -179,7 +169,7 @@ func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 		"nav":      nav,
 		"scroll":   &d.scroll,
 		"page":     d.pageContent(ctx, host, cur),
-	}))
+	}, ctx.SizesScope())
 }
 
 var (
@@ -256,7 +246,7 @@ func (d *SettingsDialog) pageTitleRow(ctx *w.Ctx, host Host, id string) Node {
 	if path != "" {
 		file = filepath.Base(path)
 	}
-	return titleRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return titleRowTemplate.MustBuild(markup.Scope{
 		"label":    label,
 		"file":     file,
 		"path":     path,
@@ -264,7 +254,7 @@ func (d *SettingsDialog) pageTitleRow(ctx *w.Ctx, host Host, id string) Node {
 		"openRaw":  func() { d.OpenRaw(host) },
 		"closeRaw": d.CloseRaw,
 		"editW":    editBtnW,
-	}))
+	}, ctx.SizesScope())
 }
 
 var (
@@ -278,10 +268,10 @@ func (d *SettingsDialog) navItem(ctx *w.Ctx, entry page, open bool) Node {
 	if open {
 		template = navOpenTemplate
 	}
-	return template.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return template.MustBuild(markup.Scope{
 		"label": entry.label,
 		"pick":  func() { d.Cat, d.scroll.Y = entry.id, 0 },
-	}))
+	}, ctx.SizesScope())
 }
 
 // OpenPage shows the page with the given id at its top and clears the
@@ -305,10 +295,10 @@ func (d *SettingsDialog) saveButton(ctx *w.Ctx, host Host) Node {
 	case host.Settings().AutoSave:
 		return nil
 	}
-	return template.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return template.MustBuild(markup.Scope{
 		"save": func() { d.Save(host) },
 		"btnW": toolbarBtnW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // Save writes what is applied but not stored: the raw text as typed when

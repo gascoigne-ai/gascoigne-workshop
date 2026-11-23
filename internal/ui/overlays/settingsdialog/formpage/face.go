@@ -47,10 +47,10 @@ func (p *Page) faceRow(ctx *w.Ctx, host Host, face form.Face) Node {
 		Changed:     settings.Changed(host.Settings(), font.Key),
 		Reset:       func() { p.Reset(host, font.Key) },
 		Description: Paragraph(form.FaceDescription(font, size)),
-		Below:       faceLineTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"face": line, "fontMinW": fontMinW})),
+		Below:       faceLineTemplate.MustBuild(markup.Scope{"face": line, "fontMinW": fontMinW}, ctx.SizesScope()),
 		Note:        note,
 	}
-	return settingRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"setting": view}))
+	return settingRowTemplate.MustBuild(markup.Scope{"setting": view}, ctx.SizesScope())
 }
 
 const faceLineSource = `<row gap="{{looseGap}}" align-items="center">

@@ -62,17 +62,17 @@ var (
 func (c *Component) bodyView(ctx *w.Ctx, tab *tabs.Tab, _ *widget.ScrollState) Node {
 	state := c.state(tab)
 	if state.picture != nil {
-		return responsePictureTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+		return sizes.Build(ctx, responsePictureTemplate, markup.Scope{
 			"pictureInfo": state.pictureInfo,
 			"picture":     state.picture,
 			"save":        func() { c.saveBody(tab) },
-		}))
+		})
 	}
 	var findBar Node // stays nil, so the slot is left out, while the bar is closed
 	if state.look.FindOpen {
 		findBar = c.findBar(ctx, tab)
 	}
-	return responsePaneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, responsePaneTemplate, markup.Scope{
 		"compact":     state.look.Compact(),
 		"pretty":      state.look.Mode == viewer.Pretty,
 		"raw":         state.look.Raw(),
@@ -90,7 +90,7 @@ func (c *Component) bodyView(ctx *w.Ctx, tab *tabs.Tab, _ *widget.ScrollState) N
 		"copyBody":    func() { c.copyBody(ctx, tab) },
 		"copyCurl":    func() { c.copyCurl(ctx, tab) },
 		"openMenu":    func(posX, posY int) { c.deps.Window.Open(posX, posY, c.menuItems(ctx, tab)) },
-	}))
+	})
 }
 
 var findBarTemplate = markup.Must("findbar.vml", findbarSource)
@@ -99,7 +99,7 @@ var findBarTemplate = markup.Must("findbar.vml", findbarSource)
 // counter and the previous, next and close buttons.
 func (c *Component) findBar(ctx *w.Ctx, tab *tabs.Tab) Node {
 	state := c.state(tab)
-	return findBarTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, findBarTemplate, markup.Scope{
 		"find":     &state.find,
 		"count":    viewer.Count(state.find.Text, len(state.view.Matches()), state.look.Match),
 		"search":   func() { c.runFind(tab) },
@@ -107,7 +107,7 @@ func (c *Component) findBar(ctx *w.Ctx, tab *tabs.Tab) Node {
 		"previous": func() { c.findStep(tab, -1) },
 		"next":     func() { c.findStep(tab, 1) },
 		"close":    func() { c.CloseFind(tab) },
-	}))
+	})
 }
 
 var headersTemplate = markup.Must("responseheaders.vml", responseheadersSource)
@@ -129,11 +129,11 @@ func (c *Component) headersView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.Scroll
 			c.deps.Window.Open(posX, posY, copyRowItems(ctx, rows, row))
 		},
 	}
-	return headersTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, headersTemplate, markup.Scope{
 		"pad":    w.Gutter,
 		"scroll": scroll,
 		"spec":   spec,
-	}))
+	})
 }
 
 // headerRows turns the headers into table rows of a name and a value.
@@ -171,12 +171,12 @@ func (c *Component) StatusView(ctx *w.Ctx, tab *tabs.Tab) Node {
 		return nil
 	}
 	fg, bg := statusPill(tab.Resp.Status)
-	return statusTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, statusTemplate, markup.Scope{
 		"pillFg": fg,
 		"pillBg": bg,
 		"status": fmt.Sprintf("%d %s", tab.Resp.Status, tab.Resp.StatusText),
 		"timing": fmt.Sprintf("%s  %s", format.Duration(tab.Resp.Duration), format.Size(tab.Resp.Size)),
-	}))
+	})
 }
 
 // statusPill is the text and background colors of a response status:

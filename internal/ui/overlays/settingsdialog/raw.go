@@ -191,7 +191,7 @@ func (d *SettingsDialog) rawView(ctx *w.Ctx, host Host) Node {
 	if len(d.Problems) > 0 {
 		status, color = fmt.Sprintf("%d problem(s): the last good settings stay in effect", len(d.Problems)), w.Error
 	}
-	return rawTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return rawTemplate.MustBuild(markup.Scope{
 		"status":       status,
 		"statusColor":  color,
 		"text":         &d.RawText,
@@ -199,7 +199,7 @@ func (d *SettingsDialog) rawView(ctx *w.Ctx, host Host) Node {
 		"edited":       func() { d.RawChanged(host) },
 		"problems":     problemLines(d.Problems),
 		"completeHint": w.PlatformKeyText("linux", "Ctrl+Space") + " completes keys and values",
-	}))
+	}, ctx.SizesScope())
 }
 
 // problemLines are the problems as the raw view lists them, each led by

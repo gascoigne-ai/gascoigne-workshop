@@ -45,11 +45,11 @@ func (l *List) Control(ctx *w.Ctx, host Host, role form.FontRole) Node {
 	case name != "":
 		current = choice{Name: name + " (not installed)", Muted: true, Ellipsis: true}
 	}
-	return controlTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, controlTemplate, markup.Scope{
 		"current":  current,
 		"open":     func() { l.Open(ctx, host, role) },
 		"chevronW": chevronW,
-	}))
+	})
 }
 
 // View is the list while it is open: a search field and the families, each in
@@ -82,7 +82,7 @@ func (l *List) View(ctx *w.Ctx, host Host) Node {
 		shown := choice{Name: family.Name, Face: l.face(host, family), Ellipsis: true}
 		rows = append(rows, l.row(ctx, host, shown, strings.EqualFold(family.Name, current), family.Name))
 	}
-	return listTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, listTemplate, markup.Scope{
 		"width":         logic.ListW,
 		"height":        logic.ListH,
 		"x":             l.open.X,
@@ -95,14 +95,14 @@ func (l *List) View(ctx *w.Ctx, host Host) Node {
 		"above":         first * rowH,
 		"rows":          rows,
 		"below":         (count - last) * rowH,
-	}))
+	})
 }
 
 // row is one row of the list; picking it applies the family called name, ""
 // for Built-in.
 func (l *List) row(ctx *w.Ctx, host Host, shown choice, selected bool, name string) Node {
 	shown.Pick = func() { l.Pick(host, name) }
-	return rowTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{"row": shown, "selected": selected}))
+	return sizes.Build(ctx, rowTemplate, markup.Scope{"row": shown, "selected": selected})
 }
 
 // Templates, parsed once above.

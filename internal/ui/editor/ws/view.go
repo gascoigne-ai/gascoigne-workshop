@@ -34,7 +34,7 @@ func StateText(state tabs.ConnState) string { return stateTexts[state] }
 func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab) Node {
 	state := c.state(tab)
 	composer := c.deps.Composers.Composer(tab)
-	return paneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, paneTemplate, markup.Scope{
 		"tightGap":  w.TightGap,
 		"gutter":    w.Gutter,
 		"composerH": ctx.Sizes.Row + 2*w.LooseGap,
@@ -46,7 +46,7 @@ func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab) Node {
 		"canFormat": composer.FormatsJSON,
 		"send":      func() { c.SendMessage(tab) },
 		"format":    func() { c.formatMessage(tab) },
-	}))
+	})
 }
 
 // toolbar is the bar above the message log: the connection state, the
@@ -55,7 +55,7 @@ func (c *Component) toolbar(ctx *w.Ctx, tab *tabs.Tab) Node {
 	pick := func(menu func(*tabs.Tab) []widget.MenuItem) func() {
 		return func() { c.deps.Window.Open(ctx.In.X, ctx.In.Y, menu(tab)) }
 	}
-	return toolbarTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, toolbarTemplate, markup.Scope{
 		"toolbarH":        ctx.Sizes.Row + w.LooseGap,
 		"state":           StateText(tab.State()),
 		"reconnect":       tab.Reconnect,
@@ -71,7 +71,7 @@ func (c *Component) toolbar(ctx *w.Ctx, tab *tabs.Tab) Node {
 		"pickPrompt":      pick(c.promptMenu),
 		"ping":            func() { c.Ping(tab) },
 		"clear":           func() { c.Clear(tab) },
-	}))
+	})
 }
 
 // Templates, parsed once above.

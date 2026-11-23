@@ -67,7 +67,7 @@ func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) 
 		chips[i] = bodyChip{Label: bodyType.label, Width: bodyType.width, Selected: id == kind,
 			Choose: func() { c.ChooseType(tab, id) }}
 	}
-	return paneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, paneTemplate, markup.Scope{
 		"typesX":      &state.typesX,
 		"chips":       chips,
 		"showStatus":  isJSON && status != "",
@@ -79,7 +79,7 @@ func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) 
 		"toggleWrap":  func() { c.ToggleWrap(tab) },
 		"format":      func() { c.format(tab) },
 		"editor":      c.editor(ctx, tab, scroll),
-	}))
+	})
 }
 
 // editor is the part of the body pane under the type chooser.

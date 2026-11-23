@@ -145,6 +145,9 @@ type Ctx struct {
 	// advances caches Advance by face; see faceKey. Cleared with widths.
 	advances map[faceKey]float64
 
+	// sizeScope is the memo of SizesScope.
+	sizeScope sizeScope
+
 	masks     *cornerMasks
 	maskMaker func(radius int) *ebiten.Image
 	ringMaker func(radius, width int) *ebiten.Image
@@ -193,6 +196,30 @@ func NewCtx(th Theme) (*Ctx, error) {
 		return nil, err
 	}
 	return &Ctx{Th: th, F: fonts, Sizes: sizes, Scale: 1, Clipboard: SystemClipboard(), HostOS: runtime.GOOS}, nil
+}
+
+// sizeScope is the Sizes.Scope of one Sizes value, kept so a frame that
+// builds many templates makes the map once.
+type sizeScope struct {
+	of    Sizes
+	names map[string]any
+}
+
+// SizesScope is Sizes.Scope, remembered while Sizes does not change. The map
+// is shared: read it, never write into it (Sizes.Scope gives a map to write
+// into). The memo holds the Sizes it was made from and compares it on every
+// read, so a plain assignment to the exported Sizes field cannot leave it
+// stale; a zero Ctx works.
+//
+// Rejected: dropping the memo in SetTheme and SetFonts only, as the width
+// cache is, since an assignment to Sizes would then read stale names. A
+// package-level cache is global mutable state. Revisit when sizes become per
+// face or per pane: then one entry is not enough.
+func (c *Ctx) SizesScope() map[string]any {
+	if c.sizeScope.names == nil || c.sizeScope.of != c.Sizes {
+		c.sizeScope = sizeScope{of: c.Sizes, names: c.Sizes.Scope()}
+	}
+	return c.sizeScope.names
 }
 
 // CaretHalfPeriod is how long the caret is shown, and then hidden.

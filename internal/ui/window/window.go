@@ -415,9 +415,5 @@ const (
 `
 )
 
-// scope is the scope of a template: the sizes of the faces the context draws
-// and the fixed widths, then own.
-func (a *Component) scope(own markup.Scope) markup.Scope { return sizes.Scope(a.ctx, own) }
-
 // statusBar is the line under the window.
 func (a *Component) statusBar() Node { return a.bar.View(a.ctx) }

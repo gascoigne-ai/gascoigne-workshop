@@ -115,23 +115,13 @@ type optionRow struct {
 	Pick     func()
 }
 
-// scope is the sizes of the faces the context draws with plus the view's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // View is the fields of the form, scrolling when there are many.
 func (form *Form) View(ctx *w.Ctx, host Host) Node {
 	fields := make([]fieldRow, len(form.fields))
 	for i, field := range form.fields {
 		fields[i] = form.fieldRow(field)
 	}
-	return formTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return formTemplate.MustBuild(markup.Scope{
 		"fieldGap":    fieldGap,
 		"description": form.Tool.Description,
 		"scroll":      &form.scroll,
@@ -139,7 +129,7 @@ func (form *Form) View(ctx *w.Ctx, host Host) Node {
 		"fields":      fields,
 		"problem":     form.Problem,
 		"submit":      host.Submit,
-	}))
+	}, ctx.SizesScope())
 }
 
 // fieldRow is one field: its name (starred when required), the

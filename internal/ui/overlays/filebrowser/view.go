@@ -59,7 +59,7 @@ func (c *Component) View(ctx *w.Ctx) Node {
 	if model.Mode == browsing.Save {
 		primary = "Save"
 	}
-	return browserTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, browserTemplate, markup.Scope{
 		"width":       browserW,
 		"height":      height,
 		"move":        &open.move,
@@ -81,7 +81,7 @@ func (c *Component) View(ctx *w.Ctx) Node {
 		"primary":     primary,
 		"enter":       func() { c.update(browsing.Entered{}) },
 		"browserFoot": browserFootH(faces),
-	}))
+	})
 }
 
 // hint names the program that would give native dialogs, so the user learns
@@ -118,7 +118,7 @@ func shownRows(scrollY, listH, rowH, count int) (first, last int) {
 
 // row is one entry of the list: a click selects it, a double click opens it.
 func (c *Component) row(ctx *w.Ctx, index int, entry workspace.FolderEntry, selected bool) Node {
-	return browserRowTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, browserRowTemplate, markup.Scope{
 		"row": browserRow{
 			Name:     entry.Name,
 			Dir:      entry.Dir,
@@ -127,7 +127,7 @@ func (c *Component) row(ctx *w.Ctx, index int, entry workspace.FolderEntry, sele
 			Open:     func() { c.openRow(index) },
 		},
 		"iconW": browserIconW,
-	}))
+	})
 }
 
 // Templates, parsed once above.

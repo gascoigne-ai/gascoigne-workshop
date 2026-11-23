@@ -9,8 +9,6 @@ package formpage
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -46,14 +44,4 @@ func (p *Page) Fresh() {
 func (p *Page) Reload(host Host) {
 	p.Forget()
 	p.Fonts.Apply(host)
-}
-
-// scope is the sizes of the faces the context draws with plus the view's own
-// names, so a template reads both.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
 }

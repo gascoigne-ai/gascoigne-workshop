@@ -72,13 +72,13 @@ func (c *Component) fileBody(ctx *w.Ctx, tab *tabs.Tab) Node {
 	if state.file.Text != "" { // asked about just above
 		look = fileLooks[state.fileCheck.state]
 	}
-	return fileTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, fileTemplate, markup.Scope{
 		"file":      &state.file,
 		"sync":      func() { c.pathTyped(tab) },
 		"choose":    func() { c.choose(tab) },
 		"size":      look.text,
 		"sizeColor": look.color,
-	}))
+	})
 }
 
 // pathTyped makes the text of the path field the request's body.

@@ -165,16 +165,6 @@ var (
 	toolbarTemplate = markup.Must("toolbar.vml", toolbarSource)
 )
 
-// scope is the sizes of the faces the context draws with plus the view's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // View is the dialog while it is open, nothing otherwise.
 func (l *Log) View(ctx *w.Ctx, host Host) Node {
 	if !l.shown {
@@ -188,7 +178,7 @@ func (l *Log) View(ctx *w.Ctx, host Host) Node {
 		"close":   l.Close,
 		"move":    &l.move,
 		"title":   l.titleBar(),
-		"toolbar": l.toolbar(ctx.Sizes),
+		"toolbar": l.toolbar(ctx),
 		"code":    &l.code,
 	})
 }
@@ -204,12 +194,12 @@ func (l *Log) titleBar() Node {
 }
 
 // toolbar is the row under the title bar: the filter and Clear.
-func (l *Log) toolbar(sizes w.Sizes) Node {
-	return toolbarTemplate.MustBuild(scope(sizes, markup.Scope{
+func (l *Log) toolbar(ctx *w.Ctx) Node {
+	return toolbarTemplate.MustBuild(markup.Scope{
 		"filter": &l.filter,
 		"clear":  l.Clear,
 		"clearW": clearBtnW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // Templates, parsed once above.

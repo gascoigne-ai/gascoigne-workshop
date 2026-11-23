@@ -29,26 +29,16 @@ const (
 
 var pageTemplate = markup.Must("systempage.vml", systempageSource)
 
-// scope is the sizes of the faces the context draws with plus the page's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // View is the page: a table of labelled values for each section of the
 // report, then Copy report.
 func View(ctx *w.Ctx, host Host) Node {
 	report := host.System()
-	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return pageTemplate.MustBuild(markup.Scope{
 		"sections":  report.Sections,
 		"copy":      func() { host.CopyText(report.Text()) },
 		"labelColW": labelColW,
 		"copyBtnW":  copyBtnW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // Templates, parsed once above.

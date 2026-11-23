@@ -13,9 +13,55 @@ import (
 // specs that containers take (*widget.ScrollState).
 type Scope map[string]any
 
+// env is what a build reads names from: the loop variables of the `for`
+// elements around the element being built, innermost first, then the
+// caller's own scope, then its fallback scopes in order. It is passed by
+// value and never written to; a `for` makes a new env, it does not copy a
+// scope.
+type env struct {
+	own       Scope
+	fallbacks []Scope
+	loop      *binding
+}
+
+// binding is the variable of one `for`: its item and index, written again
+// for each item. Nothing keeps it past the build of that item (the built
+// view holds values, not the env), so one binding serves the whole loop.
+type binding struct {
+	name  string
+	item  any
+	index int
+	outer *binding
+}
+
+// indexName is the name a `for` binds its position to.
+const indexName = "$index"
+
+// first is the entry a path starts at: found is false when no scope has the
+// name. An entry holding nil is found, so it shadows the scopes after it.
+func (e env) first(name string) (value any, found bool) {
+	for loop := e.loop; loop != nil; loop = loop.outer {
+		if name == indexName {
+			return loop.index, true
+		}
+		if name == loop.name {
+			return loop.item, true
+		}
+	}
+	if value, found = e.own[name]; found {
+		return value, true
+	}
+	for _, fallback := range e.fallbacks {
+		if value, found = fallback[name]; found {
+			return value, true
+		}
+	}
+	return nil, false
+}
+
 // interpolate replaces each {{path}} in s with the value it names.
-func interpolate(text string, sc Scope) (string, error) {
-	return parseInterp(text).eval(sc)
+func interpolate(text string, e env) (string, error) {
+	return parseInterp(text).eval(e)
 }
 
 // interpPart is a literal of a text or one {{path}} of it, already split
@@ -60,8 +106,8 @@ func parseInterp(text string) interp {
 // single empty step, which lookupPath reports.
 func splitPath(text string) []string { return strings.Split(strings.TrimSpace(text), ".") }
 
-// eval replaces each path with the value it names in sc.
-func (in interp) eval(sc Scope) (string, error) {
+// eval replaces each path with the value it names in the scopes.
+func (in interp) eval(e env) (string, error) {
 	if in.err != nil {
 		return "", in.err
 	}
@@ -74,7 +120,7 @@ func (in interp) eval(sc Scope) (string, error) {
 			sb.WriteString(part.literal)
 			continue
 		}
-		v, err := lookupPath(part.path, sc)
+		v, err := lookupPath(part.path, e)
 		if err != nil {
 			return "", err
 		}
@@ -88,21 +134,24 @@ func (in interp) eval(sc Scope) (string, error) {
 }
 
 // lookup finds a dotted path in the scope.
-func lookup(path string, sc Scope) (any, error) {
-	return lookupPath(splitPath(path), sc)
+func lookup(path string, e env) (any, error) {
+	return lookupPath(splitPath(path), e)
 }
 
 // lookupPath finds a path, split at its dots, in the scope. Each step reads
 // a key of a map or an exported field of a struct (through pointers), so a
 // view model reaches the template as its own Go type (no methods: see the
 // package doc).
-func lookupPath(parts []string, sc Scope) (any, error) {
+func lookupPath(parts []string, e env) (any, error) {
 	if len(parts) == 1 && parts[0] == "" {
 		return nil, errors.New("an empty name")
 	}
-	var cur any = map[string]any(sc)
-	for i, part := range parts {
-		next, found, err := member(cur, part)
+	cur, found := e.first(parts[0])
+	if !found {
+		return nil, fmt.Errorf("unknown name %q", strings.Join(parts, "."))
+	}
+	for i := 1; i < len(parts); i++ {
+		next, found, err := member(cur, parts[i])
 		if err != nil {
 			return nil, fmt.Errorf("%q: %s %v", strings.Join(parts, "."), strings.Join(parts[:i], "."), err)
 		}
@@ -148,9 +197,9 @@ func member(value any, name string) (member any, found bool, err error) {
 }
 
 // truthy evaluates `name` or `!name`.
-func truthy(expr string, sc Scope) (bool, error) {
+func truthy(expr string, e env) (bool, error) {
 	negated, path := splitCondition(expr)
-	return truthyPath(negated, path, sc)
+	return truthyPath(negated, path, e)
 }
 
 // splitCondition reads `name` or `!name` of an `if`.
@@ -160,8 +209,8 @@ func splitCondition(expr string) (negated bool, path []string) {
 }
 
 // truthyPath is truthy for a condition read by splitCondition.
-func truthyPath(negated bool, path []string, sc Scope) (bool, error) {
-	v, err := lookupPath(path, sc)
+func truthyPath(negated bool, path []string, e env) (bool, error) {
+	v, err := lookupPath(path, e)
 	if err != nil {
 		return false, err
 	}
@@ -191,16 +240,31 @@ func isSet(value any) bool {
 	return true
 }
 
-// asList is the items of a slice or array of any element type, so a
-// []Row from the app is a list as a []any is.
-func asList(value any) ([]any, error) {
+// list is a slice or array of any element type, so a []Row from the app is a
+// list as a []any is. A []any is read in place; any other kind is read
+// through reflect, item by item, without a copy of the list.
+type list struct {
+	plain     []any
+	reflected reflect.Value
+	size      int
+}
+
+// asList is value as a list.
+func asList(value any) (list, error) {
+	if plain, isPlain := value.([]any); isPlain {
+		return list{plain: plain, size: len(plain)}, nil
+	}
 	reflected := reflect.ValueOf(value)
 	if kind := reflected.Kind(); kind != reflect.Slice && kind != reflect.Array {
-		return nil, errors.New("is not a list")
+		return list{}, errors.New("is not a list")
 	}
-	items := make([]any, reflected.Len())
-	for i := range items {
-		items[i] = reflected.Index(i).Interface()
+	return list{reflected: reflected, size: reflected.Len()}, nil
+}
+
+// at is item i.
+func (items list) at(i int) any {
+	if items.plain != nil {
+		return items.plain[i]
 	}
-	return items, nil
+	return items.reflected.Index(i).Interface()
 }

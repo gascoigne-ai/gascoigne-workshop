@@ -72,12 +72,12 @@ func (c *Component) ResultsView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.Scroll
 		}
 		rows = append(rows, resultRow{Text: mark + text, Color: color})
 	}
-	return resultsTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, resultsTemplate, markup.Scope{
 		"gutter":  w.Gutter,
 		"scroll":  scroll,
 		"summary": assert.Summary(results),
 		"rows":    rows,
-	}))
+	})
 }
 
 // Templates, parsed once above.

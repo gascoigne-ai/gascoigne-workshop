@@ -5,6 +5,7 @@ package sizes
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // StatusH is the height of the status bar. It lives here, not in the
@@ -12,21 +13,20 @@ import (
 // import a sibling ui package.
 const StatusH = 28
 
-// Scope is the scope of a template: the sizes of the faces the context
-// draws, the fixed widths below, then own, so a view can still override a
-// name for itself.
-func Scope(ctx *core.Ctx, own markup.Scope) markup.Scope {
-	merged := markup.Scope{}
-	for name, value := range ctx.Sizes.Scope() {
-		merged[name] = value
-	}
-	for name, value := range fixedSizes {
-		merged[name] = value
-	}
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
+// Build builds template for own, which can read the fixed widths and the
+// sizes of the faces ctx draws with. They are two more scopes the build looks
+// at after own (see markup.Template.Build), not entries copied into a new map
+// per component: one frame builds hundreds of templates and the merge was a
+// quarter of the bytes the build allocated. own wins over both, and no name
+// is in both (see TestFixedAndCtxSizeNamesAreDisjoint), so their order does
+// not matter. The build only reads the three maps.
+//
+// Rejected: a merged map cached and cloned per build (the clone is the cost
+// that went); a package-level cache of the merge (global mutable state).
+// Revisit when a template needs a size scope other than ctx's, such as one
+// per pane.
+func Build(ctx *core.Ctx, template *markup.Template, own markup.Scope) view.Node {
+	return template.MustBuild(own, fixedSizes, ctx.SizesScope())
 }
 
 // Widths of the buttons, chips and slots of the app, by role. Each holds a

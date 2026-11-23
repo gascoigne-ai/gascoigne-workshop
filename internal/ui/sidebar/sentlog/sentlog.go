@@ -102,28 +102,18 @@ var (
 	rowTemplate   = markup.Must("row.vml", rowSource)
 )
 
-// scope is the sizes of the faces the context draws with plus the view's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // List is the sidebar body while it shows the log instead of the tree:
 // the rows, or a note while none match.
 func (l *Log) List(ctx *w.Ctx, host Host, filter string) Node {
 	sent := l.Rows(filter)
 	if len(sent) == 0 { // a template has one root, so the note is its own
-		return emptyTemplate.MustBuild(scope(ctx.Sizes, nil))
+		return emptyTemplate.MustBuild(nil, ctx.SizesScope())
 	}
 	rows := make([]Node, 0, len(sent))
 	for _, entry := range sent {
-		rows = append(rows, l.row(ctx.Sizes, host, entry))
+		rows = append(rows, l.row(ctx, host, entry))
 	}
-	return listTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"scroll": &l.scroll, "rows": rows}))
+	return listTemplate.MustBuild(markup.Scope{"scroll": &l.scroll, "rows": rows}, ctx.SizesScope())
 }
 
 // sentRow is what the row template shows of one sent request.
@@ -136,8 +126,8 @@ type sentRow struct {
 }
 
 // row is one sent request: badge, path and status above, URL and time below.
-func (l *Log) row(sizes w.Sizes, host Host, sent history.Sent) Node {
-	return rowTemplate.MustBuild(scope(sizes, markup.Scope{
+func (l *Log) row(ctx *w.Ctx, host Host, sent history.Sent) Node {
+	return rowTemplate.MustBuild(markup.Scope{
 		"row": sentRow{
 			Badge:  host.Badge(sent.Protocol, sent.Method),
 			Path:   sent.Path,
@@ -145,7 +135,7 @@ func (l *Log) row(sizes w.Sizes, host Host, sent history.Sent) Node {
 			When:   sent.URL + "  " + sent.At.Format("15:04:05"),
 			Open:   func() { l.Open(host, sent) },
 		},
-	}))
+	}, ctx.SizesScope())
 }
 
 func status(code int) string {

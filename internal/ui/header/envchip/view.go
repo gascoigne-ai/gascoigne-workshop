@@ -12,10 +12,10 @@ var template = markup.Must("envchip.vml", source)
 
 // View is the chip; clicking it opens the menu where the pointer is.
 func (c *Component) View(ctx *w.Ctx) Node {
-	return template.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, template, markup.Scope{
 		"label":    c.label(),
 		"openMenu": func(posX, posY int) { c.deps.Menus.Open(posX, posY, c.menu()) },
-	}))
+	})
 }
 
 // Template, parsed once above.

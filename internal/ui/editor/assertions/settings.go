@@ -30,7 +30,7 @@ var settingsPaneTemplate = markup.Must("settingspane.vml", settingspaneSource)
 // SettingsView is the request's Settings pane of tab: the per-request
 // options: timeout, redirects and certificate checks.
 func (c *Component) SettingsView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) Node {
-	return settingsPaneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, settingsPaneTemplate, markup.Scope{
 		"scroll":            scroll,
 		"timeout":           &c.state(tab).timeout,
 		"timeoutHint":       fmt.Sprintf("blank = default (%d s)", c.deps.Defaults.DefaultTimeout()/time.Second),
@@ -39,7 +39,7 @@ func (c *Component) SettingsView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.Scrol
 		"timeoutEdited":     func() { c.timeoutEdited(tab) },
 		"toggleRedirects":   func() { c.edit(tab, requestedit.NoRedirectsToggled{}) },
 		"toggleVerify":      func() { c.edit(tab, requestedit.InsecureTLSToggled{}) },
-	}))
+	})
 }
 
 // timeoutEdited applies the typed timeout; text that is not a whole

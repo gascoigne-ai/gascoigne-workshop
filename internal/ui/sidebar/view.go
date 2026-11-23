@@ -43,7 +43,7 @@ func (c *Component) View(ctx *w.Ctx, viewH int) Node {
 		rows, pad = c.treeRows(ctx, viewH)
 	}
 	entries := len(c.deps.Collections.Set().Entries)
-	return sidebarTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, sidebarTemplate, markup.Scope{
 		"mode":           label,
 		"switchMode":     switchTo,
 		"collectionMenu": func(posX, posY int) { c.deps.Menus.Open(posX, posY, c.CollectionMenu()) },
@@ -61,7 +61,7 @@ func (c *Component) View(ctx *w.Ctx, viewH int) Node {
 		"spaceBelow":     pad.bottom > 0,
 		"padBottom":      pad.bottom,
 		"headerH":        sizes.HeaderH,
-	}))
+	})
 }
 
 // treePad is the height of the rows not built above and below the ones built.
@@ -113,7 +113,7 @@ func (c *Component) treeRow(ctx *w.Ctx, row collection.Row) Node {
 	if !row.Folder {
 		template = treeRequestTemplate
 	}
-	return template.MustBuild(sizes.Scope(ctx, markup.Scope{"row": item, "badgeW": sizes.BadgeSlot(ctx, sizes.BadgeW)}))
+	return sizes.Build(ctx, template, markup.Scope{"row": item, "badgeW": sizes.BadgeSlot(ctx, sizes.BadgeW)})
 }
 
 // treeItemOf is the view model of one tree row, except whether it is selected.

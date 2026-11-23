@@ -116,9 +116,13 @@ rules). `uitoolkit/examples` are tested examples that use the exported API only.
 - **Templates** (`markup`; format and why in its package doc). The app writes each view as a
   template in a `const` at the end of its Go file, parsed once with `markup.Must`. A template has
   one root, so a view that shows one of two things is two templates and Go picks. Parse does all
-  the work that does not depend on the scope (element specs, `for`, params, `{{path}}` splits, the
-  options of static attributes, shared by every build); a build reads only handlers, `if`, `for`,
-  params and `{{...}}` from the scope. A path reads map keys and exported fields only: no methods,
+  the work that does not depend on the scope (element specs, `for`, `{{path}}` splits of text and
+  attributes, the options of static attributes, shared by every build; a param's value is split at
+  build); a build reads only handlers, `if`, `for`, params and `{{...}}` from the scope. A build
+  reads names from the caller's scope, then from fallback scopes (`Build(scope, fallbacks...)`),
+  and writes into none of them; a `for` binds its variable and `$index` in a small chain, one
+  binding per loop, so its cost does not grow with the size of the scope. The app builds its
+  templates with `sizes.Build`, which passes the fixed widths and `Ctx.SizesScope()` as fallbacks. A path reads map keys and exported fields only: no methods,
   comparisons or filters, so anything computed is a field of a view model. A wrong scope type, a
   nil state pointer or a widget-only option on another element is a parse or build error, never a
   panic at layout. `Load`/`MustLoad` (templates in an `fs.FS`) are for other programs.
@@ -171,6 +175,9 @@ Each is also said in the doc comment of what breaks the rule; a new exception ad
   not its address. `DrawStats.Widths` counts real measurements only. `Ctx.Advance` (the exact advance
   of one mono character) is cached the same way by face (`faceKey`, cleared in the same three
   places; `DrawStats.Advances` counts real measurements).
+- **Sizes scope memo.** `Ctx.SizesScope` is `Sizes.Scope` made once per `Sizes` value: it holds the
+  `Sizes` it was made from and is rebuilt when `Ctx.Sizes` differs, so an assignment to the exported
+  field cannot leave it stale. The map is shared and read-only; `Sizes.Scope` still gives a fresh map.
 - **CodeView layout cache.** The runes of every line, the digit count of the widest line number and
   the wrap layout are kept between calls
   (`codeview_cache.go`), so an Update or Draw with nothing changed costs no allocation per line (a

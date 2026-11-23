@@ -109,16 +109,6 @@ const (
 	resetAllW = 110 // the Reset colors button
 )
 
-// scope is the sizes of the faces the context draws with plus the page's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // View is the Colors section of the settings menu: one row per
 // customizable color with a swatch, its hex and a reset button.
 func (p *Page) View(ctx *w.Ctx, host Host) Node {
@@ -126,12 +116,12 @@ func (p *Page) View(ctx *w.Ctx, host Host) Node {
 	for _, custom := range theme.CustomColors {
 		colors = append(colors, p.row(host, custom))
 	}
-	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return pageTemplate.MustBuild(markup.Scope{
 		"colors":    colors,
 		"resetAll":  func() { p.resetAll(host) },
 		"labelColW": labelColW, "swatchW": swatchW, "hexFieldW": hexFieldW,
 		"resetBtnW": resetBtnW, "resetAllW": resetAllW,
-	}))
+	}, ctx.SizesScope())
 }
 
 func (p *Page) row(host Host, custom theme.CustomColor) colorRow {

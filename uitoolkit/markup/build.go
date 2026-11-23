@@ -2,16 +2,29 @@ package markup
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-// Build makes the view tree for scope. A root whose `if` is false gives a
-// nil node, which view ignores.
-func (t *Template) Build(sc Scope) (view.Node, error) {
-	n, err := t.build(t.root, sc)
+// Build makes the view tree for scope. A name is read from the variables of
+// the `for` elements around it (innermost first, `$index` before the name of
+// the loop), then from scope, then from each fallback in order; an entry that
+// holds nil still shadows the ones after it. A build reads the scopes and
+// never writes into one, so the caller may share a fallback between builds
+// (the fixed sizes of the app, see ui/sizes.Build) instead of merging it into
+// a new map for each. A root whose `if` is false gives a nil node, which view
+// ignores.
+//
+// A `for` does not copy the scope: it binds its variable in an env that
+// lives for the build, one binding per loop, written again for each item.
+// That is safe because nothing a build makes keeps the env (the handlers and
+// values it hands to view are read out of the scope when they are built).
+// Rejected: a scope copy per item, which made a loop cost the size of the
+// scope for every item. Revisit when a build output keeps a reference to the
+// scope; then one binding per item.
+func (t *Template) Build(sc Scope, fallbacks ...Scope) (view.Node, error) {
+	n, err := t.build(t.root, env{own: sc, fallbacks: fallbacks})
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +36,7 @@ func (t *Template) errf(item *node, format string, args ...any) error {
 }
 
 // build makes the element of n, or a fragment for a `for`.
-func (t *Template) build(item *node, sc Scope) (view.Node, error) {
+func (t *Template) build(item *node, sc env) (view.Node, error) {
 	loop := item.forLoop
 	if loop == nil {
 		return t.buildOne(item, sc)
@@ -35,16 +48,17 @@ func (t *Template) build(item *node, sc Scope) (view.Node, error) {
 	if err != nil {
 		return nil, t.errf(item, "%v", err)
 	}
-	list, err := asList(v)
+	items, err := asList(v)
 	if err != nil {
 		return nil, t.errf(item, "%s: %v", loop.listExpr, err)
 	}
-	var nodes []view.Item
-	for i, it := range list {
-		child := Scope{}
-		maps.Copy(child, sc)
-		child[loop.name], child["$index"] = it, i
-		el, err := t.buildOne(item, child)
+	nodes := make([]view.Item, 0, items.size)
+	bound := &binding{name: loop.name, outer: sc.loop}
+	inner := sc
+	inner.loop = bound
+	for i := 0; i < items.size; i++ {
+		bound.item, bound.index = items.at(i), i
+		el, err := t.buildOne(item, inner)
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +80,7 @@ func (element *node) missingParam(spec elementSpec) string {
 
 // args reads the values of the element's params from its attributes, in
 // the order of the attributes.
-func (t *Template) args(element *node, scope Scope) ([]any, error) {
+func (t *Template) args(element *node, scope env) ([]any, error) {
 	values := make([]any, len(element.spec.params))
 	for _, bound := range element.params {
 		value, err := bound.param.read(bound.set.value, scope)
@@ -79,7 +93,7 @@ func (t *Template) args(element *node, scope Scope) ([]any, error) {
 }
 
 // bindHandler reads the scope function an event attribute names.
-func (t *Template) bindHandler(item *node, set *attr, sc Scope) (view.Option, error) {
+func (t *Template) bindHandler(item *node, set *attr, sc env) (view.Option, error) {
 	value, err := lookupPath(set.path, sc)
 	if err != nil {
 		return nil, t.errf(item, "%v", err)
@@ -92,7 +106,7 @@ func (t *Template) bindHandler(item *node, set *attr, sc Scope) (view.Option, er
 }
 
 // buildOne makes the element of item once, honoring `if`.
-func (t *Template) buildOne(item *node, sc Scope) (view.Node, error) {
+func (t *Template) buildOne(item *node, sc env) (view.Node, error) {
 	opts, shown, err := t.options(item, sc)
 	if err != nil || !shown {
 		return nil, err
@@ -122,7 +136,7 @@ func (t *Template) buildOne(item *node, sc Scope) (view.Node, error) {
 
 // options reads the attributes of item that are options or handlers. It
 // reports false when `if` hides the element.
-func (t *Template) options(item *node, sc Scope) (opts []view.Option, shown bool, err error) {
+func (t *Template) options(item *node, sc env) (opts []view.Option, shown bool, err error) {
 	for i := range item.attrs {
 		set := &item.attrs[i]
 		switch set.kind {
@@ -154,7 +168,7 @@ func (t *Template) options(item *node, sc Scope) (opts []view.Option, shown bool
 }
 
 // option is the option an attribute makes, nil when it is switched off.
-func (t *Template) option(item *node, set *attr, sc Scope) (view.Option, error) {
+func (t *Template) option(item *node, set *attr, sc env) (view.Option, error) {
 	if set.static {
 		return set.opt, nil
 	}

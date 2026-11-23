@@ -34,7 +34,7 @@ func (c *Component) View(ctx *w.Ctx) Node {
 	}
 	grpcMethod, grpcMethodColor := MethodLabel(tab.Req)
 	streaming := c.deps.GRPC.Streaming(tab)
-	return template.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, template, markup.Scope{
 		"looseGap":         w.LooseGap,
 		"urlH":             sizes.URLBarH,
 		"gutter":           w.Gutter,
@@ -67,7 +67,7 @@ func (c *Component) View(ctx *w.Ctx) Node {
 		"send":             func() { c.deps.Sends.Send(tab) },
 		"toggleConnection": func() { c.deps.Connections.ToggleConnection(tab) },
 		"cancel":           func() { c.deps.Sends.Cancel(tab) },
-	}))
+	})
 }
 
 // streamColor shows the Stream chip lit while the tab streams.

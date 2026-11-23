@@ -370,16 +370,6 @@ func textKeyRows(goos string) []textKeyRow {
 	return rows
 }
 
-// scope is the sizes of the faces the context draws with plus the page's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // Widths of the buttons in the detail of a row, by role.
 const (
 	unbindBtnW  = 72 // Unbind
@@ -406,12 +396,12 @@ const (
 func (p *Page) View(ctx *w.Ctx, host Host) Node {
 	shown := p.visible(host)
 	keys := host.Keymap()
-	return pageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return pageTemplate.MustBuild(markup.Scope{
 		"search":   &p.search,
 		"table":    p.tableNode(ctx, host, keys, shown),
 		"noMatch":  len(shown) == 0,
 		"textKeys": textKeyRows(host.HostOS()),
-	}))
+	}, ctx.SizesScope())
 }
 
 // tableNode is the table of the shown actions: one row each, the selected
@@ -484,9 +474,9 @@ func (p *Page) detailNode(ctx *w.Ctx, host Host, keys keymap.Keymap, command key
 	} else if bound {
 		shown.Warning = Warning(BindingOf(chord))
 	}
-	return detailTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return detailTemplate.MustBuild(markup.Scope{
 		"detail": shown, "unbindBtnW": unbindBtnW, "resetBtnW": resetBtnW, "replaceBtnW": replaceBtnW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // Templates, parsed once above.

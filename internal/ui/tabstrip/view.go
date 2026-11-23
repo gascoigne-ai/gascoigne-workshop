@@ -39,7 +39,7 @@ func (c *Component) View(ctx *w.Ctx) Node {
 	for i, tab := range c.deps.Tabs.Tabs() {
 		items = append(items, c.item(i, tab))
 	}
-	return template.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, template, markup.Scope{
 		"looseGap":   w.LooseGap,
 		"tabsH":      sizes.TabsH,
 		"tabGap":     w.TabGap,
@@ -51,7 +51,7 @@ func (c *Component) View(ctx *w.Ctx) Node {
 		"closeTip":   c.deps.Hints.Hint("Close tab", "close-tab"),
 		"newRequest": c.deps.Requests.NewRequest,
 		"newTip":     c.deps.Hints.Hint("New request", "new-request"),
-	}))
+	})
 }
 
 // item is the view model of tab index: badge, name, dirty mark and handlers.

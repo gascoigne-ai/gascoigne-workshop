@@ -116,7 +116,7 @@ func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) 
 		hasSecret = hasSecret || field.secret
 		rows = append(rows, c.authFieldRow(tab, field))
 	}
-	return authPaneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, authPaneTemplate, markup.Scope{
 		"scroll":        scroll,
 		"types":         types,
 		"none":          len(current.fields) == 0,
@@ -124,7 +124,7 @@ func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) 
 		"hasSecret":     hasSecret,
 		"showSecrets":   c.state(tab).showSecrets,
 		"toggleSecrets": func() { c.toggleSecrets(tab) },
-	}))
+	})
 }
 
 // authFieldRow is the view model of one field: a chooser lights the stored

@@ -14,7 +14,7 @@ import (
 // attributes. Every param is required, as the Go argument is.
 type param struct {
 	name string
-	read func(value string, scope Scope) (any, error)
+	read func(value string, e env) (any, error)
 }
 
 // scoped is a param whose value names a scope entry of the Go type T, the
@@ -22,8 +22,8 @@ type param struct {
 // to, which no string can stand for.
 func scoped[T any](name string) param {
 	want := reflect.TypeFor[T]().String() // %T of a nil interface says "<nil>"
-	return param{name: name, read: func(value string, scope Scope) (any, error) {
-		found, err := lookup(strings.TrimSpace(value), scope)
+	return param{name: name, read: func(value string, e env) (any, error) {
+		found, err := lookup(strings.TrimSpace(value), e)
 		if err != nil {
 			return nil, err
 		}
@@ -41,8 +41,8 @@ func scoped[T any](name string) param {
 func scopedState[T any](name string) param {
 	pointer := scoped[*T](name)
 	want := fmt.Sprintf("%T", (*T)(nil))
-	return param{name: name, read: func(value string, scope Scope) (any, error) {
-		found, err := pointer.read(value, scope)
+	return param{name: name, read: func(value string, e env) (any, error) {
+		found, err := pointer.read(value, e)
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +86,8 @@ func truth(text string) (bool, error) {
 // interpolated is a param whose value is text, open to {{path}}, that
 // parse turns into the Go argument. parse's error is named after the param.
 func interpolated[T any](name string, parse func(text string) (T, error)) param {
-	return param{name: name, read: func(value string, scope Scope) (any, error) {
-		text, err := interpolate(value, scope)
+	return param{name: name, read: func(value string, e env) (any, error) {
+		text, err := interpolate(value, e)
 		if err != nil {
 			return nil, err
 		}
@@ -115,8 +115,8 @@ func boolParam(name string) param { return interpolated(name, truth) }
 // read with {{path}}. Unlike a color attribute it is required, as the Go
 // argument is, so an empty one is an error.
 func tokenParam(name string) param {
-	return param{name: name, read: func(value string, scope Scope) (any, error) {
-		text, err := interpolate(value, scope)
+	return param{name: name, read: func(value string, e env) (any, error) {
+		text, err := interpolate(value, e)
 		if err != nil {
 			return nil, err
 		}

@@ -27,14 +27,14 @@ func (c *Component) resultLines(state mcpexplorer.State) []widget.Line {
 // right.
 func (c *Component) View(ctx *w.Ctx, tab *tabs.Tab) Node {
 	made := c.state(tab)
-	return explorerTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, explorerTemplate, markup.Scope{
 		"looseGap": w.LooseGap,
 		"header":   c.header(tab),
 		"list":     c.list(ctx, tab, made),
 		"detail":   c.detail(ctx, tab, made),
 		"headerH":  ctx.Sizes.Row + w.Gutter,
 		"gutter":   w.Gutter,
-	}))
+	})
 }
 
 // explorerHeader is what the explorer template shows of the server: its
@@ -94,7 +94,7 @@ func (c *Component) list(ctx *w.Ctx, tab *tabs.Tab, made *state) Node {
 			Open:     func() { c.Open(tab, index) },
 		})
 	}
-	return explorerListTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, explorerListTemplate, markup.Scope{
 		"tabs":    items,
 		"active":  int(shown.Kind),
 		"choose":  func(index int) { c.Choose(tab, mcpexplorer.Kind(index)) },
@@ -102,7 +102,7 @@ func (c *Component) list(ctx *w.Ctx, tab *tabs.Tab, made *state) Node {
 		"entries": entries,
 		"listW":   listW,
 		"gutter":  w.Gutter,
-	}))
+	})
 }
 
 // listW is the width of the list next to the open entry.
@@ -142,10 +142,10 @@ func (c *Component) detail(ctx *w.Ctx, tab *tabs.Tab, made *state) Node {
 	if shown.Result != "" {
 		detail.Result = c.resultNode(ctx, made)
 	}
-	return explorerDetailTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, explorerDetailTemplate, markup.Scope{
 		"detail": detail,
 		"scroll": &made.detail,
-	}))
+	})
 }
 
 // formNode is the argument form of the open entry, nil for a resource.
@@ -170,12 +170,12 @@ func (c *Component) resultNode(ctx *w.Ctx, made *state) Node {
 	if made.explorer.IsFailed() {
 		heading, color = "Error", w.Error
 	}
-	return explorerResultTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, explorerResultTemplate, markup.Scope{
 		"heading": heading,
 		"color":   color,
 		"view":    &made.result,
 		"resultH": resultH,
-	}))
+	})
 }
 
 // resultH is the height of the answer's view.

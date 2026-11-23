@@ -135,7 +135,7 @@ func resetKey(host Host, edited *settings.Settings, key string) {
 
 // chipRow is a row of chips sharing its width.
 func chipRow(ctx *w.Ctx, chips []chip) Node {
-	return chipsTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"chips": chips}))
+	return chipsTemplate.MustBuild(markup.Scope{"chips": chips}, ctx.SizesScope())
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
@@ -171,7 +171,7 @@ func (p *Page) themeChips(ctx *w.Ctx, host Host) Node {
 
 func (p *Page) scaleControl(ctx *w.Ctx, host Host) Node {
 	percent := int(host.Settings().UIScale()*100 + 0.5)
-	return scaleTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return scaleTemplate.MustBuild(markup.Scope{
 		"scale":    &p.scale,
 		"min":      settings.ScaleSliderMin,
 		"max":      settings.ScaleSliderMax,
@@ -182,7 +182,7 @@ func (p *Page) scaleControl(ctx *w.Ctx, host Host) Node {
 		"slideEnd": func(int) { host.Send(prefs.Save{}) },
 		"shown":    fmt.Sprintf("%d%%", p.scale.Shown(percent)),
 		"shownW":   scaleShownW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // boolSwitch is the toggle of a true-or-false setting.
@@ -245,10 +245,10 @@ func (p *Page) carryOut(host Host, effect form.Effect) {
 
 // textControl is the field of a text or number setting.
 func (p *Page) textControl(ctx *w.Ctx, host Host, field settings.Field) Node {
-	return textControlTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return textControlTemplate.MustBuild(markup.Scope{
 		"input":  p.Input(host, field.Key),
 		"edited": func() { p.Edited(host, field.Key) },
-	}))
+	}, ctx.SizesScope())
 }
 
 // stepControl is the control of a whole-number setting that is changed in
@@ -256,13 +256,13 @@ func (p *Page) textControl(ctx *w.Ctx, host Host, field settings.Field) Node {
 // step starts from the setting, not from the text, so it recovers from an
 // entry that was refused; at the end of the range it does nothing.
 func (p *Page) stepControl(ctx *w.Ctx, host Host, field settings.Field) Node {
-	return stepTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return stepTemplate.MustBuild(markup.Scope{
 		"input":  p.Input(host, field.Key),
 		"edited": func() { p.Edited(host, field.Key) },
 		"less":   func() { p.Step(host, field, -1) },
 		"more":   func() { p.Step(host, field, 1) },
 		"fieldW": stepFieldW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // Step moves the number setting of field by delta, within its range, and
@@ -310,7 +310,7 @@ func (p *Page) settingRow(ctx *w.Ctx, host Host, field settings.Field) Node {
 	} else {
 		view.Below = control
 	}
-	return settingRowTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"setting": view}))
+	return settingRowTemplate.MustBuild(markup.Scope{"setting": view}, ctx.SizesScope())
 }
 
 // settingView is what the row template shows of one setting.
@@ -332,11 +332,11 @@ func (p *Page) openPageButton(ctx *w.Ctx, host Host, field settings.Field) Node 
 		page = "shortcuts"
 	}
 	open := func() { host.OpenPage(page) }
-	return openPageTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return openPageTemplate.MustBuild(markup.Scope{
 		"label":     "Open " + strings.ToLower(field.Category),
 		"open":      open,
 		"openPageW": openPageW,
-	}))
+	}, ctx.SizesScope())
 }
 
 // View is the settings of one category, or, while a search text is typed,
@@ -352,7 +352,7 @@ func (p *Page) View(ctx *w.Ctx, host Host, category, query string) Node {
 		}
 		if searching && field.Category != last {
 			last = field.Category
-			rows = append(rows, formCaptionTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"category": field.Category})))
+			rows = append(rows, formCaptionTemplate.MustBuild(markup.Scope{"category": field.Category}, ctx.SizesScope()))
 		}
 		if isFont {
 			rows = append(rows, p.faceRow(ctx, host, face))
@@ -374,13 +374,13 @@ func (p *Page) fileControl(ctx *w.Ctx, host Host, field settings.Field) Node {
 	input := p.Input(host, field.Key)
 	choose := func() { p.ChooseFile(host, field.Key) }
 	if strings.TrimSpace(input.Text) == "" && !input.Focused {
-		return emptyFileTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{"choose": choose, "chooseW": chooseFileW, "folderIconW": folderIconW}))
+		return emptyFileTemplate.MustBuild(markup.Scope{"choose": choose, "chooseW": chooseFileW, "folderIconW": folderIconW}, ctx.SizesScope())
 	}
-	return chosenFileTemplate.MustBuild(scope(ctx.Sizes, markup.Scope{
+	return chosenFileTemplate.MustBuild(markup.Scope{
 		"input":  input,
 		"edited": func() { p.Edited(host, field.Key) },
 		"choose": choose,
-	}))
+	}, ctx.SizesScope())
 }
 
 // ChooseFile asks for a file for the setting key and puts its path in the

@@ -31,7 +31,7 @@ func (c *Component) View(ctx *w.Ctx, table logic.Table, look Look, scroll *widge
 	scope := c.captionScope(ctx, table, look, pad)
 	scope["scroll"] = scroll
 	scope["spec"] = spec
-	return tableViewTemplate.MustBuild(scope)
+	return sizes.Build(ctx, tableViewTemplate, scope)
 }
 
 // editable fills in the table: checkboxes, the cell edit, the drag handles
@@ -82,12 +82,12 @@ var (
 // pane's title, and for editable tables the switch to bulk editing. An empty
 // title leaves the row out.
 func (c *Component) captionScope(ctx *w.Ctx, table logic.Table, look Look, pad int) markup.Scope {
-	return sizes.Scope(ctx, markup.Scope{
+	return markup.Scope{
 		"pad":        pad,
 		"caption":    look.Caption,
 		"bulkLabel":  logic.BulkLabel(c.bulk != nil),
 		"toggleBulk": func() { c.ToggleBulk(table) },
-	})
+	}
 }
 
 // bulkView shows the rows as text under the same caption.
@@ -95,7 +95,7 @@ func (c *Component) bulkView(ctx *w.Ctx, table logic.Table, look Look, pad int) 
 	scope := c.captionScope(ctx, table, look, pad)
 	scope["area"] = &c.bulk.area
 	scope["areaText"] = &c.bulk.area.TextField
-	return bulkViewTemplate.MustBuild(scope)
+	return sizes.Build(ctx, bulkViewTemplate, scope)
 }
 
 // Templates, parsed once above.

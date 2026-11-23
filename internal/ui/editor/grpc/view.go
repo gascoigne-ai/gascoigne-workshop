@@ -74,14 +74,14 @@ func (c *Component) View(ctx *core.Ctx, tab *tabs.Tab, scroll *widget.ScrollStat
 			editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ImportPaths})
 		}),
 	}
-	return paneTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, paneTemplate, markup.Scope{
 		"scroll":     scroll,
 		"sources":    chips,
 		"files":      shown,
 		"reflection": !shown,
 		"lists":      lists,
 		"problems":   st.problems(tab.Req.Proto),
-	}))
+	})
 }
 
 func (c *Component) list(st *state, tab *tabs.Tab, list requestedit.ProtoList, caption, addLabel string, addWidth int, add func()) listView {

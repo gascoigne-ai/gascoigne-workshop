@@ -34,7 +34,7 @@ func (c *Component) View(ctx *core.Ctx, tab *tabs.Tab) Node {
 	if st.schema != nil {
 		operations = len(st.schema.Operations)
 	}
-	return graphQLTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, graphQLTemplate, markup.Scope{
 		"hasSchema":   operations > 0,
 		"schemaLabel": fmt.Sprintf("Schema (%d)", operations),
 		"openSchema":  func(posX, posY int) { c.deps.Window.Open(posX, posY, c.schemaMenu(tab, st)) },
@@ -48,7 +48,7 @@ func (c *Component) View(ctx *core.Ctx, tab *tabs.Tab) Node {
 		"vars":        &st.vars,
 		"varsText":    &st.vars.TextField,
 		"syncVars":    syncVars,
-	}))
+	})
 }
 
 // loadSchema sends the introspection query to the tab's URL, with its

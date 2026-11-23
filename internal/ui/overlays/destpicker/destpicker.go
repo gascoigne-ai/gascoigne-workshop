@@ -26,16 +26,6 @@ const (
 // footH is the height of the footer: its buttons and the padding around them.
 func footH(sizes w.Sizes) int { return sizes.Row + 2*w.Gutter }
 
-// scope is the sizes of the faces the context draws with plus the view's own
-// entries, so a template holds no size as a number.
-func scope(sizes w.Sizes, own markup.Scope) markup.Scope {
-	merged := sizes.Scope()
-	for name, value := range own {
-		merged[name] = value
-	}
-	return merged
-}
-
 // Host is what the dialog needs from the application that shows it.
 type Host interface {
 	// Size is the window's size in logical pixels.
@@ -174,9 +164,9 @@ func (picker *Picker) View(ctx *w.Ctx, host Host) Node {
 	first, last := shownRows(picker.scroll.Y, listH, sizes.Row, len(picker.entries))
 	rows := make([]Node, 0, last-first)
 	for index := first; index < last; index++ {
-		rows = append(rows, picker.row(sizes, index, host))
+		rows = append(rows, picker.row(ctx, index, host))
 	}
-	return dialogTemplate.MustBuild(scope(sizes, markup.Scope{
+	return dialogTemplate.MustBuild(markup.Scope{
 		"width":      dialogW,
 		"height":     height,
 		"move":       &picker.move,
@@ -192,10 +182,10 @@ func (picker *Picker) View(ctx *w.Ctx, host Host) Node {
 		"primary":    picker.mode.primary,
 		"pick":       func() { picker.choose(host) },
 		"buttonMinW": w.DialogButtonMinW,
-	}))
+	}, ctx.SizesScope())
 }
 
-func (picker *Picker) row(sizes w.Sizes, index int, host Host) Node {
+func (picker *Picker) row(ctx *w.Ctx, index int, host Host) Node {
 	entry := picker.entries[index]
 	item := rowItem{
 		Name:     entry.Name,
@@ -211,7 +201,7 @@ func (picker *Picker) row(sizes w.Sizes, index int, host Host) Node {
 			}
 		},
 	}
-	return rowTemplate.MustBuild(scope(sizes, markup.Scope{"row": item, "stripeW": stripeW, "stripeH": stripeH}))
+	return rowTemplate.MustBuild(markup.Scope{"row": item, "stripeW": stripeW, "stripeH": stripeH}, ctx.SizesScope())
 }
 
 // shownRows are the rows built for a list scrolled to scrollY: those in

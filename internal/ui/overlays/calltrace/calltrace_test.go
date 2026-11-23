@@ -107,7 +107,7 @@ func TestTitleBarClosesTheLog(t *testing.T) {
 	if !strings.Contains(dump, "Log") || strings.Contains(dump, "fieldB") {
 		t.Errorf("title bar should name the dialog and hold no filter:\n%s", dump)
 	}
-	tools := Dump(log.toolbar(ctx.Sizes))
+	tools := Dump(log.toolbar(ctx))
 	for _, want := range []string{"fieldB", "Clear"} {
 		if !strings.Contains(tools, want) {
 			t.Errorf("toolbar has no %q:\n%s", want, tools)

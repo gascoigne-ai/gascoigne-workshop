@@ -161,7 +161,7 @@ func TestRowTemplateMatchesTheGoView(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tplView := log.row(ctx.Sizes, host, sent)
+	tplView := log.row(ctx, host, sent)
 	Layout(ctx, goView, 300, 60)
 	Layout(ctx, tplView, 300, 60)
 	if got, want := Dump(tplView), Dump(goView); got != want {

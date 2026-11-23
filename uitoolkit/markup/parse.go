@@ -12,7 +12,8 @@
 // `small`, entities such as &nbsp;). Elements and attributes are tables
 // (elements, attributes below), so a new one is a new row; anything not
 // in them is an error that names the file and line. Text and attribute
-// values may use {{path}} to read the Scope, where each step of the path
+// values may use {{path}} to read the Scope (and the fallback scopes
+// Build takes, read after it), where each step of the path
 // is a map key or an exported struct field, so `for="row in rows"` walks
 // a []Row and {{row.Name}} reads its field; `if` and `for="x in xs"` are
 // the two directives (`$index` is the item's index, `if` hides on false,
@@ -199,10 +200,10 @@ func Must(name, src string) *Template {
 	return t
 }
 
-// MustBuild is Build for a scope the caller controls: an error (an unknown
+// MustBuild is Build for scopes the caller controls: an error (an unknown
 // name, a malformed value) is a programming mistake and panics.
-func (t *Template) MustBuild(sc Scope) view.Node {
-	n, err := t.Build(sc)
+func (t *Template) MustBuild(sc Scope, fallbacks ...Scope) view.Node {
+	n, err := t.Build(sc, fallbacks...)
 	if err != nil {
 		panic(err)
 	}

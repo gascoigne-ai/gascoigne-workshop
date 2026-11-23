@@ -12,13 +12,13 @@ var template = markup.Must("statusbar.vml", statusbarSource)
 
 // View is the bar for the frame: the status, the Log button and the version.
 func (c *Component) View(ctx *w.Ctx) Node {
-	return template.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, template, markup.Scope{
 		"statusH":     sizes.StatusH,
 		"status":      c.deps.Status.Status(),
 		"version":     c.deps.Version,
 		"openLog":     c.deps.Log.Open,
 		"openWelcome": c.deps.Welcome.OpenWelcome,
-	}))
+	})
 }
 
 const statusbarSource = `<row h="{{statusH}}" pad-x="{{gutter}}" gap="{{gutter}}" bg="frame" control="statusbar" border-t="border">

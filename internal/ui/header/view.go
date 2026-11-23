@@ -13,14 +13,14 @@ var template = markup.Must("header.vml", source)
 // View is the banner: the collection's name, the environment chip and the
 // settings button.
 func (c *Component) View(ctx *w.Ctx) Node {
-	return template.MustBuild(sizes.Scope(ctx, markup.Scope{
+	return sizes.Build(ctx, template, markup.Scope{
 		"headerH":     sizes.HeaderH,
 		"gutter":      w.Gutter,
 		"title":       c.deps.Title.Title(),
 		"env":         c.chip.View(ctx),
 		"toggleMenu":  c.deps.Settings.Toggle,
 		"settingsTip": c.deps.Hints.Hint("Settings", "settings"),
-	}))
+	})
 }
 
 // Template, parsed once above.
