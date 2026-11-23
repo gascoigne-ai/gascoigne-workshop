@@ -206,7 +206,7 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 		t.Fatalf("open %d, rows %d, title %q", len(a.cols.Set().Entries), len(a.side.VisibleRows()), a.Title())
 	}
 	a.Step(core.Input{}) // the window still draws with nothing open
-	st, err := settingsDisk.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.SettingsPath())
 	if err != nil || len(st.Collections) != 0 || st.Workspace != "" {
 		t.Fatalf("remembered %+v %q %v", st.Collections, st.Workspace, err)
 	}

@@ -198,8 +198,8 @@ func (a *App) openLayers() overlay.Open {
 	open[overlay.DestPicker] = a.picker != nil
 	open[overlay.FileBrowser] = a.browser != nil
 	open[overlay.CallLog] = a.calls.Shown()
-	open[overlay.FontList] = a.form.FontListOpen()
-	open[overlay.Settings] = a.menu
+	open[overlay.FontList] = a.prefs.FontListOpen()
+	open[overlay.Settings] = a.prefs.Open()
 	open[overlay.CellEdit] = a.kv.Editing()
 	open[overlay.FindBar] = a.resp.Look(a.cur().Tab).FindOpen
 	open[overlay.Request] = true // the last resort: cancel what is being sent
@@ -214,8 +214,8 @@ func (a *App) escape() {
 		overlay.DestPicker:  a.closePicker,
 		overlay.FileBrowser: a.closeBrowser,
 		overlay.CallLog:     a.calls.Close,
-		overlay.FontList:    a.form.CloseFontList,
-		overlay.Settings:    a.closeSettings,
+		overlay.FontList:    a.prefs.CloseFontList,
+		overlay.Settings:    a.prefs.Close,
 		overlay.CellEdit:    a.kv.CancelEdit,
 		overlay.FindBar:     func() { a.resp.CloseFind(a.cur().Tab) },
 		overlay.Request:     func() { a.cancelSend(a.cur()) },

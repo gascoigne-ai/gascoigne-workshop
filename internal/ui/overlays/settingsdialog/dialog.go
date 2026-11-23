@@ -3,8 +3,10 @@
 // text of settings.json with live validation and completion. The pages are
 // drawn by the application through Host: the form of a category from the
 // settings schema (package formpage) and the tables (colors, shortcuts,
-// system). The dialog imports no other ui package; it reaches the
-// application through Host.
+// system). The shell and the pages reach the application through Host. The
+// Component of this package is that Host: it imports the pages below it
+// (a parent imports its children, no sibling) and asks the application
+// only for the narrow interfaces of Deps.
 package settingsdialog
 
 import (

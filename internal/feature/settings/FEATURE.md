@@ -7,8 +7,9 @@ The settings the user can change: the schema, the settings file, the theme built
 - `prefs`: the messages a page sends; `theme`: how settings become a theme.
 - `form`: a controller, the state of the settings form and what a user's action on it means: a `Model` (the refusal note of each setting), typed messages (`Typed`, `Stepped`, `Reset`, `Choose`, `Picked`) and a pure `Update(model, settings, msg)` that returns the next model and the effects the view carries out (`Apply`, `Restore`, `Fill`, `ForgetTexts`, `ApplyFonts`, `AskFile`). It also holds the pure facts of the form: where a row puts its control (`PlaceOf`), the font and size pairs (`Faces`), the search match (`Matches`, `Lists`). It imports the settings root only, so it runs without a window. The typed text stays a `TextField` in the view (toolkit state); the values stay in `Settings`.
 - `keymap`: a controller, which key runs which command. A `Command` is an id, a name, a default `Chord` and what to do; the components offer theirs (`commands.go`) and the App the ones that span components. `Resolve(overrides, commands, parse)` layers the user's `settings.Shortcuts` over the defaults into a `Keymap`: a valid override wins, "" unbinds, text that does not parse falls back to the default, an unknown id is ignored. `Keymap.Conflict` names the first other command on a chord (the Shortcuts page offers to replace it) and `Keymap.Run` runs every command on a pressed chord in display order, none while a typing key meets a focused text field. The package knows no toolkit: the chord is plain data, the parse function is passed in and the caller tells whether a key is typed. The keymap is derived where it is read, never stored. The bindings stay persisted here (`Settings.Shortcuts`, ids to key text), so the file format did not change.
+- Root `store.go`: the `SettingsStore` port and `ReadOnly(store)`, which reads and refuses every write; a session that found the file written by a newer build keeps it. It is a rule about the file, not the window, so the dialog component only chooses it.
 - `adapter/settingsfile`: `settings.json` on disk.
-- The dialog is `internal/ui/overlays/settingsdialog` (the shell: title bar, list of pages, search field, raw JSON view, Save, behind its `Host`) with the pages `formpage`, `colorpage`, `shortcutpage` and `systempage` below it; this feature has no UI. A `ui` package never imports a sibling, so the App draws the form through `Host.FormPage` and the tables through `Host.ExtraPage`, and composes the font list over the dialog (`menuView`).
+- The dialog is `internal/ui/overlays/settingsdialog` with the pages `formpage`, `colorpage`, `shortcutpage` and `systempage` below it; this feature has no UI. Its `Component` (`New(Deps)`) owns whether the dialog is open, what is unsaved, the file question it asked and the shell (title bar, list of pages, search field, raw JSON view, Save, behind its `Host`) with the three stateful pages; it is the `Host` of the shell and of the pages, so the shell draws the form through `Host.FormPage` and the tables through `Host.ExtraPage` and the component composes the font list over the dialog (`View`). The App answers only the narrow interfaces of `Deps` (`settingsHost` in `window_hosts.go`): the settings in effect and what changing them touches (theme, open tabs, protocols), the window (size, toasts, status, menus), the file chooser, the one dialog, the bus, the looks and the keymap.
 - Installed fonts come from the toolkit's `desktop/fonts` (`Family`, `Find`, `Matching`, the scan); this package keeps only the family names (`UIFont`, `CodeFont`).
 - Imports: `storage` and the base feature leaf `feature/request/severity`.
 
@@ -19,8 +20,8 @@ The settings the user can change: the schema, the settings file, the theme built
 flowchart LR
   schema["settings.Schema rows (settings)"] --> formpage["formpage: rows and controls"]
   formpage -- "form.Update" --> form["form: Model, messages, effects"]
-  formpage -- "prefs messages" --> app["App.Send (settingshost.go)"]
-  app --> theme["theme.ThemeWith, Ctx.SetTheme"]
+  formpage -- "prefs messages" --> app["Component.Send (settingsdialog.go)"]
+  app --> theme["Deps.Settings.Edit: theme.ThemeWith, Ctx.SetTheme"]
   app --> file["settingsfile: settings.json"]
   file -- "Poll every PollTicks frames" --> shell["settingsdialog: dialog, raw JSON, search"]
   commands["components: Commands()"] --> keymap["keymap.Resolve"]
@@ -40,11 +41,15 @@ flowchart LR
   category heading (search results only), the page title row and the search field in the page list
   follow `style.md` (Settings row). The Colors, Shortcuts and System pages stay tables and get only the
   title row.
-- **Dialog and host** (`ui/overlays/settingsdialog`, `.../formpage`): `settingsdialog.SettingsDialog` is `App.prefs`, `formpage.Page` is `App.form`, and
-  the `App` is the `Host` of both. Host methods only read; everything a page asks for is a
-  `prefs` message applied by `App.Send`. `SetFonts` stays a method because its
-  error is the answer. The Colors, Shortcuts and System pages are separate `ui` packages that the
-  App draws through `Host.ExtraPage`.
+- **Dialog and host** (`ui/overlays/settingsdialog`, `.../formpage`): `settingsdialog.Component` is `App.prefs`; its
+  `Shell` (`SettingsDialog`) and `Form` (`formpage.Page`) are fields of it, and the component is the `Host` of both.
+  Host methods only read; everything a page asks for is a `prefs` message applied by `Component.Send`.
+  `SetFonts` stays a method because its error is the answer. The Colors, Shortcuts and System pages are
+  separate `ui` packages that the component draws through `Host.ExtraPage`. The component decides when
+  the file is written (auto-save, the Save button, Discard) and keeps what is unsaved; the App
+  keeps the settings values and applies them (`Deps.Settings.Edit`, `Apply`). The `settings` command
+  (open the dialog) is the component's `Commands()`, and `Component.Keys` takes the frame's keys while
+  a shortcut is recorded or the Shortcuts page is shown.
 - **Closing forgets.** Closing the dialog drops page, search, raw view and typed text
   (`SettingsDialog.Fresh` and `formpage.Page.Fresh`); only its size (resized by any edge, `widget.Resizable`) stays, in
   `state.json`. A file chooser it opened is

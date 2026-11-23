@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"testing"
 	"time"
@@ -13,11 +14,11 @@ func TestClosingTheSettingsClosesAFileBrowserOpenedFromThem(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{} // unavailable: the in-app file browser is used
 	picked := ""
-	a.pickSettingsFile("Choose CA certificates", func(path string) { picked = path })
+	a.prefs.Send(prefs.PickFile{Title: "Choose CA certificates", Done: func(path string) { picked = path }})
 	if a.browser == nil {
 		t.Fatal("no file browser")
 	}
-	a.closeSettingsNow()
+	a.prefs.Close()
 	if a.browser != nil {
 		t.Fatal("the file browser stayed open after the settings closed")
 	}
@@ -35,8 +36,8 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 		return "", ctx.Err()
 	}}
 	called := false
-	a.pickSettingsFile("Choose", func(string) { called = true })
-	a.closeSettingsNow()
+	a.prefs.Send(prefs.PickFile{Title: "Choose", Done: func(string) { called = true }})
+	a.prefs.Close()
 	select {
 	case <-finished:
 	case <-time.After(2 * time.Second):
@@ -53,7 +54,7 @@ func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{}
 	a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(string) {}) // the request body's, not the settings'
-	a.closeSettingsNow()
+	a.prefs.Close()
 	if a.browser == nil {
 		t.Fatal("closing the settings closed a file browser that is not theirs")
 	}

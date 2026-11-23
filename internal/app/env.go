@@ -250,7 +250,7 @@ func (a *App) variableCompletion(tab *reqTab) (names []string, from int) {
 // typed name.
 func (a *App) completeVariable() {
 	if a.prefs.RawFocused() {
-		a.prefs.CompleteRaw(a)
+		a.prefs.CompleteRaw()
 		return
 	}
 	t := a.cur()

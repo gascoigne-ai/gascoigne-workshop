@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image/color"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -20,6 +21,9 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
@@ -266,7 +270,7 @@ func (a *App) hint(text, shortcutID string) string {
 }
 
 // shortcutHint is the key of an action for a menu item: nothing when unbound.
-func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(a, id) }
+func (a *App) shortcutHint(id string) string { return shortcutpage.Hint(a.prefs, id) }
 
 // promptWorkspace asks for the folder of a collection to open beside the
 // open ones; an empty or new folder starts a new collection there.
@@ -885,3 +889,103 @@ func (host wsHost) Toast(text string, level severity.Level) { host.toast(text, l
 
 // Composer is how the protocol of tab composes, a row of the protocol table.
 func (host wsHost) Composer(tab *tabs.Tab) ws.Composer { return viewOf(tab.Req.Protocol).composer }
+
+// settingsHost is what the settings dialog asks of the App
+// (settingsdialog.Deps). The settings stay on the App, since the theme, the
+// open tabs and the protocols follow from them; the dialog decides when
+// they are written.
+type settingsHost struct{ *App }
+
+// Settings are the settings in effect.
+func (host settingsHost) Settings() settings.Settings { return host.settings }
+
+// Edit changes the settings in effect and what follows from the change: the
+// tabs already open, the protocols and the theme. The error says why the
+// theme could not be built.
+func (host settingsHost) Edit(edit func(*settings.Settings)) error {
+	wasNetwork, wasView := host.networkSettings(), host.settings.ResponseView
+	edit(&host.settings)
+	if host.settings.ResponseView != wasView { // the choice applies to the tabs already open
+		host.setResponseMode()
+	}
+	if host.networkSettings() != wasNetwork {
+		host.reg = host.newRegistry() // protocols hold the proxy and certificates they were built with
+	}
+	return host.ctx.SetTheme(theme.ThemeWith(host.settings))
+}
+
+// Apply makes current the settings in effect, with everything that follows
+// from them.
+func (host settingsHost) Apply(current settings.Settings) {
+	host.settings = current
+	if err := host.ctx.SetTheme(theme.ThemeWith(current)); err != nil {
+		host.notices.SetStatus(err.Error())
+	}
+	host.setResponseMode()
+	host.dirty = true
+}
+
+// setResponseMode gives every open tab the response view of the settings.
+func (a *App) setResponseMode() {
+	for _, t := range a.openTabs() {
+		a.resp.SetMode(t.Tab, viewer.ModeOf(a.settings.ResponseView))
+	}
+}
+
+// SetScale sets the interface scale while its slider is dragged.
+func (host settingsHost) SetScale(percent int) { host.settings.UIScalePct, host.dirty = percent, true }
+
+// Pointer is the pointer position in the window.
+func (host settingsHost) Pointer() (int, int) { return host.ctx.In.X, host.ctx.In.Y }
+
+// Toast shows a message over the window.
+func (host settingsHost) Toast(text string, level severity.Level) { host.toast(text, level) }
+
+// SetStatus writes the status line.
+func (host settingsHost) SetStatus(text string) { host.notices.SetStatus(text) }
+
+// OpenMenu shows a menu of items at a point of the window.
+func (host settingsHost) OpenMenu(posX, posY int, items []widget.MenuItem) {
+	host.openMenu(posX, posY, items)
+}
+
+// Stale says the tree built this frame no longer shows what changed.
+func (host settingsHost) Stale() { host.treeStale = true }
+
+// Redraw says the screen must be drawn again.
+func (host settingsHost) Redraw() { host.dirty = true }
+
+// Pick asks for a file and calls done with its path.
+func (host settingsHost) Pick(title string, done func(path string)) (cancel func()) {
+	return host.pickFile(title, filedialog.OpenFile, "", done)
+}
+
+// Open shows state as the dialog of the window. The returned func closes
+// that dialog and no other.
+func (host settingsHost) Open(state widget.DialogState) (close func()) {
+	open := &dialog{DialogState: state}
+	host.dialog = open
+	return func() {
+		if host.dialog == open {
+			host.dialog = nil
+		}
+	}
+}
+
+// Dispatch runs run on the UI goroutine.
+func (host settingsHost) Dispatch(run func()) { host.bus.Dispatch(run) }
+
+// Color is the color in effect for a token.
+func (host settingsHost) Color(token w.Token) color.RGBA { return host.ctx.Th.Color(token) }
+
+// SetFonts switches the interface and code fonts.
+func (host settingsHost) SetFonts(ui, code w.FontData) error { return host.ctx.SetFonts(ui, code) }
+
+// HostOS is the operating system shortcut text follows.
+func (host settingsHost) HostOS() string { return host.ctx.HostOS }
+
+// CopyText puts text on the clipboard.
+func (host settingsHost) CopyText(text string) { _ = host.ctx.Clipboard.Write(text) } // the clipboard reports its own failures
+
+// Keymap is the binding of every shortcut action, in display order.
+func (host settingsHost) Keymap() keymap.Keymap { return host.keymap() }

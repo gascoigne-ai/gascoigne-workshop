@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -161,7 +162,14 @@ func TestAnOutOfRangeSettingIsClampedAndNamedInTheStatusLine(t *testing.T) {
 		t.Fatalf("timeout %d, status %q", a.settings.TimeoutSec, a.notices.Status())
 	}
 	a.settings.TimeoutSec = 10
-	a.revertSettings() // reading the file again applies the clamped value too
+	a.prefs.Show() // discarding unsaved changes reads the file again, which applies the clamped value too
+	a.prefs.Send(prefs.FileMarked{Saved: false})
+	a.prefs.Close()
+	for _, button := range a.dialog.Buttons {
+		if button.Label == "Discard" {
+			button.Run()
+		}
+	}
 	if a.settings.TimeoutSec != 3600 {
 		t.Fatalf("after revert: timeout %d, want the clamped 3600", a.settings.TimeoutSec)
 	}

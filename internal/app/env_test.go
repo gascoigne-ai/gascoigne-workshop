@@ -30,7 +30,7 @@ func TestSelectedEnvironmentIsRemembered(t *testing.T) {
 	a := testApp(t)
 	a.col().Envs = []request.Environment{{Name: "Dev"}, {Name: "Prod"}}
 	a.selectEnv(1)
-	st, err := settingsDisk.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.SettingsPath())
 	if got := st.RememberedCollections(); err != nil || len(got) != 1 || got[0].Environment != "Prod" {
 		t.Fatalf("saved %+v %v", got, err)
 	}

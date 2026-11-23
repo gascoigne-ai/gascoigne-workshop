@@ -131,19 +131,19 @@ func (d *Driver) OpenDialog(kind string) error {
 func (d *Driver) ShowToast(text string) { d.app.toast(text, severity.Error) }
 
 // OpenSettingsMenu opens the settings dialog.
-func (d *Driver) OpenSettingsMenu() { d.app.menu = true }
+func (d *Driver) OpenSettingsMenu() { d.app.prefs.Show() }
 
 // OpenSettingsPage opens the settings dialog on the page with this name.
 func (d *Driver) OpenSettingsPage(name string) {
-	d.app.prefs.Cat = name
-	d.app.menu = true
+	d.app.prefs.Shell.Cat = name
+	d.app.prefs.Show()
 }
 
 // OpenRawSettings opens the settings dialog on the text of settings.json, as
 // its JSON button does.
 func (d *Driver) OpenRawSettings() {
-	d.app.prefs.OpenRaw(d.app)
-	d.app.menu = true
+	d.app.prefs.OpenRaw()
+	d.app.prefs.Show()
 }
 
 // RecordShortcut starts recording on the shortcut action spec names
@@ -151,11 +151,11 @@ func (d *Driver) OpenRawSettings() {
 // press would.
 func (d *Driver) RecordShortcut(spec string) error {
 	id, keys, hasKeys := strings.Cut(spec, "=")
-	known := slices.Contains(d.app.ActionIDs(), id)
+	known := slices.Contains(d.app.prefs.ActionIDs(), id)
 	if !known {
 		return fmt.Errorf("record: %q is not a shortcut action", id)
 	}
-	d.app.shortcutKeys.Start(id)
+	d.app.prefs.Shortcuts.Start(id)
 	if !hasKeys {
 		return nil
 	}
@@ -163,7 +163,7 @@ func (d *Driver) RecordShortcut(spec string) error {
 	if err != nil {
 		return fmt.Errorf("record %s: %w", id, err)
 	}
-	d.app.shortcutKeys.RecordKey(d.app, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
+	d.app.prefs.Shortcuts.RecordKey(d.app.prefs, core.Input{Keys: []ebiten.Key{binding.Key}, Ctrl: binding.Ctrl, Shift: binding.Shift, Alt: binding.Alt})
 	return nil
 }
 

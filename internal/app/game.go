@@ -57,13 +57,6 @@ func (a *App) Step(in core.Input) {
 	a.endFrame(moved)
 }
 
-// shortcutsPageShown reports whether the Shortcuts page is what the settings
-// dialog draws: not another page, the raw text or a search. Only then do its
-// rows take the arrow keys and Enter.
-func (a *App) shortcutsPageShown() bool {
-	return a.menu && a.prefs.Cat == "shortcuts" && !a.prefs.Raw && !a.prefs.Searching()
-}
-
 // beginFrame takes in the input and what goroutines reported, and reports
 // whether anything moved: input, a finished send or an expired toast.
 func (a *App) beginFrame(in core.Input) bool {
@@ -91,7 +84,7 @@ func (a *App) beginFrame(in core.Input) bool {
 // shortcuts or the table undo, in that order of claim.
 func (a *App) routeKeys(in core.Input) {
 	hadOverlay := a.overlayOpen()
-	wasRecording := a.shortcutKeys.Recording() != ""
+	wasRecording := a.prefs.Recording()
 	menuWasOpen := widget.MenuOpen(a.ctx)
 	a.overlayKeys(in)
 	if menuWasOpen {
@@ -101,11 +94,7 @@ func (a *App) routeKeys(in core.Input) {
 		a.side.Keys(in, a.textFocused(), a.sidebarWidth())
 	}
 	textKeys := !a.overlayOpen() && (a.urlbar.Keys(in) || a.body.Keys(in) || a.resp.Keys(in))
-	if wasRecording {
-		a.shortcutKeys.RecordKey(a, in)
-	} else if a.shortcutsPageShown() {
-		a.shortcutKeys.Navigate(in, a)
-	} else if !a.overlayOpen() && !typedInText(textKeys, in) {
+	if !a.prefs.Keys(in) && !a.overlayOpen() && !typedInText(textKeys, in) {
 		a.runKeymap(in)
 	}
 	if in.Escape && !wasRecording { // one step per press: overlays, the settings menu, a cell edit, find, a running request
@@ -147,7 +136,7 @@ func (a *App) endFrame(moved bool) {
 	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
 		a.treeStale = true // an outside change of settings.json replaces settings and the raw text
-		a.prefs.Poll(a)
+		a.prefs.Poll()
 	}
 	a.dragHover()
 	a.showGrab()

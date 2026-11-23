@@ -95,18 +95,18 @@ func TestDriverActionsApply(t *testing.T) {
 		check func(t *testing.T, a *App)
 	}{
 		{"open the named settings page", Options{}, func(driver *Driver) error { driver.OpenSettingsPage("colors"); return nil }, func(t *testing.T, a *App) {
-			if !a.menu || a.prefs.Cat != "colors" {
-				t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.menu, a.prefs.Cat)
+			if !a.prefs.Open() || a.prefs.Shell.Cat != "colors" {
+				t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.prefs.Open(), a.prefs.Shell.Cat)
 			}
 		}},
 		{"open the settings menu", Options{}, func(driver *Driver) error { driver.OpenSettingsMenu(); return nil }, func(t *testing.T, a *App) {
-			if !a.menu {
+			if !a.prefs.Open() {
 				t.Error("the settings dialog should be open")
 			}
 		}},
 		{"open the settings as text", Options{}, func(driver *Driver) error { driver.OpenRawSettings(); return nil }, func(t *testing.T, a *App) {
-			if !a.menu || !a.prefs.Raw {
-				t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.menu, a.prefs.Raw)
+			if !a.prefs.Open() || !a.prefs.Shell.Raw {
+				t.Errorf("settings open = %v, raw = %v, want the dialog showing settings.json", a.prefs.Open(), a.prefs.Shell.Raw)
 			}
 		}},
 		{"show the sent log", Options{}, func(driver *Driver) error { driver.ShowSentLog(); return nil }, func(t *testing.T, a *App) {
@@ -363,14 +363,14 @@ func TestDriverRecordsShortcutKeys(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if pending, ok := a.shortcutKeys.Pending("close-tab"); !ok || pending.OtherName != "Focus URL" {
+	if pending, ok := a.prefs.Shortcuts.Pending("close-tab"); !ok || pending.OtherName != "Focus URL" {
 		t.Errorf("close-tab pending %+v, want a conflict with Focus URL", pending)
 	}
 	if got := a.settings.Shortcuts["new-request"]; got != "J" {
 		t.Errorf("new-request is %q, want J", got)
 	}
-	if a.shortcutKeys.Recording() != "send" || !strings.Contains(a.shortcutKeys.Note("send"), "text editing") {
-		t.Errorf("recording %q, note %q, want send still recording after its refused key", a.shortcutKeys.Recording(), a.shortcutKeys.Note("send"))
+	if a.prefs.Shortcuts.Recording() != "send" || !strings.Contains(a.prefs.Shortcuts.Note("send"), "text editing") {
+		t.Errorf("recording %q, note %q, want send still recording after its refused key", a.prefs.Shortcuts.Recording(), a.prefs.Shortcuts.Note("send"))
 	}
 }
 
@@ -380,8 +380,8 @@ func TestDriverLeavesABareActionRecording(t *testing.T) {
 	if err := a.Driver().RecordShortcut("close-tab"); err != nil {
 		t.Fatal(err)
 	}
-	if a.shortcutKeys.Recording() != "close-tab" {
-		t.Fatalf("recording %q, want close-tab", a.shortcutKeys.Recording())
+	if a.prefs.Shortcuts.Recording() != "close-tab" {
+		t.Fatalf("recording %q, want close-tab", a.prefs.Shortcuts.Recording())
 	}
 }
 

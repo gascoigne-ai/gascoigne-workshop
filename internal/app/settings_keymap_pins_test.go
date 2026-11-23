@@ -21,10 +21,10 @@ var wantActionIDs = []string{
 
 func TestShortcutsPageListsTheActionsInDisplayOrder(t *testing.T) {
 	a := testApp(t)
-	if got := a.ActionIDs(); !slices.Equal(got, wantActionIDs) {
+	if got := a.prefs.ActionIDs(); !slices.Equal(got, wantActionIDs) {
 		t.Fatalf("ActionIDs = %v, want %v", got, wantActionIDs)
 	}
-	dump := view.Dump(a.shortcutKeys.View(a.ctx, a))
+	dump := view.Dump(a.prefs.Shortcuts.View(a.ctx, a.prefs))
 	last := -1
 	for _, name := range []string{"Send request", "Focus URL", "New request", "Close tab", "Next tab", "Previous tab", "Duplicate row", "Move row up", "Move row down", "Delete row", "Complete variable", "Save collection", "Open collection folder", "Close collection", "Find in response", "Settings"} {
 		at := strings.Index(dump, name)
@@ -41,7 +41,7 @@ func TestEveryActionOnAChordRuns(t *testing.T) {
 	a := testApp(t)
 	a.settings.Shortcuts = map[string]string{"settings": "Ctrl+F"}
 	a.Step(combo(ebiten.KeyF, true, false, false))
-	if !a.menu {
+	if !a.prefs.Open() {
 		t.Fatal("the settings dialog did not open on its rebound chord")
 	}
 	if !a.resp.Look(a.cur().Tab).FindOpen {
@@ -82,8 +82,8 @@ func TestTableUndoRunsAfterAUserBindingOnCtrlZ(t *testing.T) {
 		t.Fatal("test setup")
 	}
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyZ}, Ctrl: true, Undo: true})
-	if !a.menu || len(req.Params) != 3 {
-		t.Fatalf("menu %v params %d: both the binding and the table undo must run", a.menu, len(req.Params))
+	if !a.prefs.Open() || len(req.Params) != 3 {
+		t.Fatalf("menu %v params %d: both the binding and the table undo must run", a.prefs.Open(), len(req.Params))
 	}
 }
 
@@ -104,7 +104,7 @@ func TestHintNamesTheEffectiveKeyAndNothingWhenUnbound(t *testing.T) {
 
 func TestSettingsCompletionOffersEveryActionID(t *testing.T) {
 	a := testApp(t)
-	got := settings.Complete(`{"shortcuts": {"`, len(`{"shortcuts": {"`), a.ActionIDs())
+	got := settings.Complete(`{"shortcuts": {"`, len(`{"shortcuts": {"`), a.prefs.ActionIDs())
 	for _, id := range wantActionIDs {
 		if !slices.ContainsFunc(got, func(suggestion settings.Completion) bool { return strings.Contains(suggestion.Insert, id) }) {
 			t.Errorf("completion lacks %q: %+v", id, got)

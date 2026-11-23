@@ -32,7 +32,9 @@ func newBenchApp(b *testing.B, dialog bool) *App {
 	}
 	a.w, a.h = winW, winH
 	a.Step(core.Input{})
-	a.menu = dialog
+	if dialog {
+		a.prefs.Show()
+	}
 	a.Step(core.Input{})
 	b.ReportAllocs()
 	b.ResetTimer()

@@ -684,7 +684,7 @@ const ()
 // openSettingsPage opens the settings dialog on the page with the given id.
 func openSettingsPage(t *testing.T, id string) (*App, string) {
 	a, path := openSettingsMenu(t)
-	a.prefs.Cat = id
+	a.prefs.Shell.Cat = id
 	a.Step(core.Input{})
 	return a, path
 }
@@ -693,7 +693,7 @@ func openSettingsMenu(t *testing.T) (*App, string) {
 	a := testApp(t, withSettings(defaultLayout))
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
-	if !a.menu {
+	if !a.prefs.Open() {
 		t.Fatal("test setup")
 	}
 	return a, path

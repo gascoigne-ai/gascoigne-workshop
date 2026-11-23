@@ -21,8 +21,8 @@ func TestSettingsAreSavedAutomaticallyByDefault(t *testing.T) {
 		t.Fatal("auto-save is off by default")
 	}
 	setLayout(a, "side")
-	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
-		t.Fatalf("file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
+	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.prefs.Unsaved() {
+		t.Fatalf("file %q unsaved %v", fileText(t, path), a.prefs.Unsaved())
 	}
 }
 
@@ -37,12 +37,12 @@ func TestWithAutoSaveOffChangesApplyAtOnceButAreWrittenOnlyOnSave(t *testing.T) 
 	if a.settings.Layout != "side" {
 		t.Fatal("the change did not apply")
 	}
-	if strings.Contains(fileText(t, path), "layout") || !a.settingsUnsaved {
-		t.Fatalf("the change was written (file %q) or not marked unsaved (%v)", fileText(t, path), a.settingsUnsaved)
+	if strings.Contains(fileText(t, path), "layout") || !a.prefs.Unsaved() {
+		t.Fatalf("the change was written (file %q) or not marked unsaved (%v)", fileText(t, path), a.prefs.Unsaved())
 	}
-	a.prefs.Save(a)
-	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
-		t.Fatalf("after Save: file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
+	a.prefs.Shell.Save(a.prefs)
+	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.prefs.Unsaved() {
+		t.Fatalf("after Save: file %q unsaved %v", fileText(t, path), a.prefs.Unsaved())
 	}
 }
 
@@ -52,8 +52,8 @@ func TestTurningAutoSaveBackOnWritesWhatWasPending(t *testing.T) {
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 	setLayout(a, "side")
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = true })
-	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.settingsUnsaved {
-		t.Fatalf("file %q unsaved %v", fileText(t, path), a.settingsUnsaved)
+	if !strings.Contains(fileText(t, path), `"layout": "side"`) || a.prefs.Unsaved() {
+		t.Fatalf("file %q unsaved %v", fileText(t, path), a.prefs.Unsaved())
 	}
 }
 
@@ -62,8 +62,8 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 		a, path := openSettingsMenu(t)
 		a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
 		setLayout(a, "side")
-		a.closeSettings()
-		if a.dialog == nil || !a.menu {
+		a.prefs.Close()
+		if a.dialog == nil || !a.prefs.Open() {
 			t.Fatal("closing with unsaved changes must ask first and keep the settings open")
 		}
 		return a, path
@@ -80,31 +80,31 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 	t.Run("cancel keeps the dialog and the changes", func(t *testing.T) {
 		a, _ := setup(t)
 		press(a, "Cancel")
-		if a.dialog != nil || !a.menu || a.settings.Layout != "side" {
-			t.Fatalf("dialog %v menu %v layout %q", a.dialog != nil, a.menu, a.settings.Layout)
+		if a.dialog != nil || !a.prefs.Open() || a.settings.Layout != "side" {
+			t.Fatalf("dialog %v menu %v layout %q", a.dialog != nil, a.prefs.Open(), a.settings.Layout)
 		}
 	})
 	t.Run("save writes and closes", func(t *testing.T) {
 		a, path := setup(t)
 		press(a, "Save")
-		if a.menu || !strings.Contains(fileText(t, path), `"layout": "side"`) {
-			t.Fatalf("menu open %v, file %q", a.menu, fileText(t, path))
+		if a.prefs.Open() || !strings.Contains(fileText(t, path), `"layout": "side"`) {
+			t.Fatalf("menu open %v, file %q", a.prefs.Open(), fileText(t, path))
 		}
 	})
 	t.Run("discard reverts to what was stored and closes", func(t *testing.T) {
 		a, path := setup(t)
 		press(a, "Discard")
-		if a.menu || a.settings.Layout != "stacked" || strings.Contains(fileText(t, path), "side") || a.settingsUnsaved {
-			t.Fatalf("menu %v layout %q file %q unsaved %v", a.menu, a.settings.Layout, fileText(t, path), a.settingsUnsaved)
+		if a.prefs.Open() || a.settings.Layout != "stacked" || strings.Contains(fileText(t, path), "side") || a.prefs.Unsaved() {
+			t.Fatalf("menu %v layout %q file %q unsaved %v", a.prefs.Open(), a.settings.Layout, fileText(t, path), a.prefs.Unsaved())
 		}
 	})
 }
 
 func TestACleanDialogClosesWithoutAsking(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	a.closeSettings()
-	if a.menu || a.dialog != nil {
-		t.Fatalf("menu %v dialog %v", a.menu, a.dialog != nil)
+	a.prefs.Close()
+	if a.prefs.Open() || a.dialog != nil {
+		t.Fatalf("menu %v dialog %v", a.prefs.Open(), a.dialog != nil)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestAnOutsideChangeOfTheFileDoesNotOverwriteUnsavedChanges(t *testing.T) {
 	if err := os.WriteFile(path, []byte(`{"autoSave": false, "corners": "square"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	a.prefs.Poll(a)
+	a.prefs.Poll()
 	if a.settings.Layout != "side" || a.settings.Corners == "square" {
 		t.Fatalf("layout %q corners %q: the reload clobbered the unsaved changes", a.settings.Layout, a.settings.Corners)
 	}
@@ -124,16 +124,16 @@ func TestAnOutsideChangeOfTheFileDoesNotOverwriteUnsavedChanges(t *testing.T) {
 
 func TestTheDialogHasASaveButtonAndTheAutoSaveSetting(t *testing.T) {
 	a, _ := openSettingsMenu(t)
-	if dump := view.Dump(a.menuView()); strings.Contains(dump, `text="Save"`) {
+	if dump := view.Dump(a.prefs.View(a.ctx)); strings.Contains(dump, `text="Save"`) {
 		t.Fatalf("a Save button while auto-save is on and nothing is pending:\n%.800s", dump)
 	}
 	a.changeSettings(func(prefs *settings.Settings) { prefs.AutoSave = false })
-	if dump := view.Dump(a.menuView()); !strings.Contains(dump, `text="Save"`) {
+	if dump := view.Dump(a.prefs.View(a.ctx)); !strings.Contains(dump, `text="Save"`) {
 		t.Fatalf("no Save button in the title bar with auto-save off:\n%.800s", dump)
 	}
-	a.prefs.Cat = "general"
+	a.prefs.Shell.Cat = "general"
 	a.Step(core.Input{})
-	page := view.Dump(a.menuView())
+	page := view.Dump(a.prefs.View(a.ctx))
 	for _, want := range []string{"Save changes automatically", "written to settings.json at once"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("the General page lacks %q", want)

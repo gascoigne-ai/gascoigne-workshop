@@ -31,7 +31,7 @@ func TestStatusBarTemplateMatchesTheGoView(t *testing.T) {
 // The header template renders exactly what the Go view it replaced did.
 func TestHeaderTemplateMatchesTheGoView(t *testing.T) {
 	a := testApp(t)
-	toggle := OnClick(func() { a.menu = !a.menu })
+	toggle := OnClick(func() { a.prefs.Toggle() })
 	goView := Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
 		Text(a.col().Name, Bold(), Ellipsis(), Shrink(), MinW(48), Color(w.HeroText)),
 		Spacer(),

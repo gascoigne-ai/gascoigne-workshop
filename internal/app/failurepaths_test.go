@@ -33,50 +33,50 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 	tests := []struct {
 		name      string
 		trigger   func(t *testing.T, app *App)
-		wantToast string // text of an error toast; "" when only the status is checked
-		wantState string // text the status line must contain
+		wantToast string                    // text of an error toast; "" when only the status is checked
+		wantState string                    // text the status line must contain
+		settings  func(t *testing.T) string // where the settings are kept; nil is a file of their own
 	}{
 		{"network failure", func(t *testing.T, app *App) {
 			tab := app.cur()
 			app.pointTabAt(tab, "http://127.0.0.1:1/")
 			app.send(tab)
 			waitForResponse(t, app, tab)
-		}, "", "Request failed"},
+		}, "", "Request failed", nil},
 		{"clipboard cannot be read for a cURL import", func(t *testing.T, app *App) {
 			app.ctx.Clipboard = &fakeClip{err: errors.New("no clipboard tool")}
 			app.importCurl(&app.col().Folder)
-		}, "Cannot read the clipboard", ""},
+		}, "Cannot read the clipboard", "", nil},
 		{"clipboard is not a cURL command", func(t *testing.T, app *App) {
 			app.ctx.Clipboard = &fakeClip{text: "hello"}
 			app.importCurl(&app.col().Folder)
-		}, "Not a cURL command", ""},
+		}, "Not a cURL command", "", nil},
 		{"clipboard is not an OpenAPI document", func(t *testing.T, app *App) {
 			app.ctx.Clipboard = &fakeClip{text: "{}"}
 			app.importOpenAPI(&app.col().Folder)
-		}, "Not an OpenAPI document", ""},
+		}, "Not an OpenAPI document", "", nil},
 		{"clipboard is not a Postman collection", func(t *testing.T, app *App) {
 			app.ctx.Clipboard = &fakeClip{text: "[]"}
 			app.importPostman(&app.col().Folder)
-		}, "Not a Postman collection", ""},
+		}, "Not a Postman collection", "", nil},
 		{"the collection cannot be saved", func(t *testing.T, app *App) {
 			app.setWorkspace(blockedDir(t))
 			app.saveWorkspace()
-		}, "Saving failed", ""},
+		}, "Saving failed", "", nil},
 		{"there is no folder to save to", func(t *testing.T, app *App) {
 			app.setWorkspace("")
 			app.defaultWorkspace = ""
 			app.saveWorkspace()
-		}, "No folder to save to", ""},
+		}, "No folder to save to", "", nil},
 		{"the settings cannot be saved", func(t *testing.T, app *App) {
-			app.settingsPath = blockedDir(t)
 			app.saveSettings(func(*settings.Settings) {})
-		}, "Could not save settings", ""},
+		}, "Could not save settings", "", blockedDir},
 		{"a response body cannot be written", func(t *testing.T, app *App) {
 			app.folders = folders.Disk{} // the real disk, so the blocked folder is what fails
 			tab := app.cur()
 			tab.Resp = &request.Response{Status: 200, Body: []byte("x")}
 			saveBodyAs(t, app, tab, blockedDir(t))
-		}, "Saving failed", ""},
+		}, "Saving failed", "", nil},
 		{"a history was written by a newer version", func(t *testing.T, app *App) {
 			app.statePath = filepath.Join(t.TempDir(), "state.json") // history lives beside it
 			req := app.cur().Req
@@ -93,7 +93,7 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 				t.Fatal(err)
 			}
 			app.loadHistory(req)
-		}, "written by a newer version", ""},
+		}, "written by a newer version", "", nil},
 		{"the state cannot be saved", func(t *testing.T, app *App) {
 			app.statePath = blockedDir(t)
 			app.stateTick() // notices the change
@@ -102,11 +102,15 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			clock := app.now()
 			app.now = func() time.Time { return clock.Add(10 * time.Second) }
 			app.stateTick()
-		}, "not a directory", ""},
+		}, "not a directory", "", nil},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a := testApp(t)
+			var options []appOption
+			if test.settings != nil {
+				options = append(options, settingsAt(test.settings(t)))
+			}
+			a := testApp(t, options...)
 			before := a.notices.Status()
 			test.trigger(t, a)
 			a.WaitWrites() // saves run in the background

@@ -94,8 +94,8 @@ func (a *App) snapshot() state.State {
 		SidebarW:  a.sidebarSplit.Size,
 		PaneSplit: a.paneSplit.Size,
 		Active:    a.tabs.Active(),
-		SettingsW: a.prefs.Size.W,
-		SettingsH: a.prefs.Size.H,
+		SettingsW: a.prefs.Shell.Size.W,
+		SettingsH: a.prefs.Shell.Size.H,
 		Trusted:   a.trusted.Keys(),
 		Welcomed:  a.welcomed,
 	}
@@ -185,7 +185,7 @@ func rememberedPane(tab *reqTab, remembered state.Tab) int {
 // that no longer exists is skipped, and values are kept in range.
 func (a *App) restore(stateValue state.State) {
 	a.trusted = request.AccessSetOf(stateValue.Trusted)
-	a.prefs.Size.W, a.prefs.Size.H = max(stateValue.SettingsW, 0), max(stateValue.SettingsH, 0)
+	a.prefs.Shell.Size.W, a.prefs.Shell.Size.H = max(stateValue.SettingsW, 0), max(stateValue.SettingsH, 0)
 	a.sidebarSplit.Size = max(stateValue.SidebarW, 0)
 	if stateValue.PaneSplit > 0 && stateValue.PaneSplit < 1 {
 		a.paneSplit.Size = stateValue.PaneSplit

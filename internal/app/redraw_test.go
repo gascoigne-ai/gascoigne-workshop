@@ -236,7 +236,7 @@ func TestInterfaceScaleSliderResizesLiveAndSavesOnRelease(t *testing.T) {
 	a := testApp(t)
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
-	a.prefs.Search = widget.NewTextField("interface scale")
+	a.prefs.Shell.Search = widget.NewTextField("interface scale")
 	a.Step(core.Input{})
 	a.Step(core.Input{X: scaleTrackX0 + (scaleTrackX1-scaleTrackX0)/3, Y: scaleRowY, Click: true, Held: true})
 	a.Step(core.Input{X: scaleTrackX1 + 400, Y: scaleRowY, Held: true}) // far right: the maximum

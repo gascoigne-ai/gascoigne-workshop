@@ -109,9 +109,7 @@ func (a *App) commands() []keymap.Command {
 		},
 		a.side.Commands(),
 		a.resp.Commands(),
-		[]keymap.Command{
-			{ID: "settings", Name: "Settings", Default: ctrl(ebiten.KeyComma), Run: func() { a.menu = true }},
-		},
+		a.prefs.Commands(),
 	)
 }
 

@@ -1,48 +1,19 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 )
 
-// changeSettings is saveSettings for the settings dialog's own controls: the
-// color fields are rebuilt afterwards, since the colors in effect may have
-// changed.
-func (a *App) changeSettings(edit func(*settings.Settings)) {
-	a.saveSettings(edit)
-	a.colors.Forget() // not in saveSettings: the Colors page edits through it while a field is being typed
-}
+// changeSettings is saveSettings for the settings dialog's own controls (see
+// settingsdialog.Component.Change).
+func (a *App) changeSettings(edit func(*settings.Settings)) { a.prefs.Change(edit) }
 
 // saveSettings edits and applies the settings and, unless auto-save is off,
-// writes them. Turning auto-save off writes that choice once; turning it on
-// writes whatever was waiting.
-func (a *App) saveSettings(edit func(*settings.Settings)) {
-	wasAuto, wasNetwork, wasView := a.settings.AutoSave, a.networkSettings(), a.settings.ResponseView
-	edit(&a.settings)
-	if a.settings.ResponseView != wasView { // the choice applies to the tabs already open
-		for _, t := range a.openTabs() {
-			a.resp.SetMode(t.Tab, viewer.ModeOf(a.settings.ResponseView))
-		}
-	}
-	if a.networkSettings() != wasNetwork {
-		a.reg = a.newRegistry() // protocols hold the proxy and certificates they were built with
-	}
-	if err := a.ctx.SetTheme(theme.ThemeWith(a.settings)); err != nil {
-		a.notices.SetStatus(err.Error())
-		return
-	}
-	if a.settingsPath == "" {
-		return
-	}
-	if !a.settings.AutoSave && wasAuto == false {
-		a.settingsUnsaved = true // applied now, written when the user saves
-		return
-	}
-	// auto-save is on, was just turned on (which writes what was pending) or
-	// was just turned off (which writes that choice, and nothing else changed)
-	a.persistSettings()
-}
+// writes them (see settingsdialog.Component.Edit).
+func (a *App) saveSettings(edit func(*settings.Settings)) { a.prefs.Edit(edit) }
+
+// SettingsPath is the settings file, "" when settings are not kept.
+func (a *App) SettingsPath() string { return a.prefs.SettingsPath() }
 
 // networkSettings are the settings the protocols are built from.
 type networkSettings struct{ proxy, caCert, clientCert, clientKey string }

@@ -108,7 +108,7 @@ func TestTheFirstSaveMakesTheCollectionAFolderAndRemembersIt(t *testing.T) {
 	if err != nil || len(got.Folders) == 0 {
 		t.Fatalf("%+v %v", got, err)
 	}
-	st, err := settingsDisk.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.SettingsPath())
 	if remembered := st.RememberedCollections(); err != nil || len(remembered) != 1 || remembered[0].Folder != want {
 		t.Fatalf("remembered %+v %v", remembered, err)
 	}
@@ -183,7 +183,7 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	if old, err := storeDisk.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
 		t.Fatalf("the old collection lost its edit: %+v %v", old, err)
 	}
-	st, err := settingsDisk.Load(a.settingsPath)
+	st, err := settingsDisk.Load(a.SettingsPath())
 	if remembered := st.RememberedCollections(); err != nil || len(remembered) != 1 || remembered[0].Folder != second {
 		t.Fatalf("remembered %+v %v", remembered, err)
 	}

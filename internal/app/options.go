@@ -25,6 +25,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
@@ -140,11 +141,9 @@ func NewApp(opts Options) (*App, error) {
 			now: opts.now(), histories: opts.History, fonts: opts.Fonts, display: opts.Display, system: opts.System,
 			settingFiles: opts.SettingsFiles, previews: opts.Previews,
 		},
-		frameState:   frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
-		persistState: persistState{saves: map[*request.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
-		settingsState: settingsState{
-			settings: st, settingsPath: opts.SettingsPath, settingsAccess: storage.AccessAfter(loadErr),
-		},
+		frameState:    frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
+		persistState:  persistState{saves: map[*request.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
+		settingsState: settingsState{settings: st},
 	}
 	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
 	a.driver.app = a
@@ -169,7 +168,12 @@ func NewApp(opts Options) (*App, error) {
 	if loadErr != nil {
 		a.notices.SetStatus(loadErr.Error())
 	}
-	a.prefs.Stamp(a, a.settingsPath)
+	settingsAccess := storage.AccessAfter(loadErr)
+	a.prefs = settingsdialog.New(settingsdialog.Deps{
+		Settings: settingsHost{a}, Window: settingsHost{a}, Files: settingsHost{a}, Dialogs: settingsHost{a},
+		Bus: settingsHost{a}, Looks: settingsHost{a}, Keys: settingsHost{a},
+		Path: opts.SettingsPath, Store: opts.SettingsFiles, Access: settingsAccess, Fonts: opts.Fonts, System: opts.System,
+	})
 	a.reg = a.newRegistry()
 	ctx.Clipboard = core.ReportClipboard(ctx.Clipboard, a.clipboardNote)
 	if opts.HostOS != "" {
@@ -177,13 +181,13 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.sampler.HostOS = ctx.HostOS
 	ctx.Now = func() time.Time { return a.now() } // the caret blinks by the app clock
-	a.noteReadOnly(a.settingsAccess, loadErr)
+	a.noteReadOnly(settingsAccess, loadErr)
 	if opts.KeyRepeat != nil {
 		delay, interval := opts.KeyRepeat.Timing()
 		a.sampler.Repeat = core.KeyRepeat{Delay: delay, Interval: interval}
 	}
 	if opts.ScanFonts {
-		a.form.ScanFonts(a)
+		a.prefs.ScanFonts()
 	}
 	a.openWorkspace(opts.WorkspaceDir)
 	stateErr := a.loadState(opts.StatePath)

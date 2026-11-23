@@ -55,7 +55,7 @@ func (a *App) view() Node {
 		"requestPane":    a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
 		"responsePane":   a.pane(t, a.responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.resp.StatusView(a.ctx, t.Tab)),
 		"statusBar":      a.statusBar(),
-		"menu":           a.menuView(),
+		"menu":           a.prefs.View(a.ctx),
 		"picker":         a.pickerView(),
 		"browser":        a.fileBrowserView(),
 		"popupMenu":      PopupMenuLayer(a.ctx),
@@ -78,7 +78,7 @@ func (a *App) header() Node {
 		"gutter":      w.Gutter,
 		"title":       a.headerTitle(),
 		"env":         a.envChip(),
-		"toggleMenu":  a.toggleSettings,
+		"toggleMenu":  a.prefs.Toggle,
 		"settingsTip": a.hint("Settings", "settings"),
 	}))
 }

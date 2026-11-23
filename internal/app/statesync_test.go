@@ -165,13 +165,13 @@ func TestAnAppWithoutAStateFileKeepsNoHistoryOnDisk(t *testing.T) {
 func TestTheSettingsDialogSizeIsRememberedAcrossRestarts(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	first := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	first.prefs.Size.W, first.prefs.Size.H = 900, 480
+	first.prefs.Shell.Size.W, first.prefs.Shell.Size.H = 900, 480
 	if err := first.SaveState(); err != nil {
 		t.Fatal(err)
 	}
 	second := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if second.prefs.Size.W != 900 || second.prefs.Size.H != 480 {
-		t.Fatalf("the dialog size after a restart: %dx%d", second.prefs.Size.W, second.prefs.Size.H)
+	if second.prefs.Shell.Size.W != 900 || second.prefs.Shell.Size.H != 480 {
+		t.Fatalf("the dialog size after a restart: %dx%d", second.prefs.Shell.Size.W, second.prefs.Shell.Size.H)
 	}
 }
 

@@ -76,7 +76,7 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	a := testApp(t)
 	path := a.SettingsPath()
 	click(a, menuBtnX, menuBtnY)
-	a.prefs.Search = widget.NewTextField("request and response")
+	a.prefs.Shell.Search = widget.NewTextField("request and response")
 	clickText(t, a, "Stacked", 0)
 	if a.settings.Layout != "stacked" {
 		t.Fatalf("Layout = %q", a.settings.Layout)
@@ -98,7 +98,7 @@ func TestLayoutSettingStacksThePanesAndIsSaved(t *testing.T) {
 	}
 	_ = tab
 	click(a, menuBtnX, menuBtnY)
-	a.prefs.Search = widget.NewTextField("request and response") // the reopened dialog is fresh
+	a.prefs.Shell.Search = widget.NewTextField("request and response") // the reopened dialog is fresh
 	clickText(t, a, "Side by side", 0)
 	if a.settings.Layout != "side" {
 		t.Fatalf("Layout = %q", a.settings.Layout)

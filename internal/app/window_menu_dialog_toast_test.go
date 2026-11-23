@@ -18,13 +18,13 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 	a := testApp(t)
 	click(a, menuBtnX, menuBtnY)
 	a.Step(core.Input{Escape: true})
-	if a.menu {
+	if a.prefs.Open() {
 		t.Fatal("Escape must close the menu")
 	}
 
 	click(a, menuBtnX, menuBtnY)
 	click(a, 100, treeRowY(4)) // outside the menu, on a request row
-	if a.menu {
+	if a.prefs.Open() {
 		t.Fatal("an outside click must close the menu")
 	}
 	if len(a.tabs.Tabs()) != 1 {
@@ -33,7 +33,7 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 
 	click(a, menuBtnX, menuBtnY)
 	click(a, menuBtnX, menuBtnY) // the button again toggles it shut
-	if a.menu {
+	if a.prefs.Open() {
 		t.Fatal("the button must toggle the menu")
 	}
 }
@@ -115,10 +115,10 @@ func TestMenuKeyboardNavigationSkipsSeparatorsAndDisabledRows(t *testing.T) {
 
 func TestEscapeClosesTheMenuFirst(t *testing.T) {
 	a, r := openTestMenu(t)
-	a.menu = true // the settings menu is open too
+	a.prefs.Show() // the settings menu is open too
 	a.Step(core.Input{Escape: true})
-	if widget.PopupMenu(a.ctx) != nil || !a.menu || len(r.log) != 0 {
-		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", widget.PopupMenu(a.ctx) != nil, a.menu)
+	if widget.PopupMenu(a.ctx) != nil || !a.prefs.Open() || len(r.log) != 0 {
+		t.Fatalf("context menu open %v, settings menu open %v: Escape closes the top one only", widget.PopupMenu(a.ctx) != nil, a.prefs.Open())
 	}
 }
 
