@@ -132,6 +132,14 @@ func (step settingsPageStep) apply(scene *scene) error {
 	return nil
 }
 
+type fontListStep struct{ role string }
+
+// fontList opens the settings dialog on Appearance with the list of the "ui"
+// or "code" font open.
+func fontList(role string) Step { return fontListStep{role} }
+
+func (step fontListStep) apply(scene *scene) error { return scene.driver.OpenFontList(step.role) }
+
 type rawSettingsStep struct{}
 
 // rawSettings opens the settings dialog on the text of settings.json, as its

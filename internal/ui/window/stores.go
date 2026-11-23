@@ -14,7 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 )
@@ -48,7 +48,7 @@ type Ports struct {
 	Folders       workspace.Folders                // what the in-app file browser lists
 	Now           func() time.Time                 // the clock; nil is the wall clock
 	History       func(dir string) history.History // nil keeps no history
-	Fonts         formpage.FontStore
+	Fonts         fontlist.FontStore
 	System        SystemInfo // what the System page of the settings shows; nil has no report
 	SettingsFiles settings.SettingsStore
 	Previews      send.BodyPreview // shows a response body in the browser
@@ -108,7 +108,7 @@ type ports struct {
 	folders      workspace.Folders
 	now          func() time.Time
 	histories    func(dir string) history.History
-	fonts        formpage.FontStore
+	fonts        fontlist.FontStore
 	system       SystemInfo
 	settingFiles settings.SettingsStore
 	previews     send.BodyPreview

@@ -1,4 +1,4 @@
-package formpage
+package fontlist
 
 import (
 	"fmt"
@@ -12,13 +12,13 @@ import (
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// SetFont picks the family called name for role, applies it and saves the
+// Set picks the family called name for role, applies it and saves the
 // choice. An empty name goes back to the built-in font; a name that no
 // installed family has is explained next to the field and changes nothing.
-func (p *Page) SetFont(host Host, role form.FontRole, name string) {
+func (l *List) Set(host Host, role form.FontRole, name string) {
 	name = strings.TrimSpace(name)
 	if name != "" {
-		family, ok := fonts.Find(p.Families, name)
+		family, ok := fonts.Find(l.Families, name)
 		if !ok {
 			host.Send(prefs.Toast{Text: fmt.Sprintf("No installed font is called %q", name), Level: severity.Error})
 			return
@@ -32,24 +32,24 @@ func (p *Page) SetFont(host Host, role form.FontRole, name string) {
 			current.UIFont = name
 		}
 	}})
-	p.ApplyFonts(host)
+	l.Apply(host)
 }
 
-// FontsScanned receives the installed families and applies the saved
+// Scanned receives the installed families and applies the saved
 // choices, which could not be resolved before.
-func (p *Page) FontsScanned(host Host, families []fonts.Family) {
-	p.Families = families
-	p.ApplyFonts(host)
+func (l *List) Scanned(host Host, families []fonts.Family) {
+	l.Families = families
+	l.Apply(host)
 }
 
-// ApplyFonts loads the saved families for both roles. A name that is not
+// Apply loads the saved families for both roles. A name that is not
 // installed (any more) uses the built-in font and stays saved, so the font
 // returns when it is installed again.
-func (p *Page) ApplyFonts(host Host) {
+func (l *List) Apply(host Host) {
 	current := host.Settings()
 	var chosen [2]w.FontData
 	for _, role := range []form.FontRole{form.FontUI, form.FontCode} {
-		family, ok := fonts.Find(p.Families, form.SavedFont(current, role))
+		family, ok := fonts.Find(l.Families, form.SavedFont(current, role))
 		if !ok {
 			continue
 		}
@@ -67,12 +67,12 @@ func (p *Page) ApplyFonts(host Host) {
 	host.Send(prefs.MarkDirty{})
 }
 
-// ScanFonts reads the installed fonts in the background and hands them to
+// Scan reads the installed fonts in the background and hands them to
 // the UI goroutine.
-func (p *Page) ScanFonts(host Host) {
+func (l *List) Scan(host Host) {
 	store := host.FontStore()
 	go func() {
 		families := store.Scan()
-		host.Send(prefs.Later{Func: func() { p.FontsScanned(host, families) }})
+		host.Send(prefs.Later{Func: func() { l.Scanned(host, families) }})
 	}()
 }

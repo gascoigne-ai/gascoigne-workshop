@@ -46,7 +46,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header/envchip"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
@@ -222,7 +222,7 @@ func withDefaults(stores Stores) Stores {
 	ports.SettingsFiles = cmp.Or[settings.SettingsStore](ports.SettingsFiles, noSettingFiles{})
 	ports.States = cmp.Or[workspace.StateStore](ports.States, noStates{})
 	ports.Store = cmp.Or[collection.Store](ports.Store, noStore{})
-	ports.Fonts = cmp.Or[formpage.FontStore](ports.Fonts, noFonts{})
+	ports.Fonts = cmp.Or[fontlist.FontStore](ports.Fonts, noFonts{})
 	ports.Files = cmp.Or[FileDialog](ports.Files, noFileDialog{})
 	ports.Folders = cmp.Or[workspace.Folders](ports.Folders, noFolders{})
 	ports.Previews = cmp.Or[send.BodyPreview](ports.Previews, noBrowser{})

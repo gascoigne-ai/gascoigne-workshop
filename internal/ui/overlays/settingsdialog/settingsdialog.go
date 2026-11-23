@@ -11,6 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/systempage"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -89,17 +90,17 @@ func (c *Component) View(ctx *w.Ctx) Node {
 		return nil
 	}
 	c.ctx = ctx
-	return Frag(c.Shell.View(ctx, c), c.Form.FontList(ctx, c)) // the font list floats over the dialog
+	return Frag(c.Shell.View(ctx, c), c.Form.Fonts.View(ctx, c)) // the font list floats over the dialog
 }
 
 // FontListOpen reports whether the font list floats over the dialog.
-func (c *Component) FontListOpen() bool { return c.Form.FontListOpen() }
+func (c *Component) FontListOpen() bool { return c.Form.Fonts.IsOpen() }
 
 // CloseFontList closes the font list.
-func (c *Component) CloseFontList() { c.Form.CloseFontList() }
+func (c *Component) CloseFontList() { c.Form.Fonts.Close() }
 
 // ScanFonts looks for installed fonts in the background.
-func (c *Component) ScanFonts() { c.Form.ScanFonts(c) }
+func (c *Component) ScanFonts() { c.Form.Fonts.Scan(c) }
 
 // Poll picks up an outside change of settings.json.
 func (c *Component) Poll() { c.Shell.Poll(c) }
@@ -317,7 +318,7 @@ func (c *Component) ActionIDs() []string {
 func (c *Component) Keymap() keymap.Keymap { return c.deps.Keys.Keymap() }
 
 // FontStore is the installed fonts of this machine.
-func (c *Component) FontStore() formpage.FontStore { return c.deps.Fonts }
+func (c *Component) FontStore() fontlist.FontStore { return c.deps.Fonts }
 
 // SetFonts switches the interface and code fonts.
 func (c *Component) SetFonts(ui, code w.FontData) error { return c.deps.Looks.SetFonts(ui, code) }

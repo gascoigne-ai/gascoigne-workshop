@@ -12,6 +12,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -133,6 +134,19 @@ func (d *Driver) OpenSettingsMenu() { d.app.over.Settings.Show() }
 func (d *Driver) OpenSettingsPage(name string) {
 	d.app.over.Settings.Shell.Cat = name
 	d.app.over.Settings.Show()
+}
+
+// OpenFontList opens the settings dialog on Appearance with the font list
+// open for the "ui" or the "code" font, as a click on its control does.
+func (d *Driver) OpenFontList(role string) error {
+	roles := map[string]form.FontRole{"ui": form.FontUI, "code": form.FontCode}
+	fontRole, ok := roles[role]
+	if !ok {
+		return fmt.Errorf("font list %q is not one of ui, code", role)
+	}
+	d.OpenSettingsPage("appearance")
+	d.app.over.Settings.Form.Fonts.Open(d.app.ctx, d.app.over.Settings, fontRole)
+	return nil
 }
 
 // OpenRawSettings opens the settings dialog on the text of settings.json, as

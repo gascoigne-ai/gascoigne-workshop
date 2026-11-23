@@ -2,11 +2,19 @@ package formpage
 
 import (
 	"image/color"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
+	"golang.org/x/image/font/gofont/gobold"
+	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/gomonobold"
+	"golang.org/x/image/font/gofont/goregular"
+
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
@@ -36,7 +44,7 @@ func (h *fakeHost) Size() (int, int)                   { return 1280, 800 }
 func (h *fakeHost) Settings() settings.Settings        { return h.current }
 func (h *fakeHost) Pointer() (int, int)                { return 400, 300 }
 func (h *fakeHost) OpenPage(id string)                 { h.opened = id }
-func (h *fakeHost) FontStore() FontStore               { return fonts.System{} }
+func (h *fakeHost) FontStore() fontlist.FontStore      { return fonts.System{} }
 func (h *fakeHost) SetFonts(ui, code w.FontData) error { h.fontsSet++; return nil }
 
 // Send routes a message to the fake's own recorder of it.
@@ -57,6 +65,19 @@ func (h *fakeHost) Send(msg prefs.Msg) {
 	case prefs.Later:
 		msg.Func()
 	}
+}
+
+// testFamilies are real font files (the Go fonts) written to a folder and
+// scanned: "Go" and "Go Mono".
+func testFamilies(t *testing.T) []fonts.Family {
+	t.Helper()
+	dir := t.TempDir()
+	for name, data := range map[string][]byte{"r.ttf": goregular.TTF, "b.ttf": gobold.TTF, "m.ttf": gomono.TTF, "mb.ttf": gomonobold.TTF} {
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return fonts.Scan(dir)
 }
 
 func dump(node Node) string { return Dump(node) }
@@ -175,3 +196,21 @@ func TestAnEmptyFileSettingIsOnlyAButtonAndAFilledOneShowsItsPath(t *testing.T) 
 // dialogPageW is the width of the page in the dialog at its default size: its
 // width of 760 less the list of pages of 170 (package settingsdialog).
 const dialogPageW = 760 - 170
+
+// findAll is every element under root, in tree order, whose own line of
+// Dump has all the parts.
+func findAll(root *El, parts ...string) []*El {
+	var found []*El
+	line, _, _ := strings.Cut(Dump(root), "\n")
+	matches := true
+	for _, part := range parts {
+		matches = matches && strings.Contains(line, part)
+	}
+	if matches {
+		found = append(found, root)
+	}
+	for _, child := range root.Children() {
+		found = append(found, findAll(child, parts...)...)
+	}
+	return found
+}

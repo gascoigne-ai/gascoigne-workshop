@@ -32,7 +32,7 @@ flowchart LR
   `internal/app`, which maps them to `window.Stores`; `app` holds five files and no handler.
 - A view that needs little of the window is its own `internal/ui` package behind a `Host` or `Deps` interface the
   window answers, tested with a fake: `response`, `overlays/calltrace`, `editor` (the composite of the request pane's components), `editor/kvtable`, `editor/urlbar`, `editor/ws`, `editor/graphql`, `editor/grpc`, `editor/mcp`, `editor/mcp/mcpform`, `sidebar/sentlog`, `overlays/settingsdialog` (a component with `New(Deps)`: the window answers its narrow `Deps`, the component is the `Host` of the shell and the pages)
-  with its pages `formpage`, `colorpage`, `shortcutpage`, `systempage`, and `overlays/destpicker`; the `overlays` composite builds its children and is the host of `overlays/calltrace`. `response/respview` and `appicon` are the other views moved so far. Adapters reach those views through the
+  with its pages `formpage` (its child `formpage/fontlist` is the font drop-down: the control, the list and the font store port), `colorpage`, `shortcutpage`, `systempage`, and `overlays/destpicker`; the `overlays` composite builds its children and is the host of `overlays/calltrace`. `response/respview` and `appicon` are the other views moved so far. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 
 ## Modules

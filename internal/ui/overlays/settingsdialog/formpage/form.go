@@ -237,7 +237,7 @@ func (p *Page) carryOut(host Host, effect form.Effect) {
 	case form.ForgetTexts:
 		p.inputs = nil
 	case form.ApplyFonts:
-		p.ApplyFonts(host)
+		p.Fonts.Apply(host)
 	case form.AskFile:
 		host.Send(prefs.PickFile{Title: effect.Title, Done: func(path string) { p.update(host, form.Picked{Key: effect.Key, Path: path}) }})
 	}

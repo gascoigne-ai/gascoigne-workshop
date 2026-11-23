@@ -151,7 +151,7 @@ func TestClosingTheSettingsAlwaysOpensThemFresh(t *testing.T) {
 	*a.over.Settings.Form.Input(a.over.Settings, "proxy") = widget.NewTextField("typed but not entered")
 	a.over.Settings.Close()
 	a.over.Settings.Show()
-	if a.over.Settings.Shell.Cat != "" || a.over.Settings.Shell.Search.Text != "" || a.over.Settings.Shell.Raw || a.over.Settings.Form.FontListOpen() {
+	if a.over.Settings.Shell.Cat != "" || a.over.Settings.Shell.Search.Text != "" || a.over.Settings.Shell.Raw || a.over.Settings.Form.Fonts.IsOpen() {
 		t.Fatalf("page %q search %q raw %v: the reopened dialog is not fresh", a.over.Settings.Shell.Cat, a.over.Settings.Shell.Search.Text, a.over.Settings.Shell.Raw)
 	}
 	if got := a.over.Settings.Form.Input(a.over.Settings, "proxy").Text; got != a.settings.Proxy {

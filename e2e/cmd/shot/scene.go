@@ -33,6 +33,7 @@ var sceneFlagTable = []sceneFlag{
 	{name: "dialog", usage: "open this dialog (rename, delete, or the destination picker: move, copy) on the open request before the screenshot", step: openDialog},
 	{name: "toast", usage: "show this text as an error toast before the screenshot (repeatable)", repeat: true, step: showToast},
 	{name: "page", usage: "open the settings dialog on this page (appearance, colors, shortcuts, requests, general, system) before the screenshot", step: settingsPage},
+	{name: "font-list", usage: "open the settings dialog on Appearance with the font list of this font (ui, code) open before the screenshot", step: fontList},
 	{name: "record", usage: "ACTION=KEYS: record KEYS for the shortcut ACTION on the Shortcuts page before the screenshot; a bare ACTION is left recording (repeatable)", repeat: true, step: record},
 	{name: "raw-settings", usage: "open the settings dialog on the text of settings.json before the screenshot", toggle: true, step: func(string) Step { return rawSettings() }},
 	{name: "sent", usage: "show the log of sent requests in the sidebar before the screenshot", toggle: true, step: func(string) Step { return sentLog() }},

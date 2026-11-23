@@ -226,3 +226,14 @@ func TestAFaceDescriptionStatesTheSizeRangeFromTheSchema(t *testing.T) {
 		}
 	}
 }
+
+func TestTheFontControlShowsTheCurrentFamilyInItsOwnFont(t *testing.T) {
+	var d Page
+	host := newHost(t)
+	d.Fonts.Families = testFamilies(t)
+	host.current.UIFont = "Go Mono"
+	page := dump(d.View(testCtx(t), host, "Appearance", ""))
+	if !strings.Contains(page, `text="Go Mono"`) || !strings.Contains(page, "font=custom") {
+		t.Fatalf("the interface font control does not show its family in that font:\n%s", page)
+	}
+}

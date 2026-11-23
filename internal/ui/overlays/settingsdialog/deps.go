@@ -7,7 +7,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/systeminfo"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -29,7 +29,7 @@ type Deps struct {
 	Path   string                 // the settings file, "" keeps settings in memory only
 	Store  settings.SettingsStore // reads and writes that file
 	Access storage.Access         // ReadOnly when a newer build wrote the file
-	Fonts  formpage.FontStore     // installed fonts
+	Fonts  fontlist.FontStore     // installed fonts
 	System SystemSource           // what the System page shows; nil has no report
 }
 

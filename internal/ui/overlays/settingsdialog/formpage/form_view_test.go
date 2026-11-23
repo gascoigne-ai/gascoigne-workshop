@@ -70,7 +70,7 @@ func TestTheSettingsFormLaysOutAsPinned(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var page Page
 			host := newHost(t)
-			page.Families = testFamilies(t)
+			page.Fonts.Families = testFamilies(t)
 			if tc.prepare != nil {
 				tc.prepare(t, &page, host)
 			}
@@ -109,7 +109,7 @@ func newFormDriver(t *testing.T, category string) *formDriver {
 		t.Fatal(err)
 	}
 	driver := &formDriver{t: t, ctx: ctx, host: newHost(t), category: category}
-	driver.page.Families = testFamilies(t)
+	driver.page.Fonts.Families = testFamilies(t)
 	return driver
 }
 
@@ -410,8 +410,9 @@ func TestClickingAFontControlOpensTheListForItsRole(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			driver := newFormDriver(t, "Appearance")
 			driver.clickOn(tc.index, "control=field", "onClick=true")
-			if !driver.page.FontListOpen() || driver.page.list.role != tc.role {
-				t.Fatalf("open %v role %v, want the list open for %v", driver.page.FontListOpen(), driver.page.list.role, tc.role)
+			role, open := driver.page.Fonts.Role()
+			if !open || role != tc.role {
+				t.Fatalf("open %v role %v, want the list open for %v", open, role, tc.role)
 			}
 		})
 	}
@@ -425,7 +426,7 @@ func TestTheFontControlReadsAnInstalledFamilyOnce(t *testing.T) {
 	driver.host.current.CodeFont = "Missing Sans"
 	driver.view()
 	driver.view()
-	if driver.page.loadedFaces() != 1 {
-		t.Fatalf("%d font files read, want the interface font's only", driver.page.loadedFaces())
+	if driver.page.Fonts.FacesLoaded() != 1 {
+		t.Fatalf("%d font files read, want the interface font's only", driver.page.Fonts.FacesLoaded())
 	}
 }

@@ -2,6 +2,7 @@ package window
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/form"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -99,6 +100,12 @@ func TestDriverActionsApply(t *testing.T) {
 		{"open the named settings page", startOptions{}, func(driver *Driver) error { driver.OpenSettingsPage("colors"); return nil }, func(t *testing.T, a *Component) {
 			if !a.over.Settings.Open() || a.over.Settings.Shell.Cat != "colors" {
 				t.Errorf("settings open = %v, page = %q, want the dialog on colors", a.over.Settings.Open(), a.over.Settings.Shell.Cat)
+			}
+		}},
+		{"open the font list of the code font", startOptions{}, func(driver *Driver) error { return driver.OpenFontList("code") }, func(t *testing.T, a *Component) {
+			role, open := a.over.Settings.Form.Fonts.Role()
+			if !a.over.Settings.Open() || a.over.Settings.Shell.Cat != "appearance" || !open || role != form.FontCode {
+				t.Errorf("settings open %v on %q, list open %v for %v, want the code font's list over Appearance", a.over.Settings.Open(), a.over.Settings.Shell.Cat, open, role)
 			}
 		}},
 		{"open the settings menu", startOptions{}, func(driver *Driver) error { driver.OpenSettingsMenu(); return nil }, func(t *testing.T, a *Component) {

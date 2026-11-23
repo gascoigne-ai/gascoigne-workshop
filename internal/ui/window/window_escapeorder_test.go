@@ -46,8 +46,8 @@ func TestEscapeClosesOneLayerPerPressInOrder(t *testing.T) {
 	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
 	a.over.Calls().Open()
 	a.over.Settings.Show()
-	a.over.Settings.Form.Families = testFamilies(t)
-	a.over.Settings.Form.OpenFontList(a.ctx, a.over.Settings, form.FontUI)
+	a.over.Settings.Form.Fonts.Families = testFamilies(t)
+	a.over.Settings.Form.Fonts.Open(a.ctx, a.over.Settings, form.FontUI)
 
 	for _, layer := range []overlay.Layer{overlay.ContextMenu, overlay.Dialog, overlay.DestPicker, overlay.FileBrowser,
 		overlay.CallLog, overlay.FontList, overlay.Settings} {

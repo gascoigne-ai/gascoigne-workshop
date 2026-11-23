@@ -44,10 +44,10 @@ func TestSceneFlagsMakeOneStepPerFlagInTheFixedOrder(t *testing.T) {
 		{"an empty text gives no step", []string{"-request", "", "-pane", "Settings"}, []string{"showPaneStep"}},
 		{"every flag in the order a scene needs",
 			[]string{"-tool", "t", "-find", "f", "-sending", "-type-url", "u", "-filter", "f", "-close-all", "-browse", "d", "-log", "-sent", "-raw-settings",
-				"-record", "r", "-page", "p", "-toast", "t", "-dialog", "rename", "-wrap", "-type-body", "b", "-body", "json", "-response-pane", "Tests", "-pane", "Params",
+				"-record", "r", "-font-list", "ui", "-page", "p", "-toast", "t", "-dialog", "rename", "-wrap", "-type-body", "b", "-body", "json", "-response-pane", "Tests", "-pane", "Params",
 				"-request", "Echo", "-open-all", "-add-collection", "d", "-set", "a=b"},
 			[]string{"setSettingStep", "addCollectionStep", "openAllStep", "openRequestStep", "showPaneStep", "showResponsePaneStep", "chooseBodyStep", "typeBodyStep", "wrapStep",
-				"openDialogStep", "toastStep", "settingsPageStep", "recordStep", "rawSettingsStep", "sentLogStep", "callLogStep", "browseStep", "closeAllStep", "filterStep", "typeURLStep",
+				"openDialogStep", "toastStep", "settingsPageStep", "fontListStep", "recordStep", "rawSettingsStep", "sentLogStep", "callLogStep", "browseStep", "closeAllStep", "filterStep", "typeURLStep",
 				"sendOpenStep", "findStep", "toolFormStep"}},
 	}
 	for _, tc := range cases {

@@ -30,7 +30,7 @@ func TestLayersMarkOnlyTheOverlaysRows(t *testing.T) {
 		overlay.CallLog:     func() { world.over.Calls().Open() },
 		overlay.FontList: func() {
 			world.over.Settings.Show()
-			world.over.Settings.Form.OpenFontList(world.ctx, world.over.Settings, 0)
+			world.over.Settings.Form.Fonts.Open(world.ctx, world.over.Settings, 0)
 		},
 		overlay.Settings: func() { world.over.Settings.Show() },
 	}

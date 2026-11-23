@@ -211,7 +211,7 @@ func TestControlsFitAtFontRangeEnds(t *testing.T) {
 			t.Run(fmt.Sprintf("%d/%s", font, category), func(t *testing.T) {
 				ctx := ctxAtFont(t, font)
 				var page Page
-				page.Families = testFamilies(t)
+				page.Fonts.Families = testFamilies(t)
 				host := newHost(t)
 				host.current.FontSize = font
 				host.current.CACert = "/etc/ssl/ca.pem"

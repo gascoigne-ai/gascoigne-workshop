@@ -1,4 +1,4 @@
-package formpage
+package fontlist
 
 import (
 	"fmt"
@@ -52,7 +52,7 @@ func TestTheFontListLaysOutAsPinned(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var d Page
+			var d List
 			host := newHost(t)
 			d.Families = tc.families(t)
 			if tc.role == form.FontUI {
@@ -60,9 +60,9 @@ func TestTheFontListLaysOutAsPinned(t *testing.T) {
 			} else {
 				host.current.CodeFont = tc.current
 			}
-			d.OpenFontList(testCtx(t), host, tc.role)
-			d.FontSearch = NewTextField(tc.search)
-			root := inWindow(d.FontList(testCtx(t), host))
+			d.Open(testCtx(t), host, tc.role)
+			d.Search = NewTextField(tc.search)
+			root := inWindow(d.View(testCtx(t), host))
 			ctx, err := core.NewCtx(testTheme())
 			if err != nil {
 				t.Fatal(err)
@@ -88,7 +88,7 @@ func inWindow(list Node) *El { return Stack(list) }
 type listDriver struct {
 	t    *testing.T
 	ctx  *core.Ctx
-	page Page
+	list List
 	host *fakeHost
 }
 
@@ -99,13 +99,13 @@ func newListDriver(t *testing.T, families []fonts.Family) *listDriver {
 		t.Fatal(err)
 	}
 	driver := &listDriver{t: t, ctx: ctx, host: newHost(t)}
-	driver.page.Families = families
+	driver.list.Families = families
 	return driver
 }
 
 // step runs one frame; input is built from the frame's laid-out view.
 func (driver *listDriver) step(input func(root *El) core.Input) {
-	list := driver.page.FontList(driver.ctx, driver.host)
+	list := driver.list.View(driver.ctx, driver.host)
 	if list == nil {
 		driver.t.Fatal("the list is closed")
 	}
@@ -133,20 +133,20 @@ func (driver *listDriver) clickRow(index int) {
 
 func TestClickingAFamilyRowAppliesItAndClosesTheList(t *testing.T) {
 	driver := newListDriver(t, testFamilies(t))
-	driver.page.OpenFontList(driver.ctx, driver.host, form.FontUI)
+	driver.list.Open(driver.ctx, driver.host, form.FontUI)
 	driver.clickRow(2) // Built-in, Go, Go Mono
-	if driver.host.current.UIFont != "Go Mono" || driver.page.FontListOpen() {
-		t.Fatalf("UIFont %q, open %v; want Go Mono and the list closed", driver.host.current.UIFont, driver.page.FontListOpen())
+	if driver.host.current.UIFont != "Go Mono" || driver.list.IsOpen() {
+		t.Fatalf("UIFont %q, open %v; want Go Mono and the list closed", driver.host.current.UIFont, driver.list.IsOpen())
 	}
 }
 
 func TestClickingTheBuiltInRowGoesBackToTheEmbeddedFont(t *testing.T) {
 	driver := newListDriver(t, testFamilies(t))
 	driver.host.current.CodeFont = "Go"
-	driver.page.OpenFontList(driver.ctx, driver.host, form.FontCode)
+	driver.list.Open(driver.ctx, driver.host, form.FontCode)
 	driver.clickRow(0)
-	if driver.host.current.CodeFont != "" || driver.page.FontListOpen() {
-		t.Fatalf("CodeFont %q, open %v; want Built-in and the list closed", driver.host.current.CodeFont, driver.page.FontListOpen())
+	if driver.host.current.CodeFont != "" || driver.list.IsOpen() {
+		t.Fatalf("CodeFont %q, open %v; want Built-in and the list closed", driver.host.current.CodeFont, driver.list.IsOpen())
 	}
 }
 
@@ -155,18 +155,18 @@ func TestClickingTheBuiltInRowGoesBackToTheEmbeddedFont(t *testing.T) {
 func TestTypingASearchNarrowsTheRowsAndScrollsToTheTop(t *testing.T) {
 	driver := newListDriver(t, manyFamilies())
 	driver.host.current.UIFont = "Family 150"
-	driver.page.OpenFontList(driver.ctx, driver.host, form.FontUI)
-	if driver.page.list.scroll.Y == 0 {
+	driver.list.Open(driver.ctx, driver.host, form.FontUI)
+	if driver.list.scroll.Y == 0 {
 		t.Fatal("the list did not open scrolled to the family in use")
 	}
 	driver.step(func(*El) core.Input { return core.Input{Typed: []rune("Family 29")} })
-	if got := driver.page.FontSearch.Text; got != "Family 29" {
+	if got := driver.list.Search.Text; got != "Family 29" {
 		t.Fatalf("search text %q, want Family 29", got)
 	}
-	if driver.page.list.scroll.Y != 0 {
-		t.Fatalf("scroll = %d after typing, want the top", driver.page.list.scroll.Y)
+	if driver.list.scroll.Y != 0 {
+		t.Fatalf("scroll = %d after typing, want the top", driver.list.scroll.Y)
 	}
-	first := driver.page.matchingFamilies()[0].Name
+	first := driver.list.matching()[0].Name
 	driver.clickRow(0)
 	if driver.host.current.UIFont != first {
 		t.Fatalf("UIFont %q, want the first match, %s", driver.host.current.UIFont, first)
@@ -175,10 +175,10 @@ func TestTypingASearchNarrowsTheRowsAndScrollsToTheTop(t *testing.T) {
 
 func TestAClickOutsideTheListDismissesIt(t *testing.T) {
 	driver := newListDriver(t, testFamilies(t))
-	driver.page.OpenFontList(driver.ctx, driver.host, form.FontUI)
+	driver.list.Open(driver.ctx, driver.host, form.FontUI)
 	driver.step(func(*El) core.Input { return core.Input{X: 5, Y: 5, Click: true} })
-	if driver.page.FontListOpen() || driver.host.current.UIFont != "" {
-		t.Fatalf("open %v, UIFont %q; want the list closed and nothing picked", driver.page.FontListOpen(), driver.host.current.UIFont)
+	if driver.list.IsOpen() || driver.host.current.UIFont != "" {
+		t.Fatalf("open %v, UIFont %q; want the list closed and nothing picked", driver.list.IsOpen(), driver.host.current.UIFont)
 	}
 }
 

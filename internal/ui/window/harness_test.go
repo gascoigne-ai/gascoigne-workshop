@@ -35,7 +35,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage/fontlist"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
 	"io"
 	"net/http"
@@ -68,7 +68,7 @@ type startOptions struct {
 	Folders          workspace.Folders
 	History          func(dir string) history.History
 	System           SystemInfo
-	Fonts            formpage.FontStore
+	Fonts            fontlist.FontStore
 	SettingsFiles    settings.SettingsStore
 	Previews         send.BodyPreview
 	RetryDelay       time.Duration

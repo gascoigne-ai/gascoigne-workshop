@@ -33,7 +33,7 @@ var faceLineTemplate = markup.Must("faceline.vml", faceLineSource)
 func (p *Page) faceRow(ctx *w.Ctx, host Host, face form.Face) Node {
 	font, size := form.SchemaRow(face.Font), form.SchemaRow(face.Size)
 	line := faceView{
-		Font:    p.fontControl(ctx, host, face.Role),
+		Font:    p.Fonts.Control(ctx, host, face.Role),
 		Size:    p.stepControl(ctx, host, size),
 		Changed: settings.Changed(host.Settings(), size.Key),
 		Reset:   func() { p.Reset(host, size.Key) },
