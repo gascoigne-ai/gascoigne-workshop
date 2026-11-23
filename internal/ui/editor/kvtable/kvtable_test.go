@@ -88,7 +88,7 @@ const (
 	paramsCaption  = "Query"
 )
 
-var paramsLook = Look{Caption: paramsCaption, Editable: true}
+var paramsLook = Look{Caption: paramsCaption}
 
 // tree builds the Params table and lays it out.
 func (w *world) tree() Node {

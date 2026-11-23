@@ -402,7 +402,7 @@ func TestResponseMenu(t *testing.T) {
 	}
 	rightClick(a, 1000, 400)
 	pickMenu(t, a, "Select all")
-	if a.cur().view.SelectedText() != a.cur().view.AllText() {
+	if a.resp.Code(a.cur().Tab).SelectedText() != a.resp.Code(a.cur().Tab).AllText() {
 		t.Fatal("Select all")
 	}
 	rightClick(a, 1000, 400)
@@ -415,7 +415,7 @@ func TestResponseMenu(t *testing.T) {
 	}
 	rightClick(a, 1000, 400)
 	pickMenu(t, a, "Find")
-	if !a.cur().look.FindOpen {
+	if !a.resp.Look(a.cur().Tab).FindOpen {
 		t.Fatal("Find opens the find bar")
 	}
 }
@@ -455,7 +455,7 @@ func TestResponseHeaderRowsHaveACopyMenu(t *testing.T) {
 			t.Fatalf("a read-only table must not offer %q", l)
 		}
 	}
-	h := (*responsePanes[1].rows(a, a.cur()))[0]
+	h := a.cur().Resp.Headers[0]
 	pickMenu(t, a, "Copy as Name: Value")
 	if clip.text != h.Name+": "+h.Value {
 		t.Fatalf("clipboard %q", clip.text)
@@ -466,7 +466,7 @@ func TestResponseHeaderMenuCopiesNameValueAndAll(t *testing.T) {
 	a := jsonResponse(t, `{}`)
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
-	rows := *responsePanes[1].rows(a, a.cur())
+	rows := a.cur().Resp.Headers
 	openResponseRowMenu(t, a)
 	pickMenu(t, a, "Copy value")
 	if clip.text != rows[0].Value {

@@ -22,6 +22,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
@@ -154,6 +155,7 @@ func NewApp(opts Options) (*App, error) {
 	a.body = body.New(body.Deps{Tabs: bodyHost{a}, Slots: bodyHost{a}, Vars: bodyHost{a}, Files: bodyHost{a}, Schemas: bodyHost{a}, Window: bodyHost{a}})
 	a.auth = auth.New(auth.Deps{Tabs: authHost{a}, Vars: authHost{a}, Trust: authHost{a}, Cookies: authHost{a}, Window: authHost{a}})
 	a.assertions = assertions.New(assertions.Deps{Tabs: assertionsHost{a}, Vars: assertionsHost{a}, Status: assertionsHost{a}, Defaults: assertionsHost{a}})
+	a.resp = response.New(response.Deps{Tabs: responseHost{a}, Slots: responseHost{a}, Headers: responseHost{a}, Files: responseHost{a}, Exports: responseHost{a}, Window: responseHost{a}, Hints: responseHost{a}, Defaults: responseHost{a}})
 	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})
 	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: &a.calls, Welcome: a, Version: version})
 	if loadErr != nil {

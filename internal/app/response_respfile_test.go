@@ -1,18 +1,13 @@
 package app
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-	"image"
-	"image/png"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -39,14 +34,6 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	if len(tab.Earlier) != 2 || tab.Earlier[0].Resp.Status != 201 || tab.Earlier[1].Resp.Status != 200 {
 		t.Fatalf("history %+v", tab.Earlier)
 	}
-	items := a.historyMenu(tab)
-	if len(items) != 2 || !strings.HasPrefix(items[0].Label, "201") {
-		t.Fatalf("menu %+v", items)
-	}
-	items[1].Run() // pick the 200
-	if tab.Resp.Status != 200 || tab.Earlier[1].Resp.Status != 202 {
-		t.Fatalf("shown %d, history %+v", tab.Resp.Status, tab.Earlier)
-	}
 	for i := 0; i < tabs.PastLimit+5; i++ {
 		send(300 + i)
 	}
@@ -60,37 +47,6 @@ func TestHistoryKeepsEarlierResponsesNewestFirstAndSwapsOnPick(t *testing.T) {
 	answer(a, tab, request.Response{Status: 204})
 	if len(tab.Earlier) != n {
 		t.Fatalf("a failed response must not enter the history: %d -> %d", n, len(tab.Earlier))
-	}
-}
-
-func TestSaveBodyWritesTheFileAndReportsFailures(t *testing.T) {
-	a := testApp(t) // no dialog program: the in-app file browser is used
-	tab := a.cur()
-	a.saveBody(tab) // no response yet
-	if a.browser != nil {
-		t.Fatal("no file browser without a response")
-	}
-	tab.Resp = &request.Response{Status: 200, Body: []byte(`{"a":1}`)}
-	a.saveBody(tab)
-	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "response.txt") {
-		t.Fatalf("the file browser did not open with a name: %+v", a.browser)
-	}
-	a.closeBrowser()
-	a.folders = folders.Disk{}
-	path := filepath.Join(t.TempDir(), "out.json")
-	a.writeBody(tab, path)
-	a.WaitWrites() // written in the background
-	if b, err := os.ReadFile(path); err != nil || string(b) != `{"a":1}` {
-		t.Fatalf("%q %v", b, err)
-	}
-	a.writeBody(tab, filepath.Join(t.TempDir(), "no", "such", "dir", "x"))
-	a.WaitWrites()
-	found := false
-	for _, ts := range a.toasts {
-		found = found || (ts.Kind == widget.ToastError && strings.Contains(ts.Text, "Saving failed"))
-	}
-	if !found {
-		t.Fatal("a failed save must be reported")
 	}
 }
 
@@ -117,33 +73,8 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	if got := reqTests.badge(a, tab); got != 3 {
 		t.Fatalf("the request Tests tab counts assertions: %d", got)
 	}
-	if d := view.Dump(a.resultsPaneView(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
+	if d := view.Dump(a.responsePaneView(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
 		t.Fatalf("results pane:\n%s", d)
-	}
-}
-
-func TestAnImageResponseIsShownAsAPicture(t *testing.T) {
-	var buf bytes.Buffer
-	img := image.NewRGBA(image.Rect(0, 0, 40, 20))
-	if err := png.Encode(&buf, img); err != nil {
-		t.Fatal(err)
-	}
-	a := testApp(t)
-	tab := a.cur()
-	answer(a, tab, request.Response{Status: 200, StatusText: "OK", Body: buf.Bytes(),
-		Headers: []request.KV{{Name: "Content-Type", Value: "text/plain", Enabled: true}}}) // mislabeled on purpose
-	if tab.picture == nil || !strings.HasPrefix(tab.pictureInfo, "PNG 40x20") {
-		t.Fatalf("picture %v info %q", tab.picture, tab.pictureInfo)
-	}
-	if msg, _ := responseEmpty(a, tab); msg != "" {
-		t.Fatalf("a picture must not be reported as binary: %q", msg)
-	}
-	if d := view.Dump(a.responsePane(responsePanes[0], tab, nil)); !strings.Contains(d, "PNG 40x20") || !strings.Contains(d, "Save") {
-		t.Fatalf("pane:\n%s", d)
-	}
-	answer(a, tab, request.Response{Status: 200, Body: []byte(`{"a":1}`)})
-	if tab.picture != nil {
-		t.Fatal("the next, non-image response must clear the picture")
 	}
 }
 
@@ -308,62 +239,6 @@ func TestFormFieldsCanBeEditedAsText(t *testing.T) {
 	if len(tab.Req.Form) != 2 || tab.Req.Form[0].Value != "bob" || tab.Req.Form[1].Name != "role" {
 		t.Fatalf("form %+v", tab.Req.Form)
 	}
-}
-
-func TestToggleWrapSwitchesTheResponseViewAndSurvivesANewResponse(t *testing.T) {
-	a := jsonResponse(t, `{"ok":true}`)
-	tab := a.cur()
-	if tab.view.Wrap {
-		t.Fatal("lines are not wrapped by default")
-	}
-	a.toggleWrap(tab)
-	if !tab.view.Wrap {
-		t.Fatal("toggling turns wrapping on")
-	}
-	a.refreshView(tab) // a new response or view mode rebuilds the lines
-	if !tab.view.Wrap {
-		t.Fatal("wrapping is a choice of the view, not of one response")
-	}
-	a.toggleWrap(tab)
-	if tab.view.Wrap {
-		t.Fatal("toggling again turns it off")
-	}
-}
-
-// A body of megabytes was formatted, folded and searched on the UI
-// thread, which froze the window. Over respview.ViewLimit the view shows
-// the first part as plain lines and says that the rest is not shown.
-func TestAHugeBodyIsShownAsItsFirstPartWithANote(t *testing.T) {
-	var body strings.Builder
-	for body.Len() < 3<<20 {
-		body.WriteString(`{"id": 1, "name": "row"}` + "\n")
-	}
-	a := jsonResponse(t, body.String())
-	tab := a.cur()
-	if len(tab.view.Lines) == 0 {
-		t.Fatal("the view is empty")
-	}
-	last := lineText(tab.view.Lines[len(tab.view.Lines)-1])
-	if !strings.Contains(last, "first 2.0") || !strings.Contains(last, "of 3.0") {
-		t.Errorf("last line %q does not say the body is cut", last)
-	}
-	size := 0
-	for _, line := range tab.view.Lines {
-		size += len(lineText(line))
-	}
-	if size > respview.ViewLimit+1<<10 {
-		t.Errorf("the view holds %d bytes, want at most %d", size, respview.ViewLimit)
-	}
-	a.runFind(tab) // the formatted-view paths must not read lines that were never built
-	a.closeFind(tab)
-}
-
-func lineText(line widget.Line) string {
-	var text strings.Builder
-	for _, span := range line.Spans {
-		text.WriteString(span.Text)
-	}
-	return text.String()
 }
 
 // A failed send is still checked (a "status == 0" line can pass), but its

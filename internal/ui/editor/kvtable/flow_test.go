@@ -258,28 +258,13 @@ func TestViewShowsTheCaptionAndTheBulkLink(t *testing.T) {
 	}
 }
 
-func TestAReadOnlyTableHasNoCheckboxesAndNoEdit(t *testing.T) {
-	w := newWorld(t)
-	w.look = (Look{Caption: "Headers"})
-	dump := Dump(w.tree())
-	for _, bad := range []string{"checkB", "Bulk edit", "Drag to move the row", "Delete row"} {
-		if strings.Contains(dump, bad) {
-			t.Errorf("a read-only table shows %q:\n%s", bad, dump)
-		}
-	}
-	w.click(`text="gioui"`)
-	if w.kv.Editing() {
-		t.Fatal("a read-only table cannot be edited")
-	}
-}
-
 func TestDuplicateHeaderNamesAreFlagged(t *testing.T) {
 	rows := []request.KV{{Name: "X-Id", Enabled: true}, {Name: "x-id", Enabled: true}, {Name: "Other", Enabled: true}}
-	flagged := kvRows(rows, true, true)
+	flagged := kvRows(rows, true)
 	if !flagged[0].Flagged || !flagged[1].Flagged || flagged[2].Flagged {
 		t.Fatalf("flags = %v %v %v", flagged[0].Flagged, flagged[1].Flagged, flagged[2].Flagged)
 	}
-	if kvRows(rows, true, false)[0].Flagged {
+	if kvRows(rows, false)[0].Flagged {
 		t.Fatal("params may repeat a key: no flag there")
 	}
 }
@@ -289,18 +274,17 @@ func TestKVRows(t *testing.T) {
 		{Name: "q", Value: "x", Description: "d", Enabled: true},
 		{Name: "off", Value: "y"},
 	}
-	two := kvRows(rows, false, false)
-	three := kvRows(rows, true, false)
-	if len(two[0].Cells) != 2 || len(three[0].Cells) != 3 || three[0].Cells[2] != "d" {
-		t.Fatalf("cells: %v / %v", two[0].Cells, three[0].Cells)
+	table := kvRows(rows, false)
+	if len(table[0].Cells) != 3 || table[0].Cells[2] != "d" {
+		t.Fatalf("cells: %v, want name, value and description", table[0].Cells)
 	}
-	if !two[0].Checked || two[0].Muted || two[1].Checked || !two[1].Muted {
-		t.Fatalf("enabled rows are checked and bright, disabled ones muted: %+v", two)
+	if !table[0].Checked || table[0].Muted || table[1].Checked || !table[1].Muted {
+		t.Fatalf("enabled rows are checked and bright, disabled ones muted: %+v", table)
 	}
 }
 
 func TestSecretValuesAreMaskedInTheTable(t *testing.T) {
-	rows := kvRows([]request.KV{{Name: "token", Value: "hunter2", Secret: true, Enabled: true}, {Name: "a", Value: "visible"}}, true, false)
+	rows := kvRows([]request.KV{{Name: "token", Value: "hunter2", Secret: true, Enabled: true}, {Name: "a", Value: "visible"}}, false)
 	if rows[0].Cells[1] == "hunter2" || rows[0].Cells[1] == "" {
 		t.Fatalf("secret shown as %q", rows[0].Cells[1])
 	}

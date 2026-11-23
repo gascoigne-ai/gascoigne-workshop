@@ -7,12 +7,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-	"github.com/hajimehoshi/ebiten/v2"
 	"slices"
 )
 
@@ -56,23 +54,18 @@ type mcpBlock struct {
 	detailScroll widget.ScrollState // scroll of the open entry
 }
 
-// responseBlock holds the state of the response pane: the body shown, the response mode and find bar and the pane scroll.
+// responseBlock holds what the response area keeps per tab outside the
+// response component: which pane is shown and how it scrolls. The panes of
+// a socket tab share them, which is why they stay here.
 type responseBlock struct {
-	respTab     int
-	view        widget.CodeView    // response body
-	picture     *ebiten.Image      // the response body when it is an image
-	pictureInfo string             // "PNG 640x480, 12.5KB"
-	look        viewer.Model       // the response mode, the find bar and its active match
-	compactAll  []widget.Line      // the unfiltered compact lines, kept while a search filters the view
-	find        widget.TextField   // the search text
-	respScroll  widget.ScrollState // scroll of the table and note panes
-	respTabsX   widget.ScrollState // sideways scroll of the two pane tab strips
+	respTab    int
+	respScroll widget.ScrollState // scroll of the table and note panes
+	respTabsX  widget.ScrollState // sideways scroll of the two pane tab strips
 }
 
-// makeTab is newTab with the response view the settings ask for.
+// makeTab is newTab with the history of its request.
 func (a *App) makeTab(tab *tabs.Tab) *reqTab {
 	t := newReqTab(tab)
-	t.look = viewer.New(a.settings.ResponseView)
 	t.Earlier = a.loadHistory(tab.Req)
 	return t
 }
@@ -124,7 +117,6 @@ func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
 func newReqTab(tab *tabs.Tab) *reqTab {
 	req := tab.Req
 	t := &reqTab{Tab: tab}
-	t.look.Match = -1
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()

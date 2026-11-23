@@ -287,11 +287,10 @@ func (a *App) closeFocusedCollection() {
 // tablePanes is the pane that shows each table, by kind: where its rows are
 // and what follows a change of them.
 var tablePanes = [kvlogic.KindCount]pane{
-	kvlogic.Params:          paramsPane,
-	kvlogic.Headers:         headersPane,
-	kvlogic.Vars:            varsPane,
-	kvlogic.Form:            formPane,
-	kvlogic.ResponseHeaders: responsePanes[1],
+	kvlogic.Params:  paramsPane,
+	kvlogic.Headers: headersPane,
+	kvlogic.Vars:    varsPane,
+	kvlogic.Form:    formPane,
 }
 
 // tablePane is the pane's table in the request pane's padding.
@@ -301,7 +300,7 @@ func (a *App) tablePane(panel pane, tab *reqTab, scroll *widget.ScrollState) Nod
 
 // tableView is the pane's table with the given padding around it.
 func (a *App) tableView(panel pane, tab *reqTab, scroll *widget.ScrollState, pad int) Node {
-	look := kvtable.Look{Caption: panel.captionOf(a), Editable: panel.editable, FlagDuplicates: panel.flagDuplicates}
+	look := kvtable.Look{Caption: panel.captionOf(a), FlagDuplicates: panel.flagDuplicates}
 	return a.kv.View(a.ctx, kvlogic.Table{Tab: tab.Tab, Kind: panel.table}, look, scroll, pad)
 }
 
@@ -356,7 +355,7 @@ func (host kvtableHost) Visible() (kvlogic.Table, bool) {
 	tab := host.cur()
 	shown := requestPanesFor(tab)[tab.paneTab]
 	switch {
-	case shown.kind == paneTable && shown.editable:
+	case shown.kind == paneTable:
 		return kvlogic.Table{Tab: tab.Tab, Kind: shown.table}, true
 	case shown.kind == paneBody && (tab.Req.BodyType == request.BodyForm || tab.Req.BodyType == request.BodyMultipart):
 		return kvlogic.Table{Tab: tab.Tab, Kind: formPane.table}, true
@@ -641,3 +640,77 @@ func (host assertionsHost) SetStatus(text string) { host.notices.SetStatus(text)
 
 // DefaultTimeout is how long a request without its own timeout may run.
 func (host assertionsHost) DefaultTimeout() time.Duration { return host.timeoutFor(request.Request{}) }
+
+// responseHost is what the response component asks of the App
+// (response.Deps).
+type responseHost struct{ *App }
+
+// Current is the tab shown.
+func (host responseHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host responseHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Results is the Tests pane, which the assertions component draws.
+func (host responseHost) Results(tab *tabs.Tab, scroll *widget.ScrollState) Node {
+	return host.assertions.ResultsView(host.ctx, tab, scroll)
+}
+
+// Widths is the column widths of the response headers table, kept with the
+// widths of the other key-value tables.
+func (host responseHost) Widths() *widget.TableState { return host.kv.Widths(kvlogic.ResponseHeaders) }
+
+// CellStyler marks the {{variables}} of a cell of req.
+func (host responseHost) CellStyler(req *request.Request) func(string) []widget.Span {
+	return kvtableHost{host.App}.CellStyler(req)
+}
+
+// PickSave asks for the path of a file to save.
+func (host responseHost) PickSave(title, suggested string, answer func(path string)) {
+	host.pickFile(title, filedialog.SaveFile, suggested, answer)
+}
+
+// Write saves body at path off the UI goroutine.
+func (host responseHost) Write(path string, body []byte, done func(error)) {
+	host.writeFile(path, body, done)
+}
+
+// Home is the home folder of the user.
+func (host responseHost) Home() (string, error) { return host.folders.Home() }
+
+// Curl is the cURL command of the request of tab with its variables filled in,
+// "" when the app has no formatter.
+func (host responseHost) Curl(tab *tabs.Tab) string {
+	if host.curl == nil {
+		return ""
+	}
+	return host.curl(tab.Req.Expanded(host.varsFor(tab.Req)))
+}
+
+// Preview serves body for the browser to open.
+func (host responseHost) Preview(ctx context.Context, body []byte, contentType string) error {
+	return host.previews.Show(ctx, body, contentType)
+}
+
+// CommitEdit writes a table cell edit in progress into its row.
+func (host responseHost) CommitEdit() { host.commitEdit() }
+
+// ShowResponse selects the Response pane of tab.
+func (host responseHost) ShowResponse(tab *tabs.Tab) { host.widgets[tab].respTab = 0 }
+
+// Open shows a context menu at the pointer position.
+func (host responseHost) Open(posX, posY int, items []widget.MenuItem) {
+	host.openMenu(posX, posY, items)
+}
+
+// Hint is label with the shortcut of action.
+func (host responseHost) Hint(label, action string) string { return host.hint(label, action) }
+
+// Shortcut is the key of action, "" when it has none.
+func (host responseHost) Shortcut(action string) string { return host.shortcutHint(action) }
+
+// ResponseView is the setting that picks the mode of a new response view.
+func (host responseHost) ResponseView() string { return host.settings.ResponseView }
+
+// Now is the time of the frame.
+func (host responseHost) Now() time.Time { return host.now() }

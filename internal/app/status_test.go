@@ -1,28 +1,47 @@
 package app
 
 import (
+	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
-func TestStatusPillsFollowTheDashboardBadges(t *testing.T) {
-	for status, want := range map[int][2]core.Token{
-		200: {core.OK, core.OKSoft}, 204: {core.OK, core.OKSoft},
-		301: {core.Warn, core.WarnSoft}, 404: {core.Error, core.ErrorSoft}, 500: {core.Error, core.ErrorSoft},
-	} {
-		if fg, bg := statusPill(status); fg != want[0] || bg != want[1] {
-			t.Errorf("%d: %v on %v, want %v on %v", status, fg, bg, want[0], want[1])
-		}
+// The status pill over the response pane, as the window shows it: nothing
+// without an answer or with an error, else the code, its text, the time and
+// the size. (The colors of the pill are pinned in ui/response.)
+func TestTheWindowShowsTheStatusPillOfTheAnswerOnly(t *testing.T) {
+	cases := []struct {
+		name string
+		resp *request.Response
+		want []string // nil means no pill
+	}{
+		{"ok", &request.Response{Status: 200, StatusText: "OK", Size: 2048}, []string{"200 OK", "2.00KB"}},
+		{"redirect", &request.Response{Status: 302, StatusText: "Found"}, []string{"302 Found"}},
+		{"not found", &request.Response{Status: 404, StatusText: "Not Found"}, []string{"404 Not Found"}},
+		{"error", &request.Response{Err: "refused"}, nil},
+		{"none", nil, nil},
 	}
-	for _, id := range []string{"dark", "light"} {
-		th := theme.ThemeFor(id, theme.FontSizes{})
-		for _, status := range []int{200, 301, 404} {
-			fg, bg := statusPill(status)
-			if r := core.ContrastRatio(th.Color(fg), th.Color(bg)); r < 3.5 {
-				t.Errorf("%s: pill %d text %.2f:1 on its background", id, status, r)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := testApp(t)
+			t.Cleanup(a.WaitWrites)
+			a.cur().Resp = tc.resp
+			dump := Dump(a.view())
+			if tc.want == nil {
+				for _, soft := range []string{"bg=ok-soft", "bg=warn-soft", "bg=error-soft"} {
+					if strings.Contains(dump, soft) {
+						t.Fatalf("a pill (%s) is shown for %s:\n%s", soft, tc.name, dump)
+					}
+				}
+				return
 			}
-		}
+			for _, want := range tc.want {
+				if !strings.Contains(dump, want) {
+					t.Fatalf("the window lacks %q:\n%s", want, dump)
+				}
+			}
+		})
 	}
 }

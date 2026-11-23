@@ -2,19 +2,15 @@ package app
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"image"
 	"image/png"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -51,14 +47,13 @@ type responseState struct {
 // one per view mode, wrapped lines, the find bar open, earlier responses
 // to pick from and an image body.
 var responseStates = []responseState{
-	{"compact", func(t *testing.T, app *App, tab *reqTab) { app.setView(tab, viewer.Compact) }},
-	{"pretty", func(t *testing.T, app *App, tab *reqTab) { app.setView(tab, viewer.Pretty) }},
-	{"raw", func(t *testing.T, app *App, tab *reqTab) { app.setView(tab, viewer.Raw) }},
-	{"wrap", func(t *testing.T, app *App, tab *reqTab) { app.toggleWrap(tab) }},
+	{"compact", func(t *testing.T, app *App, tab *reqTab) { app.resp.SetMode(tab.Tab, viewer.Compact) }},
+	{"pretty", func(t *testing.T, app *App, tab *reqTab) { app.resp.SetMode(tab.Tab, viewer.Pretty) }},
+	{"raw", func(t *testing.T, app *App, tab *reqTab) { app.resp.SetMode(tab.Tab, viewer.Raw) }},
+	{"wrap", func(t *testing.T, app *App, tab *reqTab) { app.resp.Code(tab.Tab).Wrap = true }},
 	{"find", func(t *testing.T, app *App, tab *reqTab) {
-		app.openFind()
-		tab.find.Insert("id")
-		app.runFind(tab)
+		app.resp.OpenFind()
+		app.resp.Find(tab.Tab, "id")
 	}},
 	{"history", func(t *testing.T, app *App, tab *reqTab) {
 		answer(app, tab, request.Response{Status: 201, StatusText: "Created", Body: []byte(responseBody)})
@@ -104,36 +99,6 @@ func responseIn(t *testing.T, state string) (*App, *reqTab) {
 	return a, tab
 }
 
-// The response pane is pinned as text (element kinds, options, handlers,
-// rectangles) at two widths in every look, so moving it to markup cannot
-// change a pixel unnoticed.
-func TestTheResponsePaneLaysOutAsPinned(t *testing.T) {
-	sizes := []struct {
-		name  string
-		width int
-	}{
-		{"wide", responseWideW},
-		{"narrow", responseNarrowW},
-	}
-	for _, state := range responseStates {
-		for _, size := range sizes {
-			name := "response-" + state.name + "-" + size.name
-			t.Run(name, func(t *testing.T) {
-				a, tab := responseIn(t, state.name)
-				root := a.responsePane(responsePanes[0], tab, nil)
-				Layout(a.ctx, root, size.width, responsePaneH)
-				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
-				if err != nil {
-					t.Fatal(err)
-				}
-				if got := Dump(root); got != string(want) {
-					t.Fatalf("got:\n%s\nwant:\n%s", got, want)
-				}
-			})
-		}
-	}
-}
-
 // Every button of the toolbar, and the picture, says what it does on
 // hover.
 func TestTheResponseToolbarsButtonsHaveTooltips(t *testing.T) {
@@ -165,11 +130,11 @@ func TestTheResponseToolbarsButtonsHaveTooltips(t *testing.T) {
 func TestTheCompactAndWrapChipsSwitchTheView(t *testing.T) {
 	a, tab := responseIn(t, "pretty")
 	click(a, compactX, toolbarY)
-	if !tab.look.Compact() {
-		t.Fatalf("after Compact the mode is %v", tab.look.Mode)
+	if !a.resp.Look(tab.Tab).Compact() {
+		t.Fatalf("after Compact the mode is %v", a.resp.Look(tab.Tab).Mode)
 	}
 	click(a, wrapX, toolbarY)
-	if !tab.view.Wrap {
+	if !a.resp.Code(tab.Tab).Wrap {
 		t.Fatal("Wrap did not wrap the lines")
 	}
 }
@@ -189,26 +154,5 @@ func TestRightClickingTheResponseBodyOpensItsMenu(t *testing.T) {
 	rightClick(a, findFieldX, findBarY)
 	if widget.PopupMenu(a.ctx) == nil || menuLabels(a)[1] != "Copy body" {
 		t.Fatalf("menu = %v", widget.PopupMenu(a.ctx))
-	}
-}
-
-// The code view shows the tab's own view and the picture the tab's
-// image: state Dump does not print, read from the widgets themselves.
-func TestTheResponseWidgetsShowTheTabsState(t *testing.T) {
-	a, tab := responseIn(t, "compact")
-	code := findWidget(a.responsePane(responsePanes[0], tab, nil), "*widget.codeB")
-	if code == nil {
-		t.Fatal("the response pane has no code view")
-	}
-	if got, want := fmt.Sprintf("%+v", code.Behavior()), fmt.Sprintf("view:%p", &tab.view); !strings.Contains(got, want) {
-		t.Errorf("the code view lacks %q: %s", want, got)
-	}
-	a, tab = responseIn(t, "picture")
-	picture := findWidget(a.responsePane(responsePanes[0], tab, nil), "widget.imageB")
-	if picture == nil {
-		t.Fatal("the picture pane has no image")
-	}
-	if got, want := fmt.Sprintf("%+v", picture.Behavior()), fmt.Sprintf("img:%p", tab.picture); !strings.Contains(got, want) {
-		t.Errorf("the image lacks %q: %s", want, got)
 	}
 }

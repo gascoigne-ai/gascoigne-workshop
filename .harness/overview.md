@@ -18,7 +18,7 @@ uitoolkit/           the GPU toolkit; knows nothing of requests (`uitoolkit/doc.
   markup             templates (HTML-like) that build the same trees
   theming, engine    palettes and theme files; key bindings and frame pacing
 internal/feature/    feature slices: collections, environments, history, send, settings, workspace (model, controllers, adapter/, FEATURE.md; no ui)
-internal/ui/         the screen, one directory per component (overlays/, response/, sidebar/, tabstrip/, editor/kvtable/, editor/urlbar/, editor/body/, editor/auth/, editor/assertions/, editor/mcp/, appicon, theme)
+internal/ui/         the screen, one directory per component (overlays/, response/ with respview/ and calltrace/, sidebar/, tabstrip/, editor/kvtable/, editor/urlbar/, editor/body/, editor/auth/, editor/assertions/, editor/mcp/, appicon, theme)
 internal/ui/format/  display formatting, no toolkit: durations, sizes, JSON text helpers, body to display lines
 internal/storage/    user-file location and versioning (zone base): where the program's files live, the "version" key readers
 internal/feature/request/  the request model and ports and OpenCollection, the base feature every other may import
@@ -57,7 +57,7 @@ Dependencies point inward: what each package may import is written once, in `int
 2. `App.send` calls `dispatch`: `sends.Begin` (`feature/send/sends`) numbers the send, `request.Request.Expanded` fills `{{variables}}` from the collection and the active environment, the call log records it.
 3. A command runs off the UI goroutine: `reg.Send(ctx, req)` on the protocol registry, a name-to-`Protocol` table built in `feature/send/adapter/protocol` (`rest`, `websocket`, `sse`, `mcp`, `grpc`; its package doc says which are hand-written and why). Streaming protocols return a `Session` from `Connect` and report through the same bus.
 4. The result comes back as a message on the bus (`feature/workspace/bus`), drained once per frame on the UI goroutine; a late result of a cancelled send is dropped by its number (`sends.Accept`).
-5. The tab keeps the response; the response pane (`ui/response/respview`, and `feature/send/viewer` for its mode and find state) draws it. The sent request and response are written to the history (`feature/history`) by an adapter behind a port, the collection by `feature/collections/adapter/collectionstore`.
+5. The tab keeps the response; the response panes (`ui/response`, with `ui/response/respview` for the lines, and `feature/send/viewer` for its mode and find state) draw it. The sent request and response are written to the history (`feature/history`) by an adapter behind a port, the collection by `feature/collections/adapter/collectionstore`.
 
 Every frame the whole window tree is rebuilt from the App state (why: the `markup` package doc): no diffing, no reactive graph. Widgets that need identity across frames (a text field, a code view) take a pointer to state the App owns.
 

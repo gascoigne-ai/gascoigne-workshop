@@ -12,11 +12,11 @@ import (
 func TestSendAppliesSettingsMessages(t *testing.T) {
 	a := testApp(t)
 	a.Send(prefs.Replace{Settings: settings.Settings{ResponseView: "raw", UIScalePct: 100}})
-	if a.settings.ResponseView != "raw" || !a.cur().look.Raw() {
-		t.Fatalf("Replace: setting %q raw %v", a.settings.ResponseView, a.cur().look.Raw())
+	if a.settings.ResponseView != "raw" || !a.resp.Look(a.cur().Tab).Raw() {
+		t.Fatalf("Replace: setting %q raw %v", a.settings.ResponseView, a.resp.Look(a.cur().Tab).Raw())
 	}
 	a.Send(prefs.Change{Edit: func(current *settings.Settings) { current.ResponseView = "compact" }})
-	if !a.cur().look.Compact() {
+	if !a.resp.Look(a.cur().Tab).Compact() {
 		t.Fatal("Change edits the settings in effect")
 	}
 	a.Send(prefs.Edit{Edit: func(current *settings.Settings) { current.ResponseView = "pretty" }})

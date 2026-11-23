@@ -14,7 +14,6 @@ import (
 // Look is what the pane around a table decides about it.
 type Look struct {
 	Caption        string // the title above the rows, "" leaves the row out
-	Editable       bool   // rows can be toggled, deleted, moved and edited; otherwise the table is read-only
 	FlagDuplicates bool   // mark rows that repeat a name
 }
 
@@ -24,34 +23,25 @@ func (c *Component) View(ctx *w.Ctx, table logic.Table, look Look, scroll *widge
 	if c.bulk != nil && c.bulk.Table == table {
 		return c.bulkView(ctx, table, look, pad)
 	}
-	rows := c.rows(table)
 	spec := widget.TableSpec{
-		Styler:  c.deps.Styles.CellStyler(table.Tab.Req),
-		State:   c.Widths(table.Kind),
-		Columns: []string{"Name", "Value"},
-		Weights: []float64{35, 65},
-		Rows:    kvRows(*rows, false, false),
+		Styler: c.deps.Styles.CellStyler(table.Tab.Req),
+		State:  c.Widths(table.Kind),
 	}
-	if !look.Editable {
-		spec.OnRowMenu = func(row, posX, posY int) { c.deps.Menus.Open(posX, posY, copyRowItems(ctx, *rows, row, true)) }
-	}
-	if look.Editable {
-		c.editable(ctx, &spec, table, look)
-	}
+	c.editable(ctx, &spec, table, look)
 	scope := c.captionScope(ctx, table, look, pad)
 	scope["scroll"] = scroll
 	scope["spec"] = spec
 	return tableViewTemplate.MustBuild(scope)
 }
 
-// editable fills in what only an editable table has: checkboxes, the cell
-// edit, the drag handles and the row menu.
+// editable fills in the table: checkboxes, the cell edit, the drag handles
+// and the row menu.
 func (c *Component) editable(ctx *w.Ctx, spec *widget.TableSpec, table logic.Table, look Look) {
 	rows := c.rows(table)
 	spec.Editable = true
 	spec.Columns = []string{"Name", "Value", "Description"}
 	spec.Weights = []float64{28, 40, 32}
-	spec.Rows = kvRows(*rows, true, look.FlagDuplicates)
+	spec.Rows = kvRows(*rows, look.FlagDuplicates)
 	spec.Placeholder = spec.Columns
 	spec.AllChecked = request.AllEnabled(*rows)
 	spec.OnToggleAll = func() {
@@ -95,7 +85,6 @@ func (c *Component) captionScope(ctx *w.Ctx, table logic.Table, look Look, pad i
 	return sizes.Scope(ctx, markup.Scope{
 		"pad":        pad,
 		"caption":    look.Caption,
-		"editable":   look.Editable,
 		"bulkLabel":  logic.BulkLabel(c.bulk != nil),
 		"toggleBulk": func() { c.ToggleBulk(table) },
 	})
@@ -116,7 +105,7 @@ const (
   <row if="caption" h="{{rowH}}">
     <caption>{{caption}}</caption>
     <spacer/>
-    <link-button if="editable" tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
+    <link-button tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
   </row>
   <table spec="spec"/>
 </scroll>
@@ -127,7 +116,7 @@ const (
   <row if="caption" h="{{rowH}}">
     <caption>{{caption}}</caption>
     <spacer/>
-    <link-button if="editable" tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
+    <link-button tooltip="Edit all rows as text, one per line" on-click="toggleBulk">{{bulkLabel}}</link-button>
   </row>
   <area state="area" grow="1" bg="sunken" text-menu="areaText"/>
 </col>

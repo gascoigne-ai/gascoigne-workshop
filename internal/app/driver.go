@@ -111,7 +111,7 @@ func (d *Driver) TypeURL(text string) {
 // WrapOn turns on Wrap for the open request's response and body, as their two
 // Wrap chips would.
 func (d *Driver) WrapOn() {
-	d.app.cur().view.Wrap = true
+	d.app.resp.Code(d.app.cur().Tab).Wrap = true
 	d.app.body.Area(d.app.cur().Tab).Wrap = true
 }
 
@@ -229,10 +229,8 @@ func (d *Driver) ChangeSetting(key string, value settings.Value) error {
 // Find opens the find bar on the current response and types text into it, as
 // Ctrl+F and typing would.
 func (d *Driver) Find(text string) {
-	d.app.openFind()
-	tab := d.app.cur()
-	tab.find.Insert(text)
-	d.app.runFind(tab)
+	d.app.resp.OpenFind()
+	d.app.resp.Find(d.app.cur().Tab, text)
 }
 
 // OpenToolForm opens the call form of the named tool of the open MCP request.

@@ -18,11 +18,11 @@ func focusName(app *App) string {
 		return "filter"
 	case app.urlbar.Field(t.Tab).Focused:
 		return "url"
-	case t.find.Focused:
+	case app.resp.Field(t.Tab).Focused:
 		return "find"
 	case app.body.Area(t.Tab).Focused:
 		return "body"
-	case t.view.Focused:
+	case app.resp.Code(t.Tab).Focused:
 		return "response"
 	}
 	return "none"

@@ -6,7 +6,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -18,14 +18,12 @@ type paneKind int
 
 const (
 	paneTable paneKind = iota
-	paneNote
 	paneBody
 	paneSettings
 	paneAuth
-	paneResponse
+	paneResponse // a pane of the response area, drawn by ui/response
 	paneMessages
 	paneAssertions // the request side: the assertions being written
-	paneResults    // the response side: what they found
 	paneExplorer   // the response side of MCP: what the server offers
 	paneProto      // the request side of gRPC: reflection or .proto files
 	paneSchema     // the request side of gRPC: the fields of the method's message
@@ -38,10 +36,9 @@ type pane struct {
 	kind           paneKind
 	title          string                                             // caption above a table
 	rows           func(app *App, t *reqTab) *[]request.KV            // paneTable
-	editable       bool                                               // table rows can be toggled and deleted
 	changed        func(app *App, t *reqTab)                          // runs after an edit
 	flagDuplicates bool                                               // mark rows that repeat a name
-	note           func(t *reqTab) string                             // paneNote
+	respPane       response.Pane                                      // paneResponse: which of the response component's panes
 	empty          func(app *App, t *reqTab) (msg string, isErr bool) // shown instead of the content
 	caption        func(app *App) string                              // the caption when it depends on the app state
 	table          kvlogic.Kind                                       // paneTable: which table of ui/editor/kvtable it shows
@@ -61,20 +58,20 @@ func paramsChanged(app *App, tab *reqTab) {
 }
 
 var (
-	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", editable: true, changed: paramsChanged, table: kvlogic.Params,
+	paramsPane = pane{label: "Params", kind: paneTable, title: "Query", changed: paramsChanged, table: kvlogic.Params,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Params }}
 	bodyPane = pane{label: "Body", kind: paneBody}
 	// formPane is the table of form and multipart fields; the body pane
 	// asks for it through its Slots.
-	formPane = pane{label: "Body", kind: paneTable, title: "Fields", editable: true, table: kvlogic.Form,
+	formPane = pane{label: "Body", kind: paneTable, title: "Fields", table: kvlogic.Form,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Form }}
 	// schemaPane is the Schema tab of a gRPC request: the fields of the request
 	// message of its method, drawn by the body component.
 	schemaPane  = pane{label: "Schema", kind: paneSchema}
-	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", editable: true, flagDuplicates: true, table: kvlogic.Headers,
+	headersPane = pane{label: "Headers", kind: paneTable, title: "Headers", flagDuplicates: true, table: kvlogic.Headers,
 		rows: func(_ *App, tab *reqTab) *[]request.KV { return &tab.Req.Headers }}
 	authPane = pane{label: "Auth", kind: paneAuth}
-	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", editable: true, table: kvlogic.Vars,
+	varsPane = pane{label: "Vars", kind: paneTable, title: "Collection variables", table: kvlogic.Vars,
 		caption: (*App).varsCaption,
 		rows:    func(app *App, _ *reqTab) *[]request.KV { return app.varsRows() }}
 	testsPane    = pane{label: "Tests", kind: paneAssertions}
@@ -138,18 +135,21 @@ func noResponse(app *App, tab *reqTab) (string, bool) {
 	return "", false
 }
 
+// responseEmpty is noResponse plus the case of a body that is not text.
+func responseEmpty(app *App, tab *reqTab) (string, bool) {
+	if msg, isErr := noResponse(app, tab); msg != "" {
+		return msg, isErr
+	}
+	return app.resp.Empty(tab.Tab)
+}
+
+// responsePanes are the response side of REST and of every protocol with no
+// panes of its own: the tabs of the response area, drawn by ui/response.
 var responsePanes = []pane{
-	{label: "Response", kind: paneResponse, empty: responseEmpty},
-	{label: "Headers", kind: paneTable, empty: noResponse, table: kvlogic.ResponseHeaders,
-		rows: func(_ *App, tab *reqTab) *[]request.KV {
-			if tab.Resp == nil {
-				return &[]request.KV{}
-			}
-			return &tab.Resp.Headers
-		}},
-	{label: "Timeline", kind: paneNote, empty: noResponse,
-		note: func(tab *reqTab) string { return respview.Timeline(tab.Resp) }},
-	{label: "Tests", kind: paneResults},
+	{label: "Response", kind: paneResponse, respPane: response.Body, empty: responseEmpty},
+	{label: "Headers", kind: paneResponse, respPane: response.Headers, empty: noResponse},
+	{label: "Timeline", kind: paneResponse, respPane: response.Timeline, empty: noResponse},
+	{label: "Tests", kind: paneResponse, respPane: response.Tests},
 }
 
 // badge is the count shown on a pane's tab.
@@ -157,22 +157,13 @@ func (p pane) badge(app *App, tab *reqTab) int {
 	switch p.kind {
 	case paneAssertions: // how many assertions are written
 		return assert.Count(tab.Req.Tests)
-	case paneResults: // how many failed
-		n := 0
-		for _, r := range app.assertions.Results(tab.Tab) {
-			if !r.OK {
-				n++
-			}
-		}
-		return n
+	case paneResponse:
+		return responseBadge(app, p.respPane, tab)
 	}
 	if p.kind != paneTable {
 		return 0
 	}
 	rows := *p.rows(app, tab)
-	if !p.editable {
-		return len(rows)
-	}
 	n := 0
 	for _, r := range rows {
 		if r.Enabled {
@@ -180,6 +171,27 @@ func (p pane) badge(app *App, tab *reqTab) int {
 		}
 	}
 	return n
+}
+
+// responseBadge is the count shown on a tab of the response area: how many
+// headers came back, how many assertions failed.
+func responseBadge(app *App, shown response.Pane, tab *reqTab) int {
+	switch shown {
+	case response.Headers:
+		if tab.Resp == nil {
+			return 0
+		}
+		return len(tab.Resp.Headers)
+	case response.Tests:
+		failed := 0
+		for _, result := range app.assertions.Results(tab.Tab) {
+			if !result.OK {
+				failed++
+			}
+		}
+		return failed
+	}
+	return 0
 }
 
 func (a *App) tabItems(panes []pane, tab *reqTab) []TabItem {
@@ -199,15 +211,13 @@ func paneEmpty(app *App, panel pane, tab *reqTab) (string, bool) {
 
 // paneBuilders turns a pane into its view, by kind.
 var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *ScrollState) Node{
-	paneNote:       (*App).notePane,
 	paneBody:       (*App).bodyPaneView,
 	paneSettings:   (*App).settingsPaneView,
 	paneAuth:       (*App).authPaneView,
-	paneResponse:   (*App).responsePane,
+	paneResponse:   (*App).responsePaneView,
 	paneMessages:   (*App).messagesPane,
 	paneExplorer:   (*App).explorerPane,
 	paneAssertions: (*App).assertionsPaneView,
-	paneResults:    (*App).resultsPaneView,
 	paneTable:      (*App).tablePane,
 	paneProto:      (*App).protoPane,
 	paneSchema:     (*App).schemaPaneView,
@@ -228,10 +238,12 @@ func (a *App) assertionsPaneView(panel pane, tab *reqTab, scroll *ScrollState) N
 	return a.assertions.View(a.ctx, tab.Tab, scroll)
 }
 
-// resultsPaneView is the response's Tests pane, drawn by the assertions component.
-// It scrolls with the tab's response scroll, whichever scroll it is handed.
-func (a *App) resultsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return a.assertions.ResultsView(a.ctx, tab.Tab, &tab.respScroll)
+// responsePaneView is a pane of the response area, drawn by the response
+// component. It scrolls with the tab's response scroll, whichever scroll it
+// is handed: the Tests pane has always done so, and the panes of a socket tab
+// share it.
+func (a *App) responsePaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.resp.View(a.ctx, tab.Tab, panel.respPane, &tab.respScroll)
 }
 
 // settingsPaneView is the request's Settings pane, drawn by the assertions component.
@@ -278,27 +290,11 @@ func (a *App) messagePane(panel pane, msg string, isErr bool) Node {
 	})
 }
 
-var notePaneTemplate = markup.Must("notepane.vml", notepaneSource)
-
-// notePane shows the pane's text, such as the response's timeline.
-func (a *App) notePane(panel pane, tab *reqTab, scroll *ScrollState) Node {
-	return notePaneTemplate.MustBuild(markup.Scope{
-		"gutter": w.Gutter,
-		"scroll": scroll,
-		"note":   panel.note(tab),
-	})
-}
-
 // Templates, parsed once above.
 const (
 	messagepaneSource = `<col grow="1" pad="{{gutter}}" bg="bg">
   <lines color="{{color}}">{{message}}</lines>
 </col>
-`
-
-	notepaneSource = `<scroll state="scroll" pad="{{gutter}}">
-  <lines color="text">{{note}}</lines>
-</scroll>
 `
 )
 

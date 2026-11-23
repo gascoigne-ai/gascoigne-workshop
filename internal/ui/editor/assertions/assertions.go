@@ -22,8 +22,8 @@
 // it per frame would change what users see. Revisit with a gutter mark per
 // line, which needs a lookup by line.
 //
-// The response pane draws ResultsView; task 037 hands it to the response
-// component through a host slot, as the body does for its form table.
+// The response pane draws ResultsView: ui/response asks for it through a host
+// slot, as the body does for its form table.
 //
 // There is no Keys method: a frame that only types text is skipped by the
 // window's own text-focus check, and no key needs claiming (as in auth).

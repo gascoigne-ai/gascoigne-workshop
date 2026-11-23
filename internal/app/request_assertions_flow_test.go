@@ -21,7 +21,7 @@ func TestTheResultsListScrollsWithTheTabsResponseScroll(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests, tab.Resp = "status == 200", pinnedResponse
 	a.assertions.Run(tab.Tab)
-	root := a.resultsPaneView(responsePanes[3], tab, &widget.ScrollState{})
+	root := a.responsePaneView(responsePanes[3], tab, &widget.ScrollState{})
 	if got := fmt.Sprintf("%+v", root.Behavior()); !strings.Contains(got, fmt.Sprintf("%p", &tab.respScroll)) {
 		t.Fatalf("scroll %s, want the state %p", got, &tab.respScroll)
 	}

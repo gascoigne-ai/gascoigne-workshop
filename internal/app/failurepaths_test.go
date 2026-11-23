@@ -75,16 +75,8 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			app.folders = folders.Disk{} // the real disk, so the blocked folder is what fails
 			tab := app.cur()
 			tab.Resp = &request.Response{Status: 200, Body: []byte("x")}
-			app.writeBody(tab, blockedDir(t))
+			saveBodyAs(t, app, tab, blockedDir(t))
 		}, "Saving failed", ""},
-		{"there is no response to save", func(t *testing.T, app *App) {
-			app.cur().Resp = nil
-			app.saveBody(app.cur())
-		}, "There is no response to save", ""},
-		{"there is no response to open in the browser", func(t *testing.T, app *App) {
-			app.cur().Resp = nil
-			app.openInBrowser(app.cur())
-		}, "There is no response to open", ""},
 		{"a history was written by a newer version", func(t *testing.T, app *App) {
 			app.statePath = filepath.Join(t.TempDir(), "state.json") // history lives beside it
 			req := app.cur().Req

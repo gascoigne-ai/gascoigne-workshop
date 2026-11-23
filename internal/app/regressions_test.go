@@ -8,6 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"github.com/hajimehoshi/ebiten/v2"
 	"io"
 	"math"
 	"net/http"
@@ -50,7 +51,7 @@ func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 		focus func(*App, *reqTab)
 	}{
 		{"url", func(a *App, tab *reqTab) { a.urlbar.Field(tab.Tab).Focused = true }},
-		{"find", func(a *App, tab *reqTab) { tab.find.Focused = true }},
+		{"find", func(a *App, tab *reqTab) { a.resp.Field(tab.Tab).Focused = true }},
 		{"body", func(a *App, tab *reqTab) { a.body.Area(tab.Tab).Focused = true }},
 		{"graphql variables", func(a *App, tab *reqTab) { tab.gqlVars.Focused = true }},
 		{"file path", func(a *App, tab *reqTab) { a.body.File(tab.Tab).Focused = true }},
@@ -77,13 +78,13 @@ func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 func TestAnySettingsEditThatChangesTheResponseViewRefreshesOpenTabs(t *testing.T) {
 	a := testApp(t) // starts on "pretty"
 	tab := a.cur()
-	if tab.look.Raw() {
+	if a.resp.Look(tab.Tab).Raw() {
 		t.Fatal("start: the tab should not be raw")
 	}
 
 	a.saveSettings(func(prefs *settings.Settings) { prefs.ResponseView = "raw" })
 
-	if !tab.look.Raw() {
+	if !a.resp.Look(tab.Tab).Raw() {
 		t.Fatal("the open tab kept its old response view")
 	}
 }
@@ -224,5 +225,56 @@ func TestAFileOutsideTheCollectionAsksBeforeItIsSent(t *testing.T) {
 	a.send(tab)
 	if a.dialog == nil || !strings.Contains(a.dialog.Body, "/etc/hostname") || a.sends.Sending(tab.Req) {
 		t.Fatalf("dialog %+v sending %v: want a question and no request", a.dialog, a.sends.Sending(tab.Req))
+	}
+}
+
+// The find field of the response is a text field: a plain-key shortcut
+// typed into it must type, not run, and Ctrl+Z must stay with its text
+// instead of undoing a table edit. Pinned before the field's keys moved into
+// ui/response, so it must pass on both sides of the move.
+func TestTheFindFieldKeepsPlainKeysAndUndoToItself(t *testing.T) {
+	t.Run("a plain-key shortcut types", func(t *testing.T) {
+		a := jsonResponse(t, `{"id":1}`) // the find bar shows over a response
+		a.settings.Shortcuts = map[string]string{"new-request": "Q"}
+		count := len(a.tabs.Tabs())
+		a.Step(combo(ebiten.KeyF, true, false, false)) // opens the find bar with its field focused
+		a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyQ}, Typed: []rune("q")})
+		if len(a.tabs.Tabs()) != count {
+			t.Fatal("typing Q in the find field must not run its shortcut")
+		}
+		if got := a.resp.Field(a.cur().Tab).Text; got != "q" {
+			t.Fatalf("find text %q, want the typed q", got)
+		}
+	})
+	t.Run("undo stays with the field", func(t *testing.T) {
+		a := testApp(t)
+		req := a.cur().Req
+		click(a, 739, paramsRow0Y) // a table change that could be undone
+		if len(req.Params) != 2 {
+			t.Fatal("test setup")
+		}
+		a.resp.Field(a.cur().Tab).Focused = true
+		a.Step(core.Input{Ctrl: true, Undo: true})
+		if len(req.Params) != 2 {
+			t.Fatalf("params %+v: with the find field focused Ctrl+Z belongs to its text", req.Params)
+		}
+	})
+}
+
+// Cancelling a send replaces the response with the cancellation and empties
+// the lines the body view shows, so a stale body is not left under it.
+func TestCancellingASendClearsTheResponseLines(t *testing.T) {
+	a := jsonResponse(t, `{"id":1}`)
+	tab := a.cur()
+	if len(a.resp.Code(tab.Tab).Lines) == 0 {
+		t.Fatal("test setup: the response shows no lines")
+	}
+	setSending(a, tab, true)
+	a.cancelSend(tab)
+	if len(a.resp.Code(tab.Tab).Lines) != 0 {
+		t.Fatalf("%d lines left after the cancel", len(a.resp.Code(tab.Tab).Lines))
+	}
+	if tab.Resp == nil || tab.Resp.Err != request.ErrCancelled {
+		t.Fatalf("response %+v, want the cancellation", tab.Resp)
 	}
 }

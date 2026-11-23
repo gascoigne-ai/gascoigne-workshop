@@ -122,8 +122,7 @@ func (a *App) applySettings(current settings.Settings) {
 		a.notices.SetStatus(err.Error())
 	}
 	for _, t := range a.openTabs() {
-		t.look.Mode = viewer.ModeOf(current.ResponseView)
-		a.refreshView(t)
+		a.resp.SetMode(t.Tab, viewer.ModeOf(current.ResponseView))
 	}
 	a.colors.Forget()
 	a.form.Reload(a)

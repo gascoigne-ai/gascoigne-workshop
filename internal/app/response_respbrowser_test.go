@@ -19,7 +19,7 @@ func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 	tab.Resp = &request.Response{Status: 200, Body: []byte("<h1>hi</h1>"),
 		Headers: []request.KV{{Name: "Content-Type", Value: "text/html"}}}
 
-	a.openInBrowser(tab)
+	openBodyInBrowser(t, a, tab)
 
 	if opened == "" {
 		t.Fatal("no browser was asked to open anything")
@@ -35,19 +35,13 @@ func TestOpenInBrowserServesTheBodyAndOpensItsAddress(t *testing.T) {
 	}
 }
 
-func TestOpenInBrowserWithoutAResponseOpensNothing(t *testing.T) {
-	a := testApp(t)
-	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(context.Context, string) error { t.Fatal("a browser was opened"); return nil }}
-	a.openInBrowser(a.cur())
-}
-
 func TestOpenInBrowserFallsBackToTextPlainWithoutAContentType(t *testing.T) {
 	a := testApp(t)
 	var opened string
 	a.previews = preview.Browser{Lifetime: time.Minute, Open: func(_ context.Context, address string) error { opened = address; return nil }}
 	tab := a.cur()
 	tab.Resp = &request.Response{Status: 200, Body: []byte("plain")}
-	a.openInBrowser(tab)
+	openBodyInBrowser(t, a, tab)
 	response, err := http.Get(opened)
 	if err != nil {
 		t.Fatal(err)

@@ -21,13 +21,11 @@ func TestPaneTablesAreComplete(t *testing.T) {
 		for _, p := range panes {
 			ok := map[paneKind]bool{
 				paneTable:      p.rows != nil,
-				paneNote:       p.note != nil,
 				paneBody:       true, // the body pane is built from the request itself
 				paneSettings:   true, // so is the settings pane
 				paneAuth:       true,
 				paneResponse:   true,
 				paneAssertions: true,
-				paneResults:    true,
 				paneMessages:   true,
 			}[p.kind]
 			if paneBuilders[p.kind] == nil {
@@ -44,13 +42,13 @@ func TestResponsePanesNeverTouchNilResponse(t *testing.T) {
 	a := &App{sends: sends.New()}
 	tab := &reqTab{Tab: &tabs.Tab{Req: &request.Request{}}}
 	for _, p := range responsePanes {
-		msg, _ := paneEmpty(a, p, tab)
-		if p.kind == paneNote && msg == "" && p.label != "Tests" {
+		if p.label == "Tests" {
+			continue // it reads the assertions component, which this bare app has none of
+		}
+		if msg, _ := paneEmpty(a, p, tab); msg == "" {
 			t.Errorf("pane %q would read a nil response", p.label)
 		}
-		if p.kind == paneTable {
-			_ = p.badge(a, tab) // must not panic with no response
-		}
+		_ = p.badge(a, tab) // must not panic with no response
 	}
 }
 

@@ -54,7 +54,7 @@ func (a *App) cancelSend(tab *reqTab) {
 		return
 	}
 	tab.Resp = &request.Response{Err: request.ErrCancelled}
-	tab.view.SetLines(nil)
+	a.resp.ClearView(tab.Tab)
 	a.notices.SetStatus(request.ErrCancelled)
 }
 
@@ -98,7 +98,7 @@ func (a *App) apply(result sends.Result) {
 	}
 	a.calls.Answer(a.now(), t.Req, &result.Response)
 	a.rememberSchema(t, &result.Response)
-	a.refreshView(t)
+	a.resp.Refresh(t.Tab)
 	if result.Response.Err != "" {
 		a.notices.SetStatus("Request failed")
 		a.assertions.Run(t.Tab)

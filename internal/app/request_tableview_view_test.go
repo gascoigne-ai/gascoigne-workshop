@@ -63,12 +63,6 @@ var tableViewStates = []tableViewState{
 	{"form", formPane, 0, func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Form = []request.KV{{Name: "name", Value: "gopher", Enabled: true}}
 	}},
-	{"response-headers", responsePanes[1], core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
-		tab.Resp = &request.Response{Headers: []request.KV{
-			{Name: "Content-Type", Value: "text/plain; charset=utf-8", Enabled: true},
-			{Name: "Content-Length", Value: "82", Enabled: true},
-		}}
-	}},
 	{"bulk", paramsPane, core.Gutter, func(t *testing.T, app *App, tab *reqTab) {
 		app.kv.ToggleBulk(kvlogic.Table{Tab: tab.Tab, Kind: paramsPane.table})
 	}},

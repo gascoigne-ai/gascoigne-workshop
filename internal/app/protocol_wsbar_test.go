@@ -40,3 +40,9 @@ func TestMessagesToolbarTemplateMatchesTheGoView(t *testing.T) {
 		}
 	}
 }
+
+// viewChip is a segment chip of the width, the way the Messages toolbar
+// template writes its Auto-reconnect chip.
+func (a *App) viewChip(label string, selected bool, width int, onClick func()) Node {
+	return SegmentChip(label, selected, W(width), HOf(w.CompactOf), OnClick(onClick))
+}

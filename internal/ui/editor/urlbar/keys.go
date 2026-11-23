@@ -27,7 +27,10 @@ func (c *Component) Keys(in core.Input) bool {
 }
 
 // typesOnly reports whether every key of the frame is one a text field is
-// typed with, under the modifiers held.
+// typed with, under the modifiers held. ui/editor/body and ui/response have a
+// copy each (siblings may not import each other); the toolkit would own it as
+// engine.TypesOnly, which waits for the user's approval of a change to
+// uitoolkit.
 func typesOnly(in core.Input) bool {
 	if in.Escape || len(in.Keys) == 0 {
 		return false

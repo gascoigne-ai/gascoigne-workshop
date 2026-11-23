@@ -22,8 +22,7 @@ func (a *App) saveSettings(edit func(*settings.Settings)) {
 	edit(&a.settings)
 	if a.settings.ResponseView != wasView { // the choice applies to the tabs already open
 		for _, t := range a.openTabs() {
-			t.look.Mode = viewer.ModeOf(a.settings.ResponseView)
-			a.refreshView(t)
+			a.resp.SetMode(t.Tab, viewer.ModeOf(a.settings.ResponseView))
 		}
 	}
 	if a.networkSettings() != wasNetwork {

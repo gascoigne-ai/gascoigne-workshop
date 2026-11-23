@@ -29,7 +29,7 @@ flowchart LR
 - `internal/app` is one package: Go cannot declare a method in another package, and everything
   that reads or writes the one `App` struct needs its methods. Adapters come in through `Options`.
 - A view that needs little of the `App` is its own `internal/ui` package behind a `Host` interface the
-  `App` implements, tested with a fake host: `response/calltrace`, `editor/kvtable`, `editor/urlbar`, `editor/mcp/mcpform`, `sidebar/sentlog`, `overlays/settingsdialog`
+  `App` implements, tested with a fake host: `response`, `response/calltrace`, `editor/kvtable`, `editor/urlbar`, `editor/mcp/mcpform`, `sidebar/sentlog`, `overlays/settingsdialog`
   with its pages `formpage`, `colorpage`, `shortcutpage`, `systempage`, and `overlays/destpicker`. `response/respview` and `appicon` are the other views moved so far. Adapters reach those views through the
   host (`Host.SentStore`, `Host.FontStore`).
 

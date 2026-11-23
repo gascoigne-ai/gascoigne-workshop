@@ -33,7 +33,7 @@ var shortcuts = []shortcut{
 	{"save", "Save collection", keys(ebiten.KeyS, true, false, false), (*App).saveWorkspace},
 	{"open-workspace", "Open collection folder", keys(ebiten.KeyO, true, false, false), (*App).promptWorkspace},
 	{"close-collection", "Close collection", keys(ebiten.KeyW, true, true, false), (*App).closeFocusedCollection},
-	{"find", "Find in response", keys(ebiten.KeyF, true, false, false), (*App).openFind},
+	{"find", "Find in response", keys(ebiten.KeyF, true, false, false), func(app *App) { app.resp.OpenFind() }},
 	{"settings", "Settings", keys(ebiten.KeyComma, true, false, false), func(app *App) { app.menu = true }},
 }
 

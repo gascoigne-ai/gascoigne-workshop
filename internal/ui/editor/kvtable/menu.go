@@ -1,8 +1,6 @@
 package kvtable
 
 import (
-	"strings"
-
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -24,7 +22,7 @@ func (c *Component) rowMenuItems(ctx *core.Ctx, table logic.Table, row int) []wi
 			c.applyRows(table, callback)
 		}
 	}
-	items := append(copyRowItems(ctx, rows, row, false), append([]widget.MenuItem{separator}, []widget.MenuItem{
+	items := append(copyRowItems(ctx, rows, row), append([]widget.MenuItem{separator}, []widget.MenuItem{
 		{Label: "Insert row above", Run: change(func(rows []request.KV) []request.KV { return request.InsertRow(rows, row, request.KV{Enabled: true}) })},
 		{Label: "Insert row below", Run: change(func(rows []request.KV) []request.KV { return request.InsertRow(rows, row+1, request.KV{Enabled: true}) })},
 		{Label: "Duplicate", Run: change(func(rows []request.KV) []request.KV { return request.DuplicateRow(rows, row) })},
@@ -49,9 +47,9 @@ func (c *Component) secretItems(table logic.Table, row int) []widget.MenuItem {
 	return []widget.MenuItem{separator, {Label: logic.SecretLabel(secret), Run: func() { c.deps.Secrets.ToggleSecret(row) }}}
 }
 
-// copyRowItems copy parts of table row index to the clipboard. They are the
-// whole menu of a read-only table and lead the menu of an editable one.
-func copyRowItems(ctx *core.Ctx, rows []request.KV, index int, withAll bool) []widget.MenuItem {
+// copyRowItems copy parts of table row index to the clipboard. They lead the
+// menu of a row.
+func copyRowItems(ctx *core.Ctx, rows []request.KV, index int) []widget.MenuItem {
 	if index < 0 || index >= len(rows) {
 		return nil
 	}
@@ -59,17 +57,9 @@ func copyRowItems(ctx *core.Ctx, rows []request.KV, index int, withAll bool) []w
 	copyText := func(text string) func() {
 		return func() { _ = ctx.Clipboard.Write(text) } // the clipboard reports its own failures
 	}
-	var all strings.Builder
-	for _, each := range rows {
-		all.WriteString(each.Name + ": " + each.Value + "\n")
-	}
-	items := []widget.MenuItem{
+	return []widget.MenuItem{
 		{Label: "Copy value", Run: copyText(row.Value)},
 		{Label: "Copy name", Run: copyText(row.Name)},
 		{Label: "Copy as Name: Value", Run: copyText(row.Name + ": " + row.Value)},
 	}
-	if withAll {
-		items = append(items, widget.MenuItem{Label: "Copy all headers", Run: copyText(all.String())})
-	}
-	return items
 }

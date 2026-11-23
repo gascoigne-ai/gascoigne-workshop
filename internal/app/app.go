@@ -20,6 +20,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
@@ -42,6 +43,7 @@ type App struct {
 
 	ctx        *core.Ctx
 	kv         *kvtable.Component    // the key-value tables of the request pane
+	resp       *response.Component   // the response panes: the body, its find bar, the headers, the timeline and the status pill
 	assertions *assertions.Component // the Tests and Settings panes, the response Tests pane and the assertion results of each tab
 	auth       *auth.Component       // the Auth pane, the trust prompt and the cookie jar view
 	body       *body.Component       // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab

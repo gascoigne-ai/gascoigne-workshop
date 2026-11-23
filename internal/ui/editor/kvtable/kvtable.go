@@ -1,8 +1,7 @@
 // Package kvtable is the key-value table of the request pane: the Params,
-// Headers, Vars and form-field tables, and the read-only Headers table of
-// the response. It draws the table (or its rows as text, "bulk edit"), edits
-// a cell, moves and drags rows, and claims Ctrl+Z and Ctrl+Y for the table
-// that is showing. Where the rows live, what a change to them means (the URL
+// Headers, Vars and form-field tables. It draws the table (or its rows as
+// text, "bulk edit"), edits a cell, moves and drags rows, and claims Ctrl+Z
+// and Ctrl+Y for the table that is showing. Where the rows live, what a change to them means (the URL
 // follows the Params) and the menus are asked of the application through
 // Deps.
 //
@@ -21,10 +20,12 @@
 // while their history is per tab, undoing in one tab can overwrite a change
 // made through another; that is known and left alone (a task of its own).
 //
-// The response Headers table (Kind ResponseHeaders) is the same component in
-// its read-only mode: no checkboxes, no edit, only the copy menu. It stays
-// here until the response pane takes it over (task 037); it is about twenty
-// lines of View.
+// The response Headers table is drawn by ui/response, which asks for its
+// column widths through its Deps. They stay here, as Kind ResponseHeaders,
+// because they are one of the records the state file keeps beside those of
+// the editable tables. Rejected: a record of the response component, which
+// would move the owner of persisted data in a refactor; revisit with the
+// state of the window (task 044).
 //
 // The form table is drawn inside the Body pane: it reaches the pane through
 // body.Deps.Slots.FormTable, which the parent answers, since siblings never

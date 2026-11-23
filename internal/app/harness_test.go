@@ -720,10 +720,11 @@ const compactBody = `{"total":3,"items":[` +
 	`{"id":2,"name":"beta","tags":["red","green","blue","yellow","orange","purple","brown","black"],"owner":{"login":"bob","site":"https://b.example.org/very/long/path/to/bob"}},` +
 	`{"id":3,"name":"gamma","tags":["cyan","magenta","teal","olive","navy","maroon","lime","aqua"],"owner":{"login":"cy","site":"https://c.example.org/very/long/path/to/cy"}}]}`
 
-func viewText(tab *reqTab) string {
+func viewText(a *App, tab *reqTab) string {
+	view := a.resp.Code(tab.Tab)
 	var sb strings.Builder
-	for _, i := range tab.view.Visible() {
-		for _, sp := range tab.view.Lines[i].Spans {
+	for _, i := range view.Visible() {
+		for _, sp := range view.Lines[i].Spans {
 			sb.WriteString(sp.Text)
 		}
 		sb.WriteString("\n")
@@ -733,9 +734,8 @@ func viewText(tab *reqTab) string {
 
 // find replaces the search text, as typing would.
 func (a *App) find(tab *reqTab, text string) {
-	tab.find = widget.NewTextField(text)
-	tab.find.Focused = true
-	a.runFind(tab)
+	a.resp.Field(tab.Tab).Focused = true
+	a.resp.Find(tab.Tab, text)
 }
 
 // openSession puts tab in the open state with session, as a finished
@@ -757,4 +757,29 @@ func setSending(app *App, tab *reqTab, sending bool) {
 		app.sends.Begin(tab.Req, func() {})
 	case !sending && app.sends.Cancel(tab.Req):
 	}
+}
+
+// saveBodyAs saves the response body of tab to path the way the menu and the
+// file chooser do: the Save body item opens the chooser and its answer is the
+// path.
+func saveBodyAs(t *testing.T, a *App, tab *reqTab, path string) {
+	t.Helper()
+	a.resp.Refresh(tab.Tab)
+	a.Step(core.Input{})
+	rightClick(a, findFieldX, findBarY)
+	pickMenu(t, a, "Save body...")
+	if a.browser == nil {
+		t.Fatal("the Save body item opened no file chooser")
+	}
+	a.browser.done(path)
+}
+
+// openBodyInBrowser opens the response body of tab in the browser the way the
+// menu does.
+func openBodyInBrowser(t *testing.T, a *App, tab *reqTab) {
+	t.Helper()
+	a.resp.Refresh(tab.Tab)
+	a.Step(core.Input{})
+	rightClick(a, findFieldX, findBarY)
+	pickMenu(t, a, "Open in browser")
 }

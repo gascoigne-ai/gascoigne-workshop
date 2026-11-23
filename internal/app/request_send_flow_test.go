@@ -72,8 +72,8 @@ func TestSendShowsTheResponse(t *testing.T) {
 	if a.sends.Sending(tab.Req) || tab.Resp.Status != 200 || tab.Resp.Err != "" {
 		t.Fatalf("sending %v resp %+v", a.sends.Sending(tab.Req), tab.Resp)
 	}
-	if len(tab.view.Lines) != 3 { // pretty-printed {"ok":true}
-		t.Fatalf("response view has %d lines", len(tab.view.Lines))
+	if len(a.resp.Code(tab.Tab).Lines) != 3 { // pretty-printed {"ok":true}
+		t.Fatalf("response view has %d lines", len(a.resp.Code(tab.Tab).Lines))
 	}
 	if !strings.Contains(a.notices.Status(), "200 OK") {
 		t.Fatalf("status = %q", a.notices.Status())
@@ -498,16 +498,16 @@ func TestFollowRedirectsToggleControlsRedirects(t *testing.T) {
 func TestRawAndPrettyToggleTheResponseView(t *testing.T) {
 	a := jsonResponse(t, `{"a":1,"b":[2]}`)
 	tab := a.cur()
-	if len(tab.view.Lines) != 6 {
-		t.Fatalf("pretty view has %d lines", len(tab.view.Lines))
+	if len(a.resp.Code(tab.Tab).Lines) != 6 {
+		t.Fatalf("pretty view has %d lines", len(a.resp.Code(tab.Tab).Lines))
 	}
 	click(a, rawX, toolbarY)
-	if !tab.look.Raw() || len(tab.view.Lines) != 1 || tab.view.AllText() != `{"a":1,"b":[2]}` {
-		t.Fatalf("raw: %d lines %q", len(tab.view.Lines), tab.view.AllText())
+	if !a.resp.Look(tab.Tab).Raw() || len(a.resp.Code(tab.Tab).Lines) != 1 || a.resp.Code(tab.Tab).AllText() != `{"a":1,"b":[2]}` {
+		t.Fatalf("raw: %d lines %q", len(a.resp.Code(tab.Tab).Lines), a.resp.Code(tab.Tab).AllText())
 	}
 	click(a, prettyX, toolbarY)
-	if tab.look.Raw() || len(tab.view.Lines) != 6 {
-		t.Fatalf("back to pretty: raw %v, %d lines", tab.look.Raw(), len(tab.view.Lines))
+	if a.resp.Look(tab.Tab).Raw() || len(a.resp.Code(tab.Tab).Lines) != 6 {
+		t.Fatalf("back to pretty: raw %v, %d lines", a.resp.Look(tab.Tab).Raw(), len(a.resp.Code(tab.Tab).Lines))
 	}
 }
 
@@ -545,7 +545,7 @@ func TestCopyBodyAndCopyAsCurl(t *testing.T) {
 func TestCurlCopyExpandsVariables(t *testing.T) {
 	a := testApp(t) // the sample request uses {{baseUrl}}
 	a.cur().Resp = &request.Response{Status: 200, Body: []byte("{}")}
-	a.cur().view.SetLines(respview.CodeLines([]byte("{}")))
+	a.resp.Code(a.cur().Tab).SetLines(respview.CodeLines([]byte("{}")))
 	clip := &fakeClip{}
 	a.ctx.Clipboard = clip
 	a.Step(core.Input{})
@@ -558,13 +558,13 @@ func TestCurlCopyExpandsVariables(t *testing.T) {
 func TestCompactChipShowsJSONCompactlyWithDeepBlocksFolded(t *testing.T) {
 	a := jsonResponse(t, compactBody)
 	tab := a.cur()
-	pretty := len(tab.view.Visible())
+	pretty := len(a.resp.Code(tab.Tab).Visible())
 	click(a, compactX, toolbarY)
-	if !tab.look.Compact() || tab.look.Raw() {
-		t.Fatalf("compact %v raw %v", tab.look.Compact(), tab.look.Raw())
+	if !a.resp.Look(tab.Tab).Compact() || a.resp.Look(tab.Tab).Raw() {
+		t.Fatalf("compact %v raw %v", a.resp.Look(tab.Tab).Compact(), a.resp.Look(tab.Tab).Raw())
 	}
-	text := viewText(tab)
-	if got := len(tab.view.Visible()); got >= pretty {
+	text := viewText(a, tab)
+	if got := len(a.resp.Code(tab.Tab).Visible()); got >= pretty {
 		t.Fatalf("compact shows %d lines, pretty showed %d", got, pretty)
 	}
 	// Items are blocks at depth 2: folded, so only their previews show.
@@ -575,22 +575,22 @@ func TestCompactChipShowsJSONCompactlyWithDeepBlocksFolded(t *testing.T) {
 		t.Fatalf("top-level values stay:\n%s", text)
 	}
 	click(a, rawX, toolbarY)
-	if tab.look.Compact() || !tab.look.Raw() {
+	if a.resp.Look(tab.Tab).Compact() || !a.resp.Look(tab.Tab).Raw() {
 		t.Fatal("Raw replaces Compact")
 	}
 	click(a, prettyX, toolbarY)
-	if tab.look.Compact() || tab.look.Raw() {
+	if a.resp.Look(tab.Tab).Compact() || a.resp.Look(tab.Tab).Raw() {
 		t.Fatal("Pretty replaces both")
 	}
 }
 
 func TestNewTabsShowResponsesCompactByDefault(t *testing.T) {
 	a := testApp(t, untouchedSettings())
-	if !a.cur().look.Compact() || a.cur().look.Raw() {
-		t.Fatalf("compact %v raw %v", a.cur().look.Compact(), a.cur().look.Raw())
+	if !a.resp.Look(a.cur().Tab).Compact() || a.resp.Look(a.cur().Tab).Raw() {
+		t.Fatalf("compact %v raw %v", a.resp.Look(a.cur().Tab).Compact(), a.resp.Look(a.cur().Tab).Raw())
 	}
 	a.newRequest()
-	if !a.cur().look.Compact() {
+	if !a.resp.Look(a.cur().Tab).Compact() {
 		t.Fatal("a new tab starts compact too")
 	}
 }
@@ -599,15 +599,15 @@ func TestResponseViewChipsAreCompactPrettyRawInThatOrder(t *testing.T) {
 	a := jsonResponse(t, `{"a":1}`)
 	tab := a.cur()
 	click(a, rawX, toolbarY)
-	if !tab.look.Raw() {
+	if !a.resp.Look(tab.Tab).Raw() {
 		t.Fatal("the third chip is Raw")
 	}
 	click(a, prettyX, toolbarY)
-	if tab.look.Raw() || tab.look.Compact() {
+	if a.resp.Look(tab.Tab).Raw() || a.resp.Look(tab.Tab).Compact() {
 		t.Fatal("the second chip is Pretty")
 	}
 	click(a, compactX, toolbarY)
-	if !tab.look.Compact() {
+	if !a.resp.Look(tab.Tab).Compact() {
 		t.Fatal("the first chip is Compact")
 	}
 	if !(compactX < prettyX && prettyX < rawX) {
@@ -619,15 +619,15 @@ func TestResponseViewSettingAppliesToOpenTabsAndIsSaved(t *testing.T) {
 	a, path := openSettingsPage(t, "appearance")
 	a.prefs.Search = widget.NewTextField("response view")
 	clickText(t, a, "Compact", 0)
-	if !a.cur().look.Compact() || a.settings.ResponseView != "compact" {
-		t.Fatalf("compact %v setting %q", a.cur().look.Compact(), a.settings.ResponseView)
+	if !a.resp.Look(a.cur().Tab).Compact() || a.settings.ResponseView != "compact" {
+		t.Fatalf("compact %v setting %q", a.resp.Look(a.cur().Tab).Compact(), a.settings.ResponseView)
 	}
 	if saved, _ := settingsDisk.Load(path); saved.ResponseView != "compact" {
 		t.Fatalf("saved %+v", saved)
 	}
 	clickText(t, a, "Pretty", 0)
-	if a.cur().look.Compact() || a.cur().look.Raw() || a.settings.ResponseView != "pretty" {
-		t.Fatalf("compact %v raw %v setting %q", a.cur().look.Compact(), a.cur().look.Raw(), a.settings.ResponseView)
+	if a.resp.Look(a.cur().Tab).Compact() || a.resp.Look(a.cur().Tab).Raw() || a.settings.ResponseView != "pretty" {
+		t.Fatalf("compact %v raw %v setting %q", a.resp.Look(a.cur().Tab).Compact(), a.resp.Look(a.cur().Tab).Raw(), a.settings.ResponseView)
 	}
 }
 

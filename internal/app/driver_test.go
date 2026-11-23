@@ -157,14 +157,14 @@ func TestDriverActionsApply(t *testing.T) {
 			if tab.Req.Name != "Echo" {
 				t.Fatalf("open request %q, want Echo: wrap must apply after the request is opened", tab.Req.Name)
 			}
-			if !tab.view.Wrap || !a.body.Area(tab.Tab).Wrap {
-				t.Errorf("response wrap %v, body wrap %v, want both on", tab.view.Wrap, a.body.Area(tab.Tab).Wrap)
+			if !a.resp.Code(tab.Tab).Wrap || !a.body.Area(tab.Tab).Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both on", a.resp.Code(tab.Tab).Wrap, a.body.Area(tab.Tab).Wrap)
 			}
 		}},
 		// Without WrapOn both stay off, the default the user decided.
 		{"leave wrap off by default", Options{}, func(driver *Driver) error { return driver.OpenRequest("Echo") }, func(t *testing.T, a *App) {
-			if tab := a.cur(); tab.view.Wrap || a.body.Area(tab.Tab).Wrap {
-				t.Errorf("response wrap %v, body wrap %v, want both off", tab.view.Wrap, a.body.Area(tab.Tab).Wrap)
+			if tab := a.cur(); a.resp.Code(tab.Tab).Wrap || a.body.Area(tab.Tab).Wrap {
+				t.Errorf("response wrap %v, body wrap %v, want both off", a.resp.Code(tab.Tab).Wrap, a.body.Area(tab.Tab).Wrap)
 			}
 		}},
 		// Each text is an error toast, oldest first.
@@ -517,10 +517,10 @@ func TestDriverFindsTheQueryInTheResponse(t *testing.T) {
 	a.Driver().Send()
 	waitForResponse(t, a, tab)
 	a.Driver().Find("ok")
-	if !tab.look.FindOpen || tab.find.Text != "ok" {
-		t.Fatalf("find open = %v with %q, want open with %q", tab.look.FindOpen, tab.find.Text, "ok")
+	if !a.resp.Look(tab.Tab).FindOpen || a.resp.Field(tab.Tab).Text != "ok" {
+		t.Fatalf("find open = %v with %q, want open with %q", a.resp.Look(tab.Tab).FindOpen, a.resp.Field(tab.Tab).Text, "ok")
 	}
-	if len(tab.view.Matches()) == 0 {
+	if len(a.resp.Code(tab.Tab).Matches()) == 0 {
 		t.Error("the query should match the response")
 	}
 }
