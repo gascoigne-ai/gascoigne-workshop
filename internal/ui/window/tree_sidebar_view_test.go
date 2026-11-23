@@ -62,7 +62,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.WaitWrites)
 				tc.setup(a)
-				root := a.side.View(a.ctx)
+				root := a.side.View(a.ctx, a.h)
 				Layout(a.ctx, root, size.width, sidebarPinH)
 				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 				if err != nil {
@@ -111,7 +111,7 @@ func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
 			t.Cleanup(a.WaitWrites)
 			clickDumped(t, a, "control=field", 0) // the filter field, the first field of the window
 			a.typeText(tc.filter)
-			root := a.side.View(a.ctx)
+			root := a.side.View(a.ctx, a.h)
 			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
 			line := dumpLineWithText(t, Dump(root), tc.match)
 			if want := "fg=" + string(core.AccentLine); !strings.Contains(line, want) {
@@ -143,7 +143,7 @@ func TestARootRowNameIsBoldAndAFolderNameIsNot(t *testing.T) {
 			a, _, _ := twoCollectionsApp(t)
 			t.Cleanup(a.WaitWrites)
 			a.side.Filter().Text = tc.filter
-			root := a.side.View(a.ctx)
+			root := a.side.View(a.ctx, a.h)
 			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
 			line := dumpLineWithText(t, Dump(root), tc.text)
 			if got := strings.Contains(line, "bold=true"); got != tc.bold {

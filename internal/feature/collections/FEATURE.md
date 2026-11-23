@@ -74,6 +74,9 @@ All importers are pure packages under `importers/`; the sidebar logic attaches t
   expanded set by folder pointer, so a renamed or moved folder stays open.
 - The tree operations are pure functions in `internal/feature/request/tree.go`; a move or copy is
   `transfer`, which validates before it changes anything.
+- The sidebar builds only the rows in view plus one (`ui/sidebar/logic.RowGeometry`); two spacers
+  stand for the rest, so the scroll box keeps the height of the whole tree. A scroll that moves the
+  range makes the window build again before it paints (`Component.Tick`).
 
 ### Example server and client config
 The default build carries example endpoints and a release build reads client configs instead

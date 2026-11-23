@@ -20,6 +20,30 @@ type Component struct {
 	sent     sentlog.Log      // requests sent in this workspace, newest first
 	showSent bool             // the sent log is listed instead of the tree
 	scroll   widget.ScrollState
+
+	// shown is what the last View built of the tree: the geometry it cut
+	// the rows by and the range it built. Tick compares the scroll position
+	// with it, since a wheel step or a thumb drag moves the scroll without
+	// a rebuild and the rows in view then are not the rows built. The zero
+	// value, kept in sent mode and with no collection, never moves.
+	//
+	// It is written by View, not derived in Tick: Tick runs every frame and
+	// must not walk the rows again. Rejected: a ViewH or H field on the
+	// toolkit's ScrollState (a toolkit change for one list), a SetViewH from
+	// setSize (misses SetSize and the first frame), and a map from node to
+	// built Node (invalidation follows select, drag-over, filter and Alt).
+	// Revisit when VisibleRows or FilteredRows shows in a profile at 100x
+	// the rows (then cache the row list), or when rows stop having one
+	// height (then a prefix sum of heights).
+	shown struct {
+		geometry logic.RowGeometry
+		built    logic.RowRange
+	}
+}
+
+// moved reports whether the rows in view at scrollY are not the rows built.
+func (c *Component) moved(scrollY int) bool {
+	return c.shown.geometry.Range(scrollY) != c.shown.built
 }
 
 // New returns a sidebar asking deps.

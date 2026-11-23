@@ -314,3 +314,36 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 		})
 	}
 }
+
+// The tree builds only the rows in view, and a wheel step or a thumb drag
+// moves the scroll after the view was built. Draw then has to paint a tree
+// built for the new position, not the old one with the rows of another
+// screen.
+func TestTheDrawnTreeFollowsAScrollOfALongTree(t *testing.T) {
+	a := testApp(t)
+	for i := 0; i < 400; i++ {
+		a.col().Requests = append(a.col().Requests, &request.Request{Name: fmt.Sprintf("long-%d", i), Protocol: "rest", Method: "GET"})
+	}
+	s := scriptedFrames{t, a}
+	s.idle("the long tree", 3)
+
+	scrollLine := dumpedLines(a, "bg=sunken clip=true")[0]
+	match := rectPattern.FindStringSubmatch(scrollLine)
+	var left, top, width int
+	fmt.Sscan(match[1], &left)
+	fmt.Sscan(match[2], &top)
+	fmt.Sscan(match[3], &width)
+	trackX := left + width - 4
+
+	for i := 0; i < 5; i++ {
+		s.step("wheel down the tree", core.Input{X: 130, Y: 300, Wheel: -3})
+	}
+	s.step("press the thumb", core.Input{X: trackX, Y: top + 200, Click: true, Held: true})
+	for i := 1; i <= 4; i++ {
+		s.step("drag the thumb", core.Input{X: trackX, Y: top + 200 + 60*i, Held: true})
+	}
+	s.step("release the thumb", core.Input{X: trackX, Y: top + 440})
+	if a.side.ScrollY() == 0 {
+		t.Fatal("the tree did not scroll")
+	}
+}

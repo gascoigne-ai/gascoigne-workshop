@@ -28,5 +28,7 @@ func (c *Component) BeginFrame(in core.Input) {
 }
 
 // Tick runs the per-frame work after the view was built: a drag resting over
-// a closed folder opens it. It reports whether the view must be built again.
-func (c *Component) Tick() bool { return c.tree.Tick() }
+// a closed folder opens it, and a scroll that moved the rows in view is
+// noticed, since the view builds only those. It reports whether the view
+// must be built again.
+func (c *Component) Tick() bool { return c.tree.Tick() || c.moved(c.scroll.Y) }

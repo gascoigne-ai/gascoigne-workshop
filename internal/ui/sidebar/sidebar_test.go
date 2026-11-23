@@ -94,7 +94,7 @@ func sampleCollection() *request.Collection {
 	}}
 }
 
-func newSidebar(t *testing.T, fake *fake) (*core.Ctx, *Component) {
+func newSidebar(t testing.TB, fake *fake) (*core.Ctx, *Component) {
 	t.Helper()
 	ctx, err := core.NewCtx(core.Theme{Colors: map[core.Token]color.RGBA{core.Text: core.RGB(0xffffff)}, FontSize: 14, SmallSize: 12, MonoSize: 13})
 	if err != nil {
@@ -122,7 +122,7 @@ func withShop(t *testing.T) (*core.Ctx, *Component, *fake, *request.Collection) 
 const sidebarW, sidebarH = 260, 400
 
 func laidOut(ctx *core.Ctx, side *Component) Node {
-	root := side.View(ctx)
+	root := side.View(ctx, sidebarH)
 	Layout(ctx, root, sidebarW, sidebarH)
 	return root
 }

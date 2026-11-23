@@ -20,19 +20,27 @@ var (
 
 // View is the header (the chip that switches between the collection
 // tree and the log of sent requests, and the filter) above the one shown.
-func (c *Component) View(ctx *w.Ctx) Node {
+//
+// The tree builds only the rows in view plus one, so a drawn frame costs
+// what a screen of rows costs, not the whole tree. viewH is the height of
+// the box that shows them, an upper bound is enough (the window's height:
+// built rows are then never too few), and 0 builds every row. Tick tells
+// the window when a scroll moved the range, so it builds again before it
+// paints. Rejected: reading the box height from the toolkit's scroll state,
+// which would change the toolkit for one list.
+func (c *Component) View(ctx *w.Ctx, viewH int) Node {
 	label, switchTo := "Collections", func() { c.showSent = true }
 	if c.showSent {
 		label, switchTo = "Sent", func() { c.showSent = false }
 	}
 	var sentList Node
 	var rows []Node
+	var pad treePad
+	c.shown.geometry, c.shown.built = logic.RowGeometry{}, logic.RowRange{}
 	if c.showSent {
 		sentList = c.sent.List(ctx, c.deps.Sent, c.filter.Text)
 	} else {
-		for _, row := range c.VisibleRows() {
-			rows = append(rows, c.treeRow(ctx, row))
-		}
+		rows, pad = c.treeRows(ctx, viewH)
 	}
 	entries := len(c.deps.Collections.Set().Entries)
 	return sidebarTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
@@ -48,8 +56,30 @@ func (c *Component) View(ctx *w.Ctx) Node {
 		"sentList":       sentList,
 		"treeScroll":     &c.scroll,
 		"rows":           rows,
+		"spaceAbove":     pad.top > 0,
+		"padTop":         pad.top,
+		"spaceBelow":     pad.bottom > 0,
+		"padBottom":      pad.bottom,
 		"headerH":        sizes.HeaderH,
 	}))
+}
+
+// treePad is the height of the rows not built above and below the ones built.
+type treePad struct{ top, bottom int }
+
+// treeRows builds the rows of the tree that are in view in a box viewH high,
+// and the padding that stands for the others, so the scroll box keeps the
+// height of the whole tree. It records what it built in c.shown.
+func (c *Component) treeRows(ctx *w.Ctx, viewH int) ([]Node, treePad) {
+	visible := c.VisibleRows()
+	geometry := logic.RowGeometry{Count: len(visible), RowH: ctx.Sizes.Row, ViewH: viewH}
+	built := geometry.Range(c.scroll.Y)
+	c.shown.geometry, c.shown.built = geometry, built
+	rows := make([]Node, 0, built.Last-built.First)
+	for _, row := range visible[built.First:built.Last] {
+		rows = append(rows, c.treeRow(ctx, row))
+	}
+	return rows, treePad{top: built.First * geometry.RowH, bottom: (geometry.Count - built.Last) * geometry.RowH}
 }
 
 // treeItem is what a tree row's template shows of one row.
@@ -167,7 +197,9 @@ const (
   </row>
   <slot if="sentList" name="sentList"/>
   <scroll if="showTree" state="treeScroll" bg="sunken">
+    <row if="spaceAbove" h="{{padTop}}"/>
     <slot for="row in rows" name="row"/>
+    <row if="spaceBelow" h="{{padBottom}}"/>
   </scroll>
   <!-- closing the last collection leaves this; nothing is made on disk until asked -->
   <col if="noCollection" grow="1" bg="sunken" pad="{{gutter}}" gap="{{looseGap}}">

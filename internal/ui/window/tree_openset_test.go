@@ -319,7 +319,7 @@ func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
 	if got, want := shownTab(t, a, betaReq).Stripe, theme.CollectionToken(1); got != want {
 		t.Fatalf("tab of Beta stripe = %q, want %q", got, want)
 	}
-	root := a.side.View(a.ctx)
+	root := a.side.View(a.ctx, a.h)
 	Layout(a.ctx, root, sidebarW-1, sidebarPinH)
 	var stripes []string // the root rows' stripes, in tree order: Alpha, then Beta
 	for _, line := range strings.Split(Dump(root), "\n") {

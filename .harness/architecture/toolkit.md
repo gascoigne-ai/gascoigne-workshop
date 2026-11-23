@@ -49,6 +49,10 @@ state: no diffing and no reactive system. Elements and options are indexed in th
   show old content. `Ctx.Fired` counts the handlers that ran: `view` for its `On*` options, a
   widget where it calls a handler or changes state the app reads at build (a column width). Each
   step after `Update` that changes what the view shows sets the flag itself (listed in `endFrame`).
+- A view that builds only the rows in view (the sidebar tree) reports from its `Tick` that a wheel
+  step or a thumb drag moved the row range, since `Update` moved the scroll after the build.
+  `endFrame` runs that `Tick` after `Update`, so `Draw` builds again in the same frame and never
+  paints rows of the old position.
 - `frametree_test.go` (app) runs a script of frames and asserts after each that the painted tree
   dumps the same as a fresh build. A path that fails it must set the flag; the test is never
   relaxed.

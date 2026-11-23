@@ -197,7 +197,7 @@ func TestTheDropRowShowsACopyCueWhileAltIsHeldDuringADrag(t *testing.T) {
 		want core.Token
 	}{{false, core.AccentLine}, {true, core.OK}} {
 		a.ctx.In = core.Input{Held: true, Alt: test.alt}
-		root := a.side.View(a.ctx)
+		root := a.side.View(a.ctx, a.h)
 		Layout(a.ctx, root, sidebarW-1, sidebarPinH)
 		if got := Dump(root); !strings.Contains(got, "border="+string(test.want)) {
 			t.Fatalf("alt %v: no row outlined %q in:\n%s", test.alt, test.want, got)

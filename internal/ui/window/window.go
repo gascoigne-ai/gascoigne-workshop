@@ -333,7 +333,7 @@ func (a *Component) view() Node {
 		"sidebarDefault": sidebarW - 1,
 		"minSidebarW":    minSidebarW,
 		"minMainW":       minMainW,
-		"sidebar":        a.side.View(a.ctx),
+		"sidebar":        a.side.View(a.ctx, a.h),
 		"header":         a.header.View(a.ctx),
 		"requestTabs":    a.strip.View(a.ctx),
 		"urlBar":         a.editor.URLBar.View(a.ctx),
