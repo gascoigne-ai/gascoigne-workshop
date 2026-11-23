@@ -86,7 +86,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	a.files = filedialog.System{}
 	var got string
 	a.pickFile("Pick", filedialog.OpenFile, "", func(name string) { got = name })
-	if a.browser != nil {
+	if a.browser.Shown() {
 		t.Fatal("with a dialog program there is no in-app file browser")
 	}
 	until(t, a, "the chosen path", func() bool { return got != "" })
@@ -97,7 +97,7 @@ func TestPickFileUsesTheDesktopDialogWhenThereIsOne(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	got = ""
 	a.pickFile("Pick", filedialog.OpenFile, "start.txt", func(name string) { got = name })
-	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "start.txt") {
+	if !a.browser.Shown() || !strings.HasSuffix(a.browser.Path(), "start.txt") {
 		t.Fatal("without one the in-app file browser asks, with the name")
 	}
 }

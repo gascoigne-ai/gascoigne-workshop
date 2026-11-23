@@ -1,11 +1,11 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -66,7 +66,7 @@ func (a *App) beginFrame(in core.Input) bool {
 	a.strip.BeginFrame(in)
 	a.kv.BeginFrame(in)
 	drained := a.drain()
-	pruned := a.pruneToasts()
+	pruned := a.toasts.Prune()
 	active := engine.InputActive(a.lastIn, in)
 	a.noteGeometry()
 	if active || drained || pruned {
@@ -85,10 +85,10 @@ func (a *App) beginFrame(in core.Input) bool {
 func (a *App) routeKeys(in core.Input) {
 	hadOverlay := a.overlayOpen()
 	wasRecording := a.prefs.Recording()
-	menuWasOpen := widget.MenuOpen(a.ctx)
+	menuWasOpen := menus.Shown(a.ctx)
 	a.overlayKeys(in)
 	if menuWasOpen {
-		a.swallowMenuKeys()
+		menus.Swallow(a.ctx)
 	}
 	if !hadOverlay && !a.overlayOpen() && !wasRecording {
 		a.side.Keys(in, a.textFocused(), a.sidebarWidth())

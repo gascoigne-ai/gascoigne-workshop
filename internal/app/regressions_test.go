@@ -150,7 +150,7 @@ func TestAPanicWhileConnectingIsShownNotFatal(t *testing.T) {
 func TestAPanicInTheDesktopDialogIsShownNotFatal(t *testing.T) {
 	a := testApp(t)
 	a.files = fakeDialog{choose: func(context.Context, string, filedialog.Mode, string) (string, error) { panic("dialog boom") }}
-	a.askDesktop("Open", filedialog.OpenFile, "", func(string) {})
+	a.pickFile("Open", filedialog.OpenFile, "", func(string) {}) // the desktop dialog is asked: it exists
 	statusSoon(t, a, "dialog boom")
 }
 

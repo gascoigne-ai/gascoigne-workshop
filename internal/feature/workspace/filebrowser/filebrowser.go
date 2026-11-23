@@ -2,7 +2,7 @@
 // browser, the file chooser of a desktop that has no dialog program: which
 // folder is shown, what the path field holds, which row is selected and
 // what Enter does. It reads no disk: Update asks for a folder to be listed
-// through its Effect, and the App answers with Listed.
+// through its Effect, and the browser component (`ui/overlays/filebrowser`) answers with Listed.
 package filebrowser
 
 import (

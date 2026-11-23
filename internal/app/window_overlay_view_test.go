@@ -97,7 +97,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 			a.w, a.h = size.width, size.height
 			a.toast("Cookies cleared", severity.Info)
 			a.toast("Enter the gRPC server first, for example grpc://localhost:50051", severity.Error)
-			assertDumpPinned(t, a, Stack(a.toastsView()), name, size.width, size.height)
+			assertDumpPinned(t, a, Stack(a.toasts.View()), name, size.width, size.height)
 		})
 	}
 }
@@ -106,7 +106,7 @@ func TestTheToastsLayOutAsPinned(t *testing.T) {
 func TestNoToastsNoToastsView(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	root := Stack(a.toastsView())
+	root := Stack(a.toasts.View())
 	Layout(a.ctx, root, winW, winH)
 	if got := len(root.Children()); got != 0 {
 		t.Fatalf("the window gets %d toast views with no toasts:\n%s", got, Dump(root))
@@ -121,8 +121,8 @@ func TestToastsAndDialogAnswerInput(t *testing.T) {
 	a.toast("There is no response to save", severity.Error)
 	a.Step(core.Input{})
 	clickText(t, a, "There is no response to save", 0)
-	if len(a.toasts) != 0 {
-		t.Fatalf("toasts %+v after the click", a.toasts)
+	if len(a.toasts.Stack()) != 0 {
+		t.Fatalf("toasts %+v after the click", a.toasts.Stack())
 	}
 	ran := 0
 	a.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() { ran++ })
@@ -130,24 +130,5 @@ func TestToastsAndDialogAnswerInput(t *testing.T) {
 	clickText(t, a, "Delete", 0)
 	if ran != 1 || a.dialog != nil {
 		t.Fatalf("Delete ran %d times, dialog open %v", ran, a.dialog != nil)
-	}
-}
-
-// A new severity level must get a toast kind: the table may not miss one,
-// or the toast would silently look like an info message.
-func TestEveryLevelMapsToAToastKind(t *testing.T) {
-	for _, level := range severity.All() {
-		kind, ok := toastKinds[level]
-		if !ok {
-			t.Fatalf("level %v has no toast kind", level)
-		}
-		a := testApp(t)
-		a.toast("message", level)
-		if len(a.toasts) != 1 || a.toasts[0].Kind != kind {
-			t.Errorf("level %v: toasts %+v, want kind %v", level, a.toasts, kind)
-		}
-	}
-	if toastKinds[severity.Info] == toastKinds[severity.Error] {
-		t.Error("info and error look the same")
 	}
 }

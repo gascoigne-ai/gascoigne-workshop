@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -57,11 +58,11 @@ func (a *App) view() Node {
 		"statusBar":      a.statusBar(),
 		"menu":           a.prefs.View(a.ctx),
 		"picker":         a.pickerView(),
-		"browser":        a.fileBrowserView(),
-		"popupMenu":      PopupMenuLayer(a.ctx),
+		"browser":        a.browser.View(a.ctx),
+		"popupMenu":      menus.View(a.ctx),
 		"dialog":         a.dialogView(),
 		"callLog":        a.calls.View(a.ctx, a),
-		"toasts":         a.toastsView(),
+		"toasts":         a.toasts.View(),
 		"tooltips":       TooltipLayer(&a.tips),
 	})
 }

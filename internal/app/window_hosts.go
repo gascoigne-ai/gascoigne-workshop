@@ -24,11 +24,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/keymap"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
@@ -989,3 +991,114 @@ func (host settingsHost) CopyText(text string) { _ = host.ctx.Clipboard.Write(te
 
 // Keymap is the binding of every shortcut action, in display order.
 func (host settingsHost) Keymap() keymap.Keymap { return host.keymap() }
+
+// ---- the overlay components ----------------------------------------------------
+
+// toast shows a message: an info one fades after a few seconds, an error
+// stays until it is clicked.
+func (a *App) toast(text string, level severity.Level) { a.toasts.Show(text, level) }
+
+// openMenu shows a context menu at the pointer position x, y.
+func (a *App) openMenu(posX, posY int, items []widget.MenuItem) {
+	menus.Open(a.ctx, posX, posY, items)
+}
+
+func (a *App) closeMenu() { menus.Close(a.ctx) }
+
+// pickFile asks for a file, in the desktop's dialog or the in-app browser,
+// and calls done with the path. The returned func takes the question back.
+func (a *App) pickFile(title string, mode filedialog.Mode, name string, done func(path string)) (cancel func()) {
+	return a.browser.Pick(title, mode, name, done)
+}
+
+// OpenWelcome shows the release notes and remembers that this version was
+// welcomed, so the dialog opens by itself only once per version.
+func (a *App) OpenWelcome() {
+	a.welcomed = version
+	a.welcome.Open()
+}
+
+// clipboardNote reports what the clipboard did: failures are error
+// toasts, a successful copy is a status line.
+func (a *App) clipboardNote(msg string, isErr bool) {
+	if isErr {
+		a.toast(msg, severity.Error)
+		return
+	}
+	a.notices.SetStatus(msg)
+}
+
+// toastsHost is what the toasts ask of the App (toasts.Deps).
+type toastsHost struct{ *App }
+
+// Now is the time of the frame.
+func (host toastsHost) Now() time.Time { return host.now() }
+
+// Size is the window's size in logical pixels.
+func (host toastsHost) Size() (int, int) { return host.w, host.h }
+
+// Stale says the tree built this frame no longer shows what changed.
+func (host toastsHost) Stale() { host.treeStale = true }
+
+// Redraw says the screen must be drawn again.
+func (host toastsHost) Redraw() { host.dirty = true }
+
+// welcomeHost is what the welcome dialog asks of the App (welcome.Deps).
+type welcomeHost struct{ *App }
+
+// Size is the window's size in logical pixels.
+func (host welcomeHost) Size() (int, int) { return host.w, host.h }
+
+// Open shows state as the dialog of the window, with content as its own body
+// in a panel width wide. The returned func closes that dialog and no other.
+func (host welcomeHost) Open(state widget.DialogState, content func(ctx *w.Ctx) Node, width int) func() {
+	open := &dialog{DialogState: state, width: width}
+	open.content = func() Node { return content(host.ctx) }
+	host.dialog = open
+	return func() {
+		if host.dialog == open {
+			host.dialog = nil
+		}
+	}
+}
+
+// browserHost is what the file browser asks of the App (filebrowser.Deps).
+// The desktop dialog and the file system are read from the App on every
+// call, so a port replaced after the App was built is the one that answers.
+type browserHost struct{ *App }
+
+// Available reports whether the desktop has a file dialog.
+func (host browserHost) Available() bool { return host.files.Available() }
+
+// Suggested is the program to install for native dialogs.
+func (host browserHost) Suggested() string { return host.files.Suggested() }
+
+// Choose shows the desktop's file dialog.
+func (host browserHost) Choose(ctx context.Context, title string, mode filedialog.Mode, name string) (string, error) {
+	return host.files.Choose(ctx, title, mode, name)
+}
+
+// Home is the user's home folder.
+func (host browserHost) Home() (string, error) { return host.folders.Home() }
+
+// List is what dir holds.
+func (host browserHost) List(dir string) ([]workspace.FolderEntry, error) {
+	return host.folders.List(dir)
+}
+
+// Run starts cmd on its own goroutine; its answer runs on the UI goroutine.
+func (host browserHost) Run(ctx context.Context, cmd bus.Cmd) { host.bus.Run(ctx, cmd) }
+
+// Size is the window's size in logical pixels.
+func (host browserHost) Size() (int, int) { return host.w, host.h }
+
+// Toast shows a message over the window.
+func (host browserHost) Toast(text string, level severity.Level) { host.toast(text, level) }
+
+// Confirm asks a yes/no question.
+func (host browserHost) Confirm(title, body, okLabel string, run func()) {
+	host.confirm(title, body, okLabel, run)
+}
+
+// Asking reports whether a dialog is open.
+func (host browserHost) Asking() bool { return host.dialog != nil }

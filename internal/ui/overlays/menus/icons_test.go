@@ -1,10 +1,12 @@
-package app
+package menus
 
 import (
+	"image/color"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
@@ -46,18 +48,31 @@ func TestEveryMenuIconInTheTableExists(t *testing.T) {
 	}
 }
 
-func TestOpenMenuFillsTheIconsFromTheLabels(t *testing.T) {
-	a := testApp(t)
-	a.openMenu(10, 10, []widget.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
-	if got := widget.PopupMenu(a.ctx).Items[0].Icon; got != "copy" {
+func TestOpenFillsTheIconsFromTheLabels(t *testing.T) {
+	ctx := testCtx(t)
+	Open(ctx, 10, 10, []widget.MenuItem{{Label: "Copy"}, {Label: "GET /users"}})
+	if got := widget.PopupMenu(ctx).Items[0].Icon; got != "copy" {
 		t.Fatalf("Copy row icon = %q, want copy", got)
 	}
-	if got := widget.PopupMenu(a.ctx).Items[1].Icon; got != "" {
+	if got := widget.PopupMenu(ctx).Items[1].Icon; got != "" {
 		t.Fatalf("a row with no match has icon %q, want none", got)
 	}
-	if dump := view.Dump(widget.PopupMenuLayer(a.ctx)); !strings.Contains(dump, "icon=copy") {
+	if dump := view.Dump(View(ctx)); !strings.Contains(dump, "icon=copy") {
 		t.Fatalf("the menu does not draw the Copy icon:\n%s", dump)
 	}
 }
 
 func itoa(count int) string { return strconv.Itoa(count) }
+
+// testCtx is the context the menu is built with in tests: the default faces.
+func testCtx(t *testing.T) *core.Ctx {
+	t.Helper()
+	ctx, err := core.NewCtx(core.Theme{
+		Colors:   map[core.Token]color.RGBA{core.Text: core.RGB(0xffffff), core.Bg: core.RGB(0x101010)},
+		FontSize: 14, SmallSize: 12, MonoSize: 13,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ctx
+}

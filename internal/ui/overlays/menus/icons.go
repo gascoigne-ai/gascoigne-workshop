@@ -1,4 +1,4 @@
-package app
+package menus
 
 import (
 	"strings"
@@ -34,4 +34,14 @@ func menuIcon(item MenuItem) string {
 		return menuIcons[words[0]]
 	}
 	return ""
+}
+
+// withIcons gives every item without an icon the one its label maps to.
+func withIcons(items []MenuItem) []MenuItem {
+	out := make([]MenuItem, len(items))
+	for i, item := range items {
+		item.Icon = menuIcon(item)
+		out[i] = item
+	}
+	return out
 }

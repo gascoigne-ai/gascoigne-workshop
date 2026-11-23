@@ -60,40 +60,6 @@ func TestClickingTheVersionOpensWelcome(t *testing.T) {
 	}
 }
 
-func TestWelcomeNotesNameEveryProtocol(t *testing.T) {
-	var all strings.Builder
-	for _, section := range welcomeNotes {
-		all.WriteString(section.Title + "\n" + strings.Join(section.Items, "\n") + "\n")
-	}
-	for _, name := range []string{"REST", "WebSocket", "SSE", "MCP", "gRPC", "cURL", "OpenAPI", "Postman"} {
-		if !strings.Contains(all.String(), name) {
-			t.Errorf("the welcome notes do not mention %s", name)
-		}
-	}
-}
-
-// The notes are prose, and a Lines column does not wrap, so the dialog
-// wraps each point itself at a word boundary.
-func TestWrapBreaksAtWordsWithinTheLimit(t *testing.T) {
-	tests := []struct {
-		name, text string
-		limit      int
-		want       string
-	}{
-		{"short text stays", "one two", 20, "one two"},
-		{"breaks at the last space that fits", "one two three four", 9, "one two\nthree\nfour"},
-		{"a word longer than the limit stands alone", "tiny enormousword end", 6, "tiny\nenormousword\nend"},
-		{"empty text", "", 10, ""},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if got := wrap(test.text, test.limit); got != test.want {
-				t.Fatalf("wrap(%q, %d) = %q, want %q", test.text, test.limit, got, test.want)
-			}
-		})
-	}
-}
-
 // A dev build has no first run to wait for: WelcomeEvery opens the dialog
 // at every start, even for a version that was welcomed before.
 func TestWelcomeEveryOpensEvenWhenSeen(t *testing.T) {

@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/hajimehoshi/ebiten/v2"
 	"os"
 	"strings"
 	"testing"
@@ -110,7 +111,7 @@ func TestDropInTheSameCollectionRenamesOnAClashWithAnInfoToast(t *testing.T) {
 	if req.Name != "Alpha call 2" || !alpha.Folders[0].Contains(request.Of(req)) {
 		t.Fatalf("name %q", req.Name)
 	}
-	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.toasts[len(a.toasts)-1].Kind == widget.ToastError {
+	if text := toastTexts(a); !strings.Contains(text, "Alpha call 2") || a.toasts.Stack()[len(a.toasts.Stack())-1].Kind == widget.ToastError {
 		t.Fatalf("toasts %q", text)
 	}
 }
@@ -172,7 +173,7 @@ func TestAFailedTargetWriteKeepsTheSourceOnDiskAndSaysSo(t *testing.T) {
 	if err != nil || len(gotAlpha.Requests) != 1 {
 		t.Fatalf("Alpha on disk lost the request before the target had it: %v %v", names(gotAlpha.Requests), err)
 	}
-	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError {
+	if len(a.toasts.Stack()) == 0 || a.toasts.Stack()[len(a.toasts.Stack())-1].Kind != widget.ToastError {
 		t.Fatalf("toasts %q, want an error", toastTexts(a))
 	}
 }
@@ -332,7 +333,20 @@ func TestAPickForANodeDeletedWhileThePickerWasOpenSaysSo(t *testing.T) {
 	alpha.Delete(request.Of(req))
 	a.picker.Select(len(a.picker.Rows()) - 1)
 	a.Step(core.Input{Enter: true})
-	if len(a.toasts) == 0 || a.toasts[len(a.toasts)-1].Kind != widget.ToastError || beta.Contains(request.Of(req)) {
+	if len(a.toasts.Stack()) == 0 || a.toasts.Stack()[len(a.toasts.Stack())-1].Kind != widget.ToastError || beta.Contains(request.Of(req)) {
 		t.Fatalf("toasts %q, in Beta %v", toastTexts(a), beta.Contains(request.Of(req)))
+	}
+}
+
+// A prompt over the destination picker has the keys: Enter reaches neither
+// the picker nor, through it, a move.
+func TestPickerKeysAreIgnoredWhileAPromptIsOpen(t *testing.T) {
+	a, _, _ := twoCollectionsApp(t)
+	alpha := entryNamed(t, a, "Alpha").Collection
+	a.openTransferPicker(request.Of(alpha.Requests[0]), transfer.Move)
+	a.prompt("Name", "x", "OK", func(string) {})
+	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
+	if a.picker == nil {
+		t.Fatal("Enter under a prompt reached the picker")
 	}
 }

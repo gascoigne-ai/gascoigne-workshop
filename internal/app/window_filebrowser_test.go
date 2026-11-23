@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,10 +9,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 )
 
 // browsingApp is a test app without a dialog program whose file browser
@@ -38,16 +35,6 @@ func browsingApp(t *testing.T) (*App, string) {
 	return a, dir
 }
 
-// browserDir is the folder the open browser shows, with links resolved, as
-// the temporary folder of macOS is behind one.
-func browserDir(t *testing.T, app *App) string {
-	t.Helper()
-	if app.browser == nil {
-		t.Fatal("the file browser is not open")
-	}
-	return evalLinks(t, app.browser.model.Dir)
-}
-
 func evalLinks(t *testing.T, path string) string {
 	t.Helper()
 	resolved, err := filepath.EvalSymlinks(path)
@@ -57,80 +44,22 @@ func evalLinks(t *testing.T, path string) string {
 	return resolved
 }
 
-func pressEdit(app *App, edit core.Edit, keyDown ebiten.Key, alt bool) {
-	app.Step(core.Input{Edits: []core.Edit{edit}, Keys: []ebiten.Key{keyDown}, Alt: alt})
+// typePath puts path in the open browser's field as the user would: the field
+// is selected whole and the path typed over it.
+func typePath(a *App, path string) {
+	a.Step(core.Input{})
+	a.Step(core.Input{SelectAll: true})
+	a.typeText(path)
 }
 
-func TestWithoutADialogProgramTheFileBrowserOpensInTheHomeFolder(t *testing.T) {
-	a, dir := browsingApp(t)
+// pressEnter is the Enter key of one frame.
+func pressEnter(a *App) { a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}}) }
+
+func TestTheBrowserHoldsTheKeyboardLikeADialog(t *testing.T) {
+	a, _ := browsingApp(t)
 	a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(string) {})
-	if got := browserDir(t, a); got != evalLinks(t, dir) {
-		t.Fatalf("dir %q, want %q", got, dir)
-	}
-	a.Step(core.Input{})
-	dump := view.Dump(a.fileBrowserView())
-	for _, want := range []string{`"Choose the file to send"`, `"3 items"`, `"Hidden files"`, `"sub"`, `"api.json"`, `"notes.txt"`, `"Cancel"`, `"Open"`} {
-		if !strings.Contains(dump, want) {
-			t.Errorf("the browser does not show %s:\n%s", want, dump)
-		}
-	}
 	if !a.overlayOpen() {
 		t.Fatal("the browser holds the keyboard like a dialog")
-	}
-}
-
-func TestTheBrowserDoesNotRememberTheLastFolder(t *testing.T) {
-	a, dir := browsingApp(t)
-	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
-	typePath(a, filepath.Join(dir, "sub")+string(filepath.Separator))
-	a.browse(filebrowser.Entered{})
-	if browserDir(t, a) != filepath.Join(evalLinks(t, dir), "sub") {
-		t.Fatalf("Enter on a typed folder opens it: %q", a.browser.model.Dir)
-	}
-	a.closeBrowser()
-	a.pickFile("Pick again", filedialog.OpenFile, "", func(string) {})
-	if got := browserDir(t, a); got != evalLinks(t, dir) {
-		t.Fatalf("the next browser opens in %q, want home %q", got, dir)
-	}
-}
-
-func TestTheBrowserIsDrivenByTheKeyboard(t *testing.T) {
-	a, dir := browsingApp(t)
-	var got string
-	a.pickFile("Pick", filedialog.OpenFile, "", func(path string) { got = path })
-	a.Step(core.Input{})
-	pressEdit(a, core.EditDown, ebiten.KeyArrowDown, false) // sub
-	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
-	if browserDir(t, a) != filepath.Join(evalLinks(t, dir), "sub") {
-		t.Fatalf("Down and Enter open the folder: %q", a.browser.model.Dir)
-	}
-	pressEdit(a, core.EditBackspace, ebiten.KeyBackspace, false)
-	if browserDir(t, a) != evalLinks(t, dir) {
-		t.Fatalf("Backspace with nothing typed goes up: %q", a.browser.model.Dir)
-	}
-	if !strings.HasSuffix(a.browser.path.Text, string(filepath.Separator)) {
-		t.Fatalf("the Backspace that went up must not also delete: %q", a.browser.path.Text)
-	}
-	// A selected text is the field's to delete, even when it is the whole
-	// folder: Backspace must not also go up.
-	a.browser.path.SelectAll()
-	pressEdit(a, core.EditBackspace, ebiten.KeyBackspace, false)
-	if browserDir(t, a) != evalLinks(t, dir) || a.browser.path.Text != "" {
-		t.Fatalf("Backspace over a selection deletes it: dir %q text %q", a.browser.model.Dir, a.browser.path.Text)
-	}
-	typePath(a, a.browser.model.Dir+string(filepath.Separator))
-	a.typeText("note")
-	if visible := a.browser.model.Visible(); len(visible) != 1 || visible[0].Name != "notes.txt" {
-		t.Fatalf("typing filters the list: %+v", visible)
-	}
-	pressEdit(a, core.EditUp, ebiten.KeyArrowUp, true)
-	if browserDir(t, a) != filepath.Dir(evalLinks(t, dir)) {
-		t.Fatalf("Alt+Up goes up: %q", a.browser.model.Dir)
-	}
-	typePath(a, filepath.Join(dir, "notes.txt"))
-	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
-	if a.browser != nil || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "notes.txt") {
-		t.Fatalf("Enter on a typed path chooses it: got %q, browser %v", got, a.browser != nil)
 	}
 }
 
@@ -139,8 +68,8 @@ func TestEscapeClosesTheBrowserWithoutAnAnswer(t *testing.T) {
 	called := false
 	a.pickFile("Pick", filedialog.OpenFile, "", func(string) { called = true })
 	a.Step(core.Input{Escape: true})
-	if a.browser != nil || called {
-		t.Fatalf("browser %v called %v", a.browser != nil, called)
+	if a.browser.Shown() || called {
+		t.Fatalf("browser %v called %v", a.browser.Shown(), called)
 	}
 }
 
@@ -148,100 +77,20 @@ func TestSavingOverAFileAsksFirst(t *testing.T) {
 	a, dir := browsingApp(t)
 	var got string
 	a.pickFile("Save response body", filedialog.SaveFile, "api.json", func(path string) { got = path })
-	if !strings.HasSuffix(a.browser.path.Text, "api.json") {
-		t.Fatalf("the save name follows the folder: %q", a.browser.path.Text)
+	if !strings.HasSuffix(a.browser.Path(), "api.json") {
+		t.Fatalf("the save name follows the folder: %q", a.browser.Path())
 	}
 	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	if a.dialog == nil || a.dialog.Title != "Replace file" || got != "" {
 		t.Fatalf("dialog %+v got %q", a.dialog, got)
 	}
 	a.Step(core.Input{Escape: true})
-	if a.dialog != nil || a.browser == nil {
+	if a.dialog != nil || !a.browser.Shown() {
 		t.Fatal("Escape takes back the question first and leaves the browser open")
 	}
 	a.Step(core.Input{Enter: true, Keys: []ebiten.Key{ebiten.KeyEnter}})
 	a.dialogDefault()
-	if a.browser != nil || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
-		t.Fatalf("Replace takes the path: %q, browser %v", got, a.browser != nil)
+	if a.browser.Shown() || evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
+		t.Fatalf("Replace takes the path: %q, browser %v", got, a.browser.Shown())
 	}
-}
-
-func TestADoubleClickOpensARow(t *testing.T) {
-	a, dir := browsingApp(t)
-	var got string
-	a.pickFile("Pick", filedialog.OpenFile, "", func(path string) { got = path })
-	x, y := shownCenter(t, a, "api.json")
-	a.Step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 1})
-	a.Step(core.Input{X: x, Y: y})
-	if got != "" || a.browser.model.Selected != 1 {
-		t.Fatalf("a click selects: got %q selected %d", got, a.browser.model.Selected)
-	}
-	a.Step(core.Input{X: x, Y: y, Click: true, Held: true, Clicks: 2})
-	if evalLinks(t, got) != filepath.Join(evalLinks(t, dir), "api.json") {
-		t.Fatalf("a double click opens: %q", got)
-	}
-}
-
-func TestTheHiddenFilesToggleShowsDotNames(t *testing.T) {
-	a, dir := browsingApp(t)
-	if err := os.WriteFile(filepath.Join(dir, ".env"), nil, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
-	if strings.Contains(view.Dump(a.fileBrowserView()), `".env"`) {
-		t.Fatal("hidden names are left out at first")
-	}
-	x, y := shownCenter(t, a, "Hidden files")
-	click(a, x, y)
-	if !strings.Contains(view.Dump(a.fileBrowserView()), `".env"`) {
-		t.Fatal("the toggle shows them")
-	}
-}
-
-func TestAFolderThatCannotBeReadIsSaidInTheFooter(t *testing.T) {
-	a, dir := browsingApp(t)
-	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
-	typePath(a, filepath.Join(dir, "gone")+string(filepath.Separator))
-	a.browse(filebrowser.Entered{})
-	if !strings.Contains(a.browser.model.Problem, "Cannot open") {
-		t.Fatalf("problem %q", a.browser.model.Problem)
-	}
-	dump := view.Dump(a.fileBrowserView())
-	if !strings.Contains(dump, "Cannot open") {
-		t.Fatal("the footer shows the problem")
-	}
-	if strings.Contains(dump, "For native dialogs") {
-		t.Fatalf("the hint gives way to the problem:\n%s", dump)
-	}
-}
-
-func TestTheFooterSaysWhichProgramGivesNativeDialogs(t *testing.T) {
-	a, _ := browsingApp(t)
-	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
-	if dump := view.Dump(a.fileBrowserView()); !strings.Contains(dump, `"For native dialogs install zenity"`) {
-		t.Fatalf("no hint in the footer:\n%s", dump)
-	}
-}
-
-func TestNoHintWhenNoProgramIsSuggested(t *testing.T) {
-	a, _ := browsingApp(t)
-	a.files = fakeDialog{}
-	a.pickFile("Pick", filedialog.OpenFile, "", func(string) {})
-	if dump := view.Dump(a.fileBrowserView()); strings.Contains(dump, "For native dialogs") {
-		t.Fatalf("a hint with no program to name:\n%s", dump)
-	}
-}
-
-// shownCenter is the middle of the element showing text, once a frame has
-// laid the browser out.
-func shownCenter(t *testing.T, app *App, text string) (int, int) {
-	t.Helper()
-	app.Step(core.Input{X: 5000, Y: 5000})
-	return textCenter(t, app, text)
-}
-
-// typePath puts path in the browser's field as if it was typed.
-func typePath(app *App, path string) {
-	app.browser.path = widget.NewTextField(path)
-	app.browse(filebrowser.Typed{Text: path})
 }

@@ -61,7 +61,6 @@ type frameState struct {
 	sampler        core.Sampler
 	sidebarSplit   widget.SplitState // width of the collections sidebar
 	paneSplit      widget.SplitState // request pane share of the request/response area
-	toasts         widget.ToastStack
 }
 
 // persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the trust list.

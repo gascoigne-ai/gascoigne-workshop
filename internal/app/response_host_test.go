@@ -16,10 +16,12 @@ func TestTheResponseHostAsksForTheFileToSaveInTheFileBrowser(t *testing.T) {
 	a := testApp(t)
 	var answer string
 	responseHost{a}.PickSave("Save response body", "response.txt", func(path string) { answer = path })
-	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, "response.txt") || a.browser.title != "Save response body" {
-		t.Fatalf("the file browser did not open with the name: %+v", a.browser)
+	if dump := layoutDump(a); !strings.HasSuffix(a.browser.Path(), "response.txt") || !strings.Contains(dump, `"Save response body"`) {
+		t.Fatalf("the file browser did not open with the name %q:\n%s", a.browser.Path(), dump)
 	}
-	a.browser.done("/out/x")
+	a.folders = newFakeFolders()
+	typePath(a, "/out/x")
+	pressEnter(a)
 	if answer != "/out/x" {
 		t.Fatalf("answer %q, want the chosen path handed on", answer)
 	}

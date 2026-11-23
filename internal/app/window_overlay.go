@@ -2,10 +2,9 @@ package app
 
 import (
 	"cmp"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/menus"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -15,8 +14,9 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// Overlays (context menu, dialog, toasts) are state on the App and are
-// built into the window's Stack after everything else, newest on top.
+// The dialog is state on the App; the menu, the toasts, the file browser and
+// the welcome notes are components in ui/overlays. All are built into the
+// window's Stack after everything else, newest on top.
 
 // dialog is a message dialog (the toolkit's DialogState) that may also
 // carry a content of its own, drawn between its body and input: the typed
@@ -28,27 +28,7 @@ type dialog struct {
 	// content builds the dialog's own body, between the lead text and the
 	// buttons; width is the panel's width, zero for a message dialog's.
 	content func() Node
-	scroll  ScrollState // scroll of that content
 	width   int
-}
-
-// ---- context menu --------------------------------------------------------
-
-// openMenu shows a context menu at the pointer position x, y.
-func (a *App) openMenu(posX, posY int, items []MenuItem) {
-	OpenMenu(a.ctx, posX, posY, withIcons(items))
-}
-
-func (a *App) closeMenu() { CloseMenu(a.ctx) }
-
-// withIcons gives every item without an icon the one its label maps to.
-func withIcons(items []MenuItem) []MenuItem {
-	out := make([]MenuItem, len(items))
-	for i, item := range items {
-		item.Icon = menuIcon(item)
-		out[i] = item
-	}
-	return out
 }
 
 // confirm asks a yes/no question; onOK runs only on the primary button or Enter.
@@ -81,10 +61,7 @@ func (a *App) dialogDefault() {
 	}
 }
 
-var (
-	dialogTemplate = markup.Must("dialog.vml", dialogSource)
-	toastsTemplate = markup.Must("toasts.vml", toastsSource)
-)
+var dialogTemplate = markup.Must("dialog.vml", dialogSource)
 
 // dialogView is the open dialog, nothing when none is open: a template
 // always builds its element, so Go decides whether there is one.
@@ -102,48 +79,6 @@ func (a *App) dialogView() Node {
 	})
 }
 
-// ---- toasts ----------------------------------------------------------------
-
-// toastKinds is how each severity looks as a toast; the toolkit does not
-// know workspace.
-var toastKinds = map[severity.Level]ToastKind{
-	severity.Info:  ToastInfo,
-	severity.Error: ToastError,
-}
-
-// toast shows a message: an info one fades after a few seconds, an
-// error stays until it is clicked.
-func (a *App) toast(text string, level severity.Level) {
-	a.treeStale = true
-	if a.toasts.Show(text, toastKinds[level], a.now()) {
-		a.dirty = true
-	}
-}
-
-// pruneToasts drops the info toasts whose time is up.
-func (a *App) pruneToasts() bool { return a.toasts.Prune(a.now()) }
-
-// clipboardNote reports what the clipboard did: failures are error
-// toasts, a successful copy is a status line.
-func (a *App) clipboardNote(msg string, isErr bool) {
-	if isErr {
-		a.toast(msg, severity.Error)
-		return
-	}
-	a.notices.SetStatus(msg)
-}
-
-// toastsView is the stack of toasts in the window's bottom-right corner,
-// above the status bar.
-func (a *App) toastsView() Node {
-	return toastsTemplate.MustBuild(markup.Scope{
-		"stack":   &a.toasts,
-		"width":   a.w,
-		"height":  a.h,
-		"statusH": sizes.StatusH,
-	})
-}
-
 // ---- keyboard --------------------------------------------------------------
 
 // overlayKeys handles the keys of an open menu (Up, Down, Enter) or
@@ -152,21 +87,15 @@ func (a *App) toastsView() Node {
 func (a *App) overlayKeys(in w.Input) {
 	enter := in.Enter || in.Pressed(ebiten.KeyEnter)
 	switch {
-	case MenuOpen(a.ctx):
-		PopupMenuKeys(a.ctx, in)
+	case menus.Shown(a.ctx):
+		menus.Keys(a.ctx, in)
 	case a.dialog != nil && a.dialog.Input == nil && enter:
 		a.dialogDefault()
 	case a.dialog == nil && a.picker != nil:
 		a.pickerKeys(in)
-	case a.dialog == nil && a.browser != nil:
-		a.fileBrowserKeys(in)
+	case a.browser.Shown():
+		a.browser.Keys(a.ctx, in)
 	}
-}
-
-// swallowMenuKeys removes the keys a menu used from this frame's input, so
-// the text widget that still has the focus under it does not act on them too.
-func (a *App) swallowMenuKeys() {
-	a.ctx.In.Consume(ebiten.KeyEnter, ebiten.KeyArrowUp, ebiten.KeyArrowDown, ebiten.KeyEscape, ebiten.KeyTab)
 }
 
 // overlayOpen reports whether a menu or dialog has the keyboard.
@@ -193,10 +122,10 @@ func (a *App) dialogForm(open *dialog) Node {
 // openLayers are the things Escape can close right now.
 func (a *App) openLayers() overlay.Open {
 	var open overlay.Open
-	open[overlay.ContextMenu] = MenuOpen(a.ctx)
+	open[overlay.ContextMenu] = menus.Shown(a.ctx)
 	open[overlay.Dialog] = a.dialog != nil
 	open[overlay.DestPicker] = a.picker != nil
-	open[overlay.FileBrowser] = a.browser != nil
+	open[overlay.FileBrowser] = a.browser.Shown()
 	open[overlay.CallLog] = a.calls.Shown()
 	open[overlay.FontList] = a.prefs.FontListOpen()
 	open[overlay.Settings] = a.prefs.Open()
@@ -209,10 +138,10 @@ func (a *App) openLayers() overlay.Open {
 // escape does one step of Escape: it closes the topmost open layer.
 func (a *App) escape() {
 	closers := [...]func(){
-		overlay.ContextMenu: a.closeMenu,
+		overlay.ContextMenu: func() { menus.Close(a.ctx) },
 		overlay.Dialog:      a.closeDialog,
 		overlay.DestPicker:  a.closePicker,
-		overlay.FileBrowser: a.closeBrowser,
+		overlay.FileBrowser: a.browser.Close,
 		overlay.CallLog:     a.calls.Close,
 		overlay.FontList:    a.prefs.CloseFontList,
 		overlay.Settings:    a.prefs.Close,
@@ -231,8 +160,5 @@ const (
 <message-dialog w="{{width}}" state="state" moved="move" on-dismiss="dismiss">
   <slot if="form" name="form"/>
 </message-dialog>
-`
-
-	toastsSource = `<toasts stack="stack" width="{{width}}" height="{{height}}" bottom-inset="{{statusH}}"/>
 `
 )

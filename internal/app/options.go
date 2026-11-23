@@ -25,8 +25,11 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/toasts"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/welcome"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
@@ -148,6 +151,9 @@ func NewApp(opts Options) (*App, error) {
 	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
 	a.driver.app = a
 	a.notices.SetStatus("Ready")
+	a.toasts = toasts.New(toasts.Deps{Clock: toastsHost{a}, Window: toastsHost{a}})
+	a.welcome = welcome.New(welcome.Deps{Dialogs: welcomeHost{a}, Window: welcomeHost{a}})
+	a.browser = filebrowser.New(filebrowser.Deps{Desktop: browserHost{a}, Folders: browserHost{a}, Bus: browserHost{a}, Window: browserHost{a}, Dialogs: browserHost{a}})
 	a.side = sidebar.New(sidebar.Deps{
 		Collections: sidebarHost{a}, Requests: sidebarHost{a}, Nodes: sidebarHost{a}, Drops: sidebarHost{a},
 		Folders: sidebarHost{a}, Extras: sidebarHost{a}, Collection: collectionHost{a}, Workspace: sidebarHost{a},

@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
@@ -49,8 +50,8 @@ func TestChooseAsksForTheFileAndSetsThePath(t *testing.T) {
 		t.Fatal(err)
 	}
 	click(a, fileChooseX, fileBodyRowY)
-	if a.browser == nil || a.browser.title != "Choose the file to send" {
-		t.Fatalf("browser = %+v, want the file browser", a.browser)
+	if !a.browser.Shown() || !strings.Contains(layoutDump(a), `"Choose the file to send"`) {
+		t.Fatalf("browser shown %v, want the file browser", a.browser.Shown())
 	}
 	typePath(a, picked)
 	a.Step(core.Input{Enter: true})

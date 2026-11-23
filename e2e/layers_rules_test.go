@@ -123,6 +123,7 @@ var currentLayoutRules = []layerRule{
 	{"test only: ui/sidebar/sentlog -> historyfile", selector{Paths: []string{"internal/ui/sidebar/sentlog"}}, selector{Paths: []string{"internal/feature/history/adapter/historyfile"}}, false, true, "test fixture: the view test uses the real history adapter", false},
 	{"test only: ui/overlays/settingsdialog/formpage -> settingsfile", selector{Paths: []string{"internal/ui/overlays/settingsdialog/formpage"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the view test uses the real settings file adapter", false},
 	{"test only: ui/overlays/settingsdialog -> settingsfile", selector{Paths: []string{"internal/ui/overlays/settingsdialog"}}, selector{Paths: []string{"internal/feature/settings/adapter/settingsfile"}}, false, true, "test fixture: the dialog tests use the real settings file adapter", false},
+	{"test only: ui/overlays/filebrowser -> folders", selector{Paths: []string{"internal/ui/overlays/filebrowser"}}, selector{Paths: []string{"internal/feature/workspace/adapter/folders"}}, false, true, "test fixture: the browser tests list a real temp folder", false},
 }
 
 // targetLayoutRules are the rows of the layout in .harness/reorg.md. They sit

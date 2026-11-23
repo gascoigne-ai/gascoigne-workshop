@@ -34,7 +34,7 @@ flowchart LR
   native -- "answer as a dispatched func" --> busq["bus"]
 ```
 
-- `App.pickFile` takes the first usable row of `fileChoosers`: the desktop's dialog, else the in-app
+- `App.pickFile` forwards to `ui/overlays/filebrowser`, which takes the first usable row of its `choosers`: the desktop's dialog, else the in-app
   file browser (why not a D-Bus portal: the `filedialog` package doc). It returns a cancel function, which the settings dialog uses to take
   its question back when it closes.
 - `uitoolkit/desktop/filedialog` (the app's `FileDialog` port) picks the program order per desktop from a table (`detect.go`);

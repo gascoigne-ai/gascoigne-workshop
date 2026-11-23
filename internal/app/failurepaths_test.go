@@ -116,11 +116,11 @@ func TestEveryFailurePathIsShownToTheUser(t *testing.T) {
 			a.WaitWrites() // saves run in the background
 			if test.wantToast != "" {
 				found := false
-				for _, toast := range a.toasts {
+				for _, toast := range a.toasts.Stack() {
 					found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, test.wantToast))
 				}
 				if !found {
-					t.Fatalf("no error toast containing %q; toasts %+v, status %q", test.wantToast, a.toasts, a.notices.Status())
+					t.Fatalf("no error toast containing %q; toasts %+v, status %q", test.wantToast, a.toasts.Stack(), a.notices.Status())
 				}
 			}
 			if test.wantState != "" && !strings.Contains(a.notices.Status(), test.wantState) {
@@ -147,13 +147,13 @@ func TestAHistoryThatCannotBeWrittenIsReportedByAToast(t *testing.T) {
 	a.WaitWrites() // the history is written in the background
 
 	found := false
-	for _, toast := range a.toasts {
+	for _, toast := range a.toasts.Stack() {
 		found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, "history"))
 	}
 	if !found {
-		t.Fatalf("no toast about the history; toasts %+v, status %q", a.toasts, a.notices.Status())
+		t.Fatalf("no toast about the history; toasts %+v, status %q", a.toasts.Stack(), a.notices.Status())
 	}
-	if len(a.toasts) > 2 {
-		t.Fatalf("one failure made %d toasts: %+v", len(a.toasts), a.toasts)
+	if len(a.toasts.Stack()) > 2 {
+		t.Fatalf("one failure made %d toasts: %+v", len(a.toasts.Stack()), a.toasts.Stack())
 	}
 }

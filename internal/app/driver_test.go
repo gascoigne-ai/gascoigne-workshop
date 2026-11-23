@@ -127,8 +127,8 @@ func TestDriverActionsApply(t *testing.T) {
 			}
 		}},
 		{"open the file browser on a folder", Options{Folders: folders.Disk{}}, func(driver *Driver) error { return driver.BrowseFiles(browseDir) }, func(t *testing.T, a *App) {
-			if a.browser == nil || a.browser.model.Dir != browseDir {
-				t.Fatalf("browser %+v, want it open on %s", a.browser, browseDir)
+			if !a.browser.Shown() || filepath.Clean(a.browser.Path()) != browseDir {
+				t.Fatalf("browser shown %v on %q, want it open on %s", a.browser.Shown(), a.browser.Path(), browseDir)
 			}
 		}},
 		{"show the named request pane of an http request", Options{}, func(driver *Driver) error { return driver.ShowRequestPane("Settings") }, requestPaneIsSettings},
@@ -170,8 +170,8 @@ func TestDriverActionsApply(t *testing.T) {
 		// Each text is an error toast, oldest first.
 		{"show the toasts", Options{}, func(driver *Driver) error { driver.ShowToast("First"); driver.ShowToast("Second"); return nil }, func(t *testing.T, a *App) {
 			want := widget.ToastStack{{Text: "First", Kind: widget.ToastError}, {Text: "Second", Kind: widget.ToastError}}
-			if !slices.Equal(a.toasts, want) {
-				t.Fatalf("toasts %+v, want %+v", a.toasts, want)
+			if !slices.Equal(a.toasts.Stack(), want) {
+				t.Fatalf("toasts %+v, want %+v", a.toasts.Stack(), want)
 			}
 		}},
 		{"filter the tree", Options{}, func(driver *Driver) error { driver.FilterTree("Echo"); return nil }, func(t *testing.T, a *App) {

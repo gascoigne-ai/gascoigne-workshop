@@ -3,7 +3,6 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/filebrowser"
 	"os"
 	"path/filepath"
 	"strings"
@@ -257,12 +256,12 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 	a := testApp(t) // no dialog program: the in-app file browser asks
 	a.folders = folders.Disk{}
 	a.exportPostman(&a.col().Folder)
-	if a.browser == nil || !strings.HasSuffix(a.browser.path.Text, ".postman_collection.json") {
-		t.Fatalf("browser %+v", a.browser)
+	if !a.browser.Shown() || !strings.HasSuffix(a.browser.Path(), ".postman_collection.json") {
+		t.Fatalf("browser shown %v", a.browser.Shown())
 	}
 	path := filepath.Join(t.TempDir(), "out.json")
 	typePath(a, path)
-	a.browse(filebrowser.Entered{})
+	pressEnter(a)
 	a.WaitWrites() // written in the background
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -273,7 +272,7 @@ func TestExportPostmanWritesACollectionFileThatImportsBack(t *testing.T) {
 		t.Fatalf("%v %+v", err, res.Folder)
 	}
 	found := false
-	for _, ts := range a.toasts {
+	for _, ts := range a.toasts.Stack() {
 		found = found || strings.Contains(ts.Text, "left out") // the sample has WebSocket and MCP requests
 	}
 	if !found {
@@ -326,10 +325,10 @@ func TestImportOpenAPIWarnsAboutDroppedPathItems(t *testing.T) {
 	a := testApp(t)
 	a.ctx.Clipboard = &fakeClip{text: `{"openapi":"3.0.0","info":{"title":"Odd"},"paths":{"/ok":{"get":{"summary":"List"}},"/bad":"nope"}}`}
 	a.importOpenAPI(&a.col().Folder)
-	for _, toast := range a.toasts {
+	for _, toast := range a.toasts.Stack() {
 		if strings.Contains(toast.Text, "/bad") {
 			return
 		}
 	}
-	t.Fatalf("no toast names the dropped path; toasts %+v", a.toasts)
+	t.Fatalf("no toast names the dropped path; toasts %+v", a.toasts.Stack())
 }

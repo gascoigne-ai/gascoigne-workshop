@@ -230,29 +230,38 @@ func TestInfoToastsExpireAndErrorsStayUntilClicked(t *testing.T) {
 	a.toast("Saved", severity.Info)
 	a.toast("Disk full", severity.Error)
 	a.Step(core.Input{})
-	if len(a.toasts) != 2 {
-		t.Fatalf("toasts = %d", len(a.toasts))
+	if len(a.toasts.Stack()) != 2 {
+		t.Fatalf("toasts = %d", len(a.toasts.Stack()))
 	}
 
 	clock = clock.Add(2 * time.Second)
 	a.Step(core.Input{})
-	if len(a.toasts) != 2 {
+	if len(a.toasts.Stack()) != 2 {
 		t.Fatal("an info toast stays for a few seconds")
 	}
 	clock = clock.Add(2 * time.Second)
 	a.Step(core.Input{})
-	if len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError {
-		t.Fatalf("after 4s only the error is left: %+v", a.toasts)
+	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Kind != widget.ToastError {
+		t.Fatalf("after 4s only the error is left: %+v", a.toasts.Stack())
 	}
 	clock = clock.Add(10 * time.Minute)
 	a.Step(core.Input{})
-	if len(a.toasts) != 1 {
+	if len(a.toasts.Stack()) != 1 {
 		t.Fatal("errors persist")
 	}
 	x, y, w, h := toastRect(1, 0)
 	click(a, x+w/2, y+h/2)
-	if len(a.toasts) != 0 {
+	if len(a.toasts.Stack()) != 0 {
 		t.Fatal("a click dismisses a toast")
+	}
+}
+
+func TestAToastMarksTheTreeStaleAndTheFrameDirty(t *testing.T) {
+	a := testApp(t)
+	a.treeStale, a.dirty = false, false
+	a.toast("hello", severity.Info)
+	if !a.treeStale || !a.dirty {
+		t.Fatalf("stale %v dirty %v", a.treeStale, a.dirty)
 	}
 }
 
@@ -263,8 +272,8 @@ func TestClickingOneToastDismissesOnlyThatOne(t *testing.T) {
 	a.Step(core.Input{})
 	x, y, w, h := toastRect(2, 0)
 	click(a, x+w/2, y+h/2)
-	if len(a.toasts) != 1 || a.toasts[0].Text != "second" {
-		t.Fatalf("toasts = %+v", a.toasts)
+	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Text != "second" {
+		t.Fatalf("toasts = %+v", a.toasts.Stack())
 	}
 }
 
@@ -273,8 +282,8 @@ func TestOnlyTheNewestToastsAreKept(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		a.toast(strings.Repeat("x", i+1), severity.Error)
 	}
-	if len(a.toasts) != widget.ToastMax || len(a.toasts[len(a.toasts)-1].Text) != 8 {
-		t.Fatalf("%d toasts, newest %q", len(a.toasts), a.toasts[len(a.toasts)-1].Text)
+	if len(a.toasts.Stack()) != widget.ToastMax || len(a.toasts.Stack()[len(a.toasts.Stack())-1].Text) != 8 {
+		t.Fatalf("%d toasts, newest %q", len(a.toasts.Stack()), a.toasts.Stack()[len(a.toasts.Stack())-1].Text)
 	}
 }
 
@@ -282,13 +291,13 @@ func TestClipboardFailureBecomesAnErrorToast(t *testing.T) {
 	a := testApp(t)
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{err: errors.New("no clipboard tool found")}, a.clipboardNote)
 	a.ctx.Clipboard.Write("x")
-	if len(a.toasts) != 1 || a.toasts[0].Kind != widget.ToastError || !strings.Contains(a.toasts[0].Text, "no clipboard tool") {
-		t.Fatalf("toasts = %+v", a.toasts)
+	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Kind != widget.ToastError || !strings.Contains(a.toasts.Stack()[0].Text, "no clipboard tool") {
+		t.Fatalf("toasts = %+v", a.toasts.Stack())
 	}
 	a.ctx.Clipboard = core.ReportClipboard(&fakeClip{}, a.clipboardNote)
 	a.ctx.Clipboard.Write("hello")
-	if len(a.toasts) != 1 || a.notices.Status() != "Copied 5 characters" {
-		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts), a.notices.Status())
+	if len(a.toasts.Stack()) != 1 || a.notices.Status() != "Copied 5 characters" {
+		t.Fatalf("a successful copy is a status line, not a toast: toasts %d status %q", len(a.toasts.Stack()), a.notices.Status())
 	}
 }
 

@@ -73,7 +73,7 @@ func TestSendRecordsFileStateAndStatus(t *testing.T) {
 		t.Fatalf("status %q", a.notices.Status())
 	}
 	a.prefs.Send(prefs.Toast{Text: "oops", Level: severity.Error})
-	if len(a.toasts) != 1 || a.toasts[0].Text != "oops" {
+	if len(a.toasts.Stack()) != 1 || a.toasts.Stack()[0].Text != "oops" {
 		t.Fatal("Toast")
 	}
 }

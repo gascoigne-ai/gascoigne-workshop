@@ -112,11 +112,11 @@ func TestABadFileOnDiskKeepsTheSettingsAndSaysSo(t *testing.T) {
 		t.Fatalf("Corners = %q, want the last good value", a.settings.Corners)
 	}
 	found := false
-	for _, toast := range a.toasts {
+	for _, toast := range a.toasts.Stack() {
 		found = found || (toast.Kind == widget.ToastError && strings.Contains(toast.Text, "settings.json"))
 	}
 	if !found {
-		t.Fatalf("no toast about the file; toasts %+v", a.toasts)
+		t.Fatalf("no toast about the file; toasts %+v", a.toasts.Stack())
 	}
 }
 

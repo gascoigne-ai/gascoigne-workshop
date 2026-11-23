@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
+	"strings"
 	"testing"
 	"time"
 )
@@ -15,11 +16,11 @@ func TestClosingTheSettingsClosesAFileBrowserOpenedFromThem(t *testing.T) {
 	a.files = fakeDialog{} // unavailable: the in-app file browser is used
 	picked := ""
 	a.prefs.Send(prefs.PickFile{Title: "Choose CA certificates", Done: func(path string) { picked = path }})
-	if a.browser == nil {
+	if !a.browser.Shown() {
 		t.Fatal("no file browser")
 	}
 	a.prefs.Close()
-	if a.browser != nil {
+	if a.browser.Shown() {
 		t.Fatal("the file browser stayed open after the settings closed")
 	}
 	if picked != "" {
@@ -45,8 +46,8 @@ func TestClosingTheSettingsCancelsTheNativeFileDialogAndIgnoresItsAnswer(t *test
 	}
 	time.Sleep(20 * time.Millisecond)
 	a.drain()
-	if called || len(a.toasts) != 0 {
-		t.Fatalf("a cancelled dialog applied a path (%v) or complained: %+v", called, a.toasts)
+	if called || len(a.toasts.Stack()) != 0 {
+		t.Fatalf("a cancelled dialog applied a path (%v) or complained: %+v", called, a.toasts.Stack())
 	}
 }
 
@@ -55,7 +56,7 @@ func TestAFileDialogOpenedElsewhereSurvivesTheSettingsClosing(t *testing.T) {
 	a.files = fakeDialog{}
 	a.pickFile("Choose the file to send", filedialog.OpenFile, "", func(string) {}) // the request body's, not the settings'
 	a.prefs.Close()
-	if a.browser == nil {
+	if !a.browser.Shown() {
 		t.Fatal("closing the settings closed a file browser that is not theirs")
 	}
 }
@@ -66,10 +67,10 @@ func TestTakingBackAQuestionLeavesALaterBrowserOpen(t *testing.T) {
 	a, _ := openSettingsMenu(t)
 	a.files = fakeDialog{}
 	cancel := a.pickFile("First", filedialog.OpenFile, "", func(string) {})
-	a.closeBrowser()
+	a.browser.Close()
 	a.pickFile("Second", filedialog.OpenFile, "", func(string) {})
 	cancel()
-	if a.browser == nil || a.browser.title != "Second" {
+	if !a.browser.Shown() || !strings.Contains(layoutDump(a), `"Second"`) {
 		t.Fatal("taking back the first question closed the second browser")
 	}
 }

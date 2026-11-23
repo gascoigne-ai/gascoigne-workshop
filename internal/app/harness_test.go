@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -258,7 +259,7 @@ func clickDumped(t *testing.T, app *App, needle string, nth int) {
 // toastsWith are the toasts on the screen whose text contains part.
 func toastsWith(app *App, part string) []widget.Toast {
 	var found []widget.Toast
-	for _, toast := range app.toasts {
+	for _, toast := range app.toasts.Stack() {
 		if strings.Contains(toast.Text, part) {
 			found = append(found, toast)
 		}
@@ -293,7 +294,7 @@ func errorToasts(app *App, part string) []string {
 // toastTexts is the text of every toast on the screen, one per line.
 func toastTexts(app *App) string {
 	var texts []string
-	for _, toast := range app.toasts {
+	for _, toast := range app.toasts.Stack() {
 		texts = append(texts, toast.Text)
 	}
 	return strings.Join(texts, "\n")
@@ -766,12 +767,27 @@ func saveBodyAs(t *testing.T, a *App, tab *reqTab, path string) {
 	t.Helper()
 	a.resp.Refresh(tab.Tab)
 	a.Step(core.Input{})
+	asked, release := make(chan struct{}), make(chan struct{})
+	a.files = fakeDialog{choose: func(context.Context, string, filedialog.Mode, string) (string, error) {
+		close(asked)
+		<-release // answers once the frames of the click are over, so the answer is drained below
+		return path, nil
+	}}
 	rightClick(a, findFieldX, findBarY)
 	pickMenu(t, a, "Save body...")
-	if a.browser == nil {
+	select {
+	case <-asked:
+	case <-time.After(2 * time.Second):
 		t.Fatal("the Save body item opened no file chooser")
 	}
-	a.browser.done(path)
+	close(release)
+	for range 400 { // the answer is applied on this goroutine, as the frame loop does
+		if a.drain() {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatal("the file chooser's answer never arrived")
 }
 
 // openBodyInBrowser opens the response body of tab in the browser the way the

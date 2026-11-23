@@ -1,25 +1,6 @@
-package app
+package welcome
 
-import (
-	"strings"
-
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-)
-
-const (
-	// welcomeW is wider than a message dialog: the notes are lines of prose.
-	welcomeW = 560
-	// welcomeChrome is what the dialog needs besides the notes: the title
-	// bar, the lead text, the button and the window's margins.
-	welcomeChrome = 260
-	// welcomeCols is how many characters of a point fit a line beside its bullet.
-	welcomeCols  = 64
-	welcomeTitle = "Welcome to Gascoigne Workshop 0.1.0 alpha"
-	welcomeLead  = "The first alpha. Here is what is in it and what to expect."
-)
+import "strings"
 
 // welcomeSection is one block of the release notes: a heading and its points.
 type welcomeSection struct {
@@ -96,38 +77,3 @@ func wrap(text string, limit int) string {
 	}
 	return strings.Join(lines, "\n")
 }
-
-var welcomeTemplate = markup.Must("welcome.vml", welcomeSource)
-
-// OpenWelcome shows the release notes and remembers that this version was
-// welcomed, so the dialog opens by itself only once per version.
-func (a *App) OpenWelcome() {
-	a.welcomed = version
-	d := &dialog{width: welcomeW, DialogState: DialogState{Title: welcomeTitle, Body: welcomeLead, Buttons: []DialogButton{
-		{Label: "Get started", Primary: true, Run: a.closeDialog},
-	}}}
-	d.content = func() Node {
-		return welcomeTemplate.MustBuild(markup.Scope{
-			"looseGap": w.LooseGap,
-			"gutter":   w.Gutter,
-			"nearGap":  w.NearGap,
-			"sections": wrapped(welcomeNotes, welcomeCols),
-			"scroll":   &d.scroll,
-			"maxH":     max(a.h-welcomeChrome, 120),
-		})
-	}
-	a.dialog = d
-}
-
-// Templates, parsed once above.
-const welcomeSource = `<!-- The release notes: a heading and a bulleted list per section, scrolling in a short window. -->
-<scroll state="scroll" max-h="{{maxH}}" gap="{{gutter}}">
-  <col for="section in sections" gap="{{nearGap}}">
-    <text bold>{{section.Title}}</text>
-    <row for="item in section.Items" gap="{{looseGap}}" align-items="start">
-      <icon name="dot" color="muted" margin-t="{{looseGap}}"/>
-      <lines grow="1" color="muted">{{item}}</lines>
-    </row>
-  </col>
-</scroll>
-`

@@ -15,7 +15,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/importers/postman"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/filebrowser"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -91,7 +90,7 @@ func TestASavedBodyIsWrittenThroughTheFileSystemWithTildeAsHome(t *testing.T) {
 		t.Fatalf("written %q %v, want the body in the home folder", data, ok)
 	}
 	if !toastWith(a, "Saved 7B to out.json", false) {
-		t.Fatalf("toasts %+v", a.toasts)
+		t.Fatalf("toasts %+v", a.toasts.Stack())
 	}
 }
 
@@ -129,14 +128,14 @@ func TestAPostmanExportIsWrittenThroughTheFileSystem(t *testing.T) {
 	a.folders = files
 	a.exportPostman(&a.col().Folder)
 	typePath(a, "/out/col.json")
-	a.browse(filebrowser.Entered{})
+	pressEnter(a)
 	until(t, a, "the export toast", func() bool { return toastWith(a, "Exported to col.json", false) })
 	data, _ := files.file("/out/col.json")
 	if res, err := postman.Parse(data); err != nil || res.Folder.Name != a.col().Name {
 		t.Fatalf("%v %+v", err, res.Folder)
 	}
 	if !toastWith(a, "left out", false) { // the sample has WebSocket and MCP requests
-		t.Fatalf("toasts %+v", a.toasts)
+		t.Fatalf("toasts %+v", a.toasts.Stack())
 	}
 }
 
@@ -147,7 +146,7 @@ func TestAPostmanExportThatCannotBeWrittenIsReported(t *testing.T) {
 	a.folders = files
 	a.exportPostman(&a.col().Folder)
 	typePath(a, "/out/col.json")
-	a.browse(filebrowser.Entered{})
+	pressEnter(a)
 	until(t, a, "the failure toast", func() bool { return toastWith(a, "Export failed: disk full", true) })
 }
 

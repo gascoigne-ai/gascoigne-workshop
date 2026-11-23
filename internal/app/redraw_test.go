@@ -127,8 +127,8 @@ func TestToastsRequestRedrawsWhenShownAndWhenTheyExpire(t *testing.T) {
 	settle(a, 2)
 	clock = clock.Add(10 * time.Second)
 	a.Step(core.Input{X: a.lastIn.X, Y: a.lastIn.Y})
-	if !a.dirty || len(a.toasts) != 0 {
-		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.toasts))
+	if !a.dirty || len(a.toasts.Stack()) != 0 {
+		t.Fatalf("an expired toast must be removed and drawn away (dirty %v, toasts %d)", a.dirty, len(a.toasts.Stack()))
 	}
 }
 

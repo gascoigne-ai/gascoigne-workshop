@@ -181,7 +181,7 @@ func (d *Driver) BrowseFiles(dir string) error {
 	if err != nil {
 		return fmt.Errorf("file browser folder %q: %w", dir, err)
 	}
-	d.app.browseIn(absolute, "Choose the file to send", filedialog.OpenFile, "", func(string) {})
+	d.app.browser.Browse(absolute, "Choose the file to send", filedialog.OpenFile, "", func(string) {})
 	return nil
 }
 
