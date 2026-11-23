@@ -27,7 +27,7 @@ func TestMenuClosesOnEscapeAndOnOutsideClick(t *testing.T) {
 	if a.menu {
 		t.Fatal("an outside click must close the menu")
 	}
-	if len(a.list.Tabs) != 1 {
+	if len(a.tabs.Tabs()) != 1 {
 		t.Fatal("the click that closes the menu must not reach the tree below")
 	}
 
@@ -83,7 +83,7 @@ func TestClickingOutsideClosesTheMenuWithoutReachingWhatIsBelow(t *testing.T) {
 	if widget.PopupMenu(a.ctx) != nil || len(r.log) != 0 {
 		t.Fatalf("menu open %v ran %v", widget.PopupMenu(a.ctx) != nil, r.log)
 	}
-	if len(a.list.Tabs) != 1 {
+	if len(a.tabs.Tabs()) != 1 {
 		t.Fatal("the click that closes a menu must not also open the request under it")
 	}
 }
@@ -138,7 +138,7 @@ func TestMenuNearTheWindowEdgeStaysOnScreen(t *testing.T) {
 func TestShortcutsAreIgnoredWhileAMenuIsOpen(t *testing.T) {
 	a, _ := openTestMenu(t)
 	a.Step(combo(ebiten.KeyT, true, false, false))
-	if len(a.list.Tabs) != 1 {
+	if len(a.tabs.Tabs()) != 1 {
 		t.Fatal("Ctrl+T must not open a tab behind a menu")
 	}
 }
@@ -211,7 +211,7 @@ func TestDialogTrapsFocusAndBlocksShortcuts(t *testing.T) {
 		t.Fatal("Tab must stay inside the dialog")
 	}
 	a.Step(combo(ebiten.KeyT, true, false, false))
-	if len(a.list.Tabs) != 1 {
+	if len(a.tabs.Tabs()) != 1 {
 		t.Fatal("global shortcuts are off while a dialog is open")
 	}
 }

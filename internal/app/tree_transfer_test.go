@@ -23,7 +23,7 @@ func release(app *App, node, target request.Node, alt bool) {
 }
 
 func tabOf(app *App, req *request.Request) bool {
-	for _, tab := range app.list.Tabs {
+	for _, tab := range app.tabs.Tabs() {
 		if tab.Req == req {
 			return true
 		}

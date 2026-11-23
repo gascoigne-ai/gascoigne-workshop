@@ -40,7 +40,7 @@ type App struct {
 	reg        request.Registry
 	open       collections.Set           // the open collections, in tree order, each with its folder and environment
 	sample     func() request.Collection // the collection shown when nothing is saved or configured
-	list       tabs.List                 // the open tabs, the active one and the one being dragged
+	tabs       *tabs.Set                 // the open tabs, the current one and the drag
 	widgets    map[*tabs.Tab]*reqTab     // the widget state of each open tab
 	bus        *bus.Bus                  // what goroutines report back, drained once per frame
 	notices    notice.Notices            // the status line under the window

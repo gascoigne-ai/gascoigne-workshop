@@ -118,7 +118,7 @@ func NewApp(opts Options) (*App, error) {
 		widgets:    map[*tabs.Tab]*reqTab{},
 		bus:        bus.New(),
 		jar:        newJar(),
-		list:       tabs.List{Drag: -1},
+		tabs:       tabs.NewSet(),
 		ports: ports{
 			protocols: opts.Protocols, grpcMethods: opts.GRPCMethods, grpcSchema: opts.GRPCSchema, curl: opts.Curl,
 			store: opts.Store, clients: opts.Clients, states: opts.States, files: opts.Files, folders: opts.Folders,

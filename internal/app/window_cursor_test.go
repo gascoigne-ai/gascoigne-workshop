@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
@@ -17,7 +18,7 @@ func TestTheCursorIsAGrabWhileSomethingIsBeingDragged(t *testing.T) {
 	}{
 		{"nothing grabbed", func(*App) {}, true, core.CursorDefault},
 		{"a table row being dragged", func(app *App) { app.dragRow = &rowSelection{} }, true, core.CursorMove},
-		{"a tab being dragged", func(app *App) { app.list.Drag = 0 }, true, core.CursorMove},
+		{"a tab being dragged", func(app *App) { app.tabs.Apply(tabs.DragBegin{Index: 0}) }, true, core.CursorMove},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

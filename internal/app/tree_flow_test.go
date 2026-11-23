@@ -13,18 +13,18 @@ import (
 
 func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 	a := testApp(t)
-	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "Search Repos" {
-		t.Fatalf("start: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
+	if len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("start: %d tabs, current %q", len(a.tabs.Tabs()), a.cur().Req.Name)
 	}
 
 	click(a, 100, treeRowY(4)) // Repository Info
-	if len(a.list.Tabs) != 2 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("after click: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
+	if len(a.tabs.Tabs()) != 2 || a.cur().Req.Name != "Repository Info" {
+		t.Fatalf("after click: %d tabs, current %q", len(a.tabs.Tabs()), a.cur().Req.Name)
 	}
 
 	click(a, 100, treeRowY(4)) // the same request again focuses its tab
-	if len(a.list.Tabs) != 2 {
-		t.Fatalf("reopening must not add a tab, have %d", len(a.list.Tabs))
+	if len(a.tabs.Tabs()) != 2 {
+		t.Fatalf("reopening must not add a tab, have %d", len(a.tabs.Tabs()))
 	}
 }
 
@@ -165,8 +165,8 @@ func TestDeletingAFolderClosesTheTabsOfEverythingInIt(t *testing.T) {
 	if len(a.col().Folders) != 2 {
 		t.Fatalf("folders = %d", len(a.col().Folders))
 	}
-	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.list.Tabs), a.cur().Req.Name)
+	if len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("the open request was inside: %d tabs, current %q", len(a.tabs.Tabs()), a.cur().Req.Name)
 	}
 }
 

@@ -29,8 +29,8 @@ func TestStartsFromTheWorkspaceFolder(t *testing.T) {
 
 func TestEmptyWorkspaceStartsWithOneBlankRequest(t *testing.T) {
 	a := testApp(t, untouchedSettings(), inWorkspace(t.TempDir()), withOptions(Options{}))
-	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("tabs %d", len(a.list.Tabs))
+	if len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("tabs %d", len(a.tabs.Tabs()))
 	}
 }
 
@@ -145,10 +145,10 @@ func TestImportCurlAddsARequestFromTheClipboard(t *testing.T) {
 	if _, ok := a.col().Folder.Parent(request.Of(r)); !ok {
 		t.Fatal("request not in the collection")
 	}
-	n := len(a.list.Tabs)
+	n := len(a.tabs.Tabs())
 	clip.text = "not curl"
 	a.importCurl(&a.col().Folder)
-	if len(a.list.Tabs) != n {
+	if len(a.tabs.Tabs()) != n {
 		t.Fatal("a bad command opened a tab")
 	}
 }
@@ -177,8 +177,8 @@ func TestOpenWorkspaceAtSwitchesCollectionsAndSavesTheOldOne(t *testing.T) {
 	a := testApp(t, untouchedSettings(), inWorkspace(first), withOptions(Options{}))
 	a.cur().Req.URL = "https://unsaved.test"
 	a.openWorkspaceAt(second)
-	if a.col().Name != "Second" || len(a.list.Tabs) != 1 || a.cur().Req.Name != "Two" || a.workspace() != second {
-		t.Fatalf("col %q tabs %d workspace %q", a.col().Name, len(a.list.Tabs), a.workspace())
+	if a.col().Name != "Second" || len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "Two" || a.workspace() != second {
+		t.Fatalf("col %q tabs %d workspace %q", a.col().Name, len(a.tabs.Tabs()), a.workspace())
 	}
 	if old, err := storeDisk.Load(first); err != nil || old.Requests[0].URL != "https://unsaved.test" {
 		t.Fatalf("the old collection lost its edit: %+v %v", old, err)
@@ -218,10 +218,10 @@ func TestImportOpenAPIAddsAFolderOfRequestsAndTheBaseURL(t *testing.T) {
 	if a.cur().Req.URL == "" || !strings.HasPrefix(a.cur().Req.URL, "{{baseUrl}}") {
 		t.Fatalf("the first imported request is not open: %q", a.cur().Req.URL)
 	}
-	n := len(a.list.Tabs)
+	n := len(a.tabs.Tabs())
 	a.ctx.Clipboard = &fakeClip{text: "{}"}
 	a.importOpenAPI(&a.col().Folder)
-	if len(a.list.Tabs) != n || len(a.col().Folders) != before+1 {
+	if len(a.tabs.Tabs()) != n || len(a.col().Folders) != before+1 {
 		t.Fatal("a bad document changed the collection")
 	}
 }

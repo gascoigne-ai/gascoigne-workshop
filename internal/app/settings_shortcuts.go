@@ -22,7 +22,7 @@ var shortcuts = []shortcut{
 	{"send", "Send request", keys(ebiten.KeyEnter, true, false, false), (*App).sendCurrent},
 	{"focus-url", "Focus URL", keys(ebiten.KeyL, true, false, false), (*App).focusURL},
 	{"new-request", "New request", keys(ebiten.KeyT, true, false, false), (*App).newRequest},
-	{"close-tab", "Close tab", keys(ebiten.KeyW, true, false, false), func(app *App) { app.closeTab(app.list.Active) }},
+	{"close-tab", "Close tab", keys(ebiten.KeyW, true, false, false), func(app *App) { app.closeTab(app.tabs.Active()) }},
 	{"next-tab", "Next tab", keys(ebiten.KeyTab, true, false, false), func(app *App) { app.switchTab(1) }},
 	{"prev-tab", "Previous tab", keys(ebiten.KeyTab, true, true, false), func(app *App) { app.switchTab(-1) }},
 	{"duplicate-row", "Duplicate row", keys(ebiten.KeyD, true, false, false), (*App).duplicateRow},

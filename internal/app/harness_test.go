@@ -488,7 +488,7 @@ const tabStripY = headerH + tabsH/2
 func twoTabs(t *testing.T) *App {
 	a := testApp(t)
 	click(a, 100, treeRowY(4)) // opens "Repository Info" as the second tab
-	if len(a.list.Tabs) != 2 {
+	if len(a.tabs.Tabs()) != 2 {
 		t.Fatal("test setup: want two tabs")
 	}
 	return a

@@ -52,8 +52,8 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
-		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
+	if len(b.tabs.Tabs()) != 2 || b.tabs.Active() != 1 || b.cur().paneTab != 3 {
+		t.Fatalf("tabs %d active %d pane %d", len(b.tabs.Tabs()), b.tabs.Active(), b.cur().paneTab)
 	}
 	if b.cur().Req != b.col().Folders[0].Requests[0] || b.side.Tree().Selected() != request.Of(b.cur().Req) {
 		t.Fatal("the restored tab must be the request in the new tree")
@@ -74,8 +74,8 @@ func TestStateRestoreDropsMissingRequestsAndBadValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if len(a.list.Tabs) != 1 || a.list.Active != 0 {
-		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
+	if len(a.tabs.Tabs()) != 1 || a.tabs.Active() != 0 {
+		t.Fatalf("tabs %d active %d", len(a.tabs.Tabs()), a.tabs.Active())
 	}
 	if p := a.cur().paneTab; p < 0 || p > 4 {
 		t.Fatalf("pane tab %d out of range", p)
@@ -89,8 +89,8 @@ func TestStateWithNoTabsOpensTheFirstRequest(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	stateDisk.Save(path, state.State{Tabs: []state.Tab{{Path: "Gone"}}})
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if len(a.list.Tabs) != 1 {
-		t.Fatalf("%d tabs", len(a.list.Tabs))
+	if len(a.tabs.Tabs()) != 1 {
+		t.Fatalf("%d tabs", len(a.tabs.Tabs()))
 	}
 }
 
@@ -100,8 +100,8 @@ func TestStateCorruptFileStartsFreshWithAStatusNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: path}))
-	if len(a.list.Tabs) != 1 || a.notices.Status() == "Ready" {
-		t.Fatalf("tabs %d status %q", len(a.list.Tabs), a.notices.Status())
+	if len(a.tabs.Tabs()) != 1 || a.notices.Status() == "Ready" {
+		t.Fatalf("tabs %d status %q", len(a.tabs.Tabs()), a.notices.Status())
 	}
 }
 
@@ -193,8 +193,8 @@ func TestHostileStateValuesStillGiveAWorkingWindow(t *testing.T) {
 	for range 5 {
 		a.Step(core.Input{})
 	}
-	if len(a.list.Tabs) == 0 || a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
-		t.Fatalf("tabs %d active %d", len(a.list.Tabs), a.list.Active)
+	if len(a.tabs.Tabs()) == 0 || a.tabs.Active() < 0 || a.tabs.Active() >= len(a.tabs.Tabs()) {
+		t.Fatalf("tabs %d active %d", len(a.tabs.Tabs()), a.tabs.Active())
 	}
 }
 

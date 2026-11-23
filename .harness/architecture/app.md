@@ -35,8 +35,12 @@ flowchart LR
   tab's request. `editRequest` writes the result into the collection's own request, so the
   sidebar, the autosave and the dirty dot see it at once. The gRPC stream flag is tab state, not
   part of the request. Renames and moves are tree operations (`tree.Update`, `treeops.go`).
-- **Tab list** (`feature/workspace/tabs`): changes only through `tabs.Update`; `App.updateTabs`
-  then creates or drops the widget state of tabs that appeared or went. Any tab change selects its
+- **Tab list** (`feature/workspace/tabs`): is `App.tabs`, a `tabs.Set` (owner of the open tabs and the current one; `Current()` is nil only before
+  the first `Open`, closing the last tab leaves a blank one). It changes only through `Set.Apply` (a
+  wrapper of the pure `tabs.Update`), and `App.updateTabs` is its only mutating caller: after each
+  change it creates the widget state of tabs that appeared, drops the state of tabs that went
+  (ending an inline edit, cancelling the send, closing the socket) and reveals the request. That sync
+  is not a Set callback because the App must see which tabs left. Any tab change selects its
   request in the tree and opens the folders above it (`App.revealRequest`).
 - **Table rows**: every change goes through `App.applyRows`, which keeps the undo history
   (`tabs.HistoryLimit` steps per table and tab) and runs the pane's `changed` hook (Params rewrite

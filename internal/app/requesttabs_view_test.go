@@ -123,10 +123,10 @@ func TestTheRequestTabsButtonsHaveTooltips(t *testing.T) {
 func TestClickingThePlusOpensANewRequestTab(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	before := len(a.list.Tabs)
+	before := len(a.tabs.Tabs())
 	click(a, newRequestX, tabStripY)
-	if len(a.list.Tabs) != before+1 || a.list.Active != before {
-		t.Fatalf("%d tabs, active %d; want %d tabs with the new one active", len(a.list.Tabs), a.list.Active, before+1)
+	if len(a.tabs.Tabs()) != before+1 || a.tabs.Active() != before {
+		t.Fatalf("%d tabs, active %d; want %d tabs with the new one active", len(a.tabs.Tabs()), a.tabs.Active(), before+1)
 	}
 }
 

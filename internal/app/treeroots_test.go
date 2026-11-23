@@ -152,10 +152,10 @@ func TestCtrlShiftWClosesTheFocusedCollectionAndCtrlWOnlyTheTab(t *testing.T) {
 	}
 	a, _, _ := twoCollectionsApp(t)
 	a.openRequest(entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0])
-	tabCount := len(a.list.Tabs)
+	tabCount := len(a.tabs.Tabs())
 	a.Step(combo(ebiten.KeyW, true, false, false))
-	if got := openNames(a); len(got) != 2 || len(a.list.Tabs) != tabCount-1 {
-		t.Fatalf("Ctrl+W: open %v, %d tabs, want both open and %d tabs", got, len(a.list.Tabs), tabCount-1)
+	if got := openNames(a); len(got) != 2 || len(a.tabs.Tabs()) != tabCount-1 {
+		t.Fatalf("Ctrl+W: open %v, %d tabs, want both open and %d tabs", got, len(a.tabs.Tabs()), tabCount-1)
 	}
 	a.Step(core.Input{Keys: []ebiten.Key{ebiten.KeyW}, Ctrl: true, Shift: true}) // Beta's tab is the active one
 	if got := openNames(a); !reflect.DeepEqual(got, []string{"Alpha"}) {

@@ -24,7 +24,7 @@ import (
 // else the tree selection, else the first open one. ok is false when
 // nothing is open.
 func (a *App) focus() (collections.Entry, bool) {
-	if len(a.list.Tabs) > 0 {
+	if len(a.tabs.Tabs()) > 0 {
 		if entry, ok := a.open.Owner(request.Node{Req: a.cur().Req}); ok {
 			return entry, true
 		}

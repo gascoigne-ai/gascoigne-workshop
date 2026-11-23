@@ -62,7 +62,7 @@ func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 		Color:       theme.MethodToken(tab.Req.Method),
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),
-		Active:      index == a.list.Active,
+		Active:      index == a.tabs.Active(),
 		Stripe:      a.collectionToken(request.Node{Req: tab.Req}),
 		Press:       func() { a.pressTab(index) },
 		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: index}) },

@@ -91,9 +91,16 @@ func (a *App) makeTab(tab *tabs.Tab) *reqTab {
 // for the window: an inline edit in a closed tab ends, closed tabs lose
 // their widgets and new ones get theirs.
 func (a *App) updateTabs(msg tabs.Msg) {
-	next := tabs.Update(a.list, msg)
+	was := a.activeRequest()
+	a.tabs.Apply(msg)
+	// Widgets are made first: a restore reads cur() right after an Open.
+	for _, tab := range a.tabs.Tabs() {
+		if a.widgets[tab] == nil {
+			a.widgets[tab] = a.makeTab(tab)
+		}
+	}
 	for tab, widgets := range a.widgets {
-		if slices.Contains(next.Tabs, tab) {
+		if slices.Contains(a.tabs.Tabs(), tab) {
 			continue
 		}
 		if a.edit != nil && a.edit.tab == widgets {
@@ -103,30 +110,24 @@ func (a *App) updateTabs(msg tabs.Msg) {
 		a.disconnect(widgets)
 		delete(a.widgets, tab)
 	}
-	for _, tab := range next.Tabs {
-		if a.widgets[tab] == nil {
-			a.widgets[tab] = a.makeTab(tab)
-		}
-	}
-	was := a.activeRequest()
-	a.list = next
 	if now := a.activeRequest(); now != nil && now != was {
 		a.revealRequest(now)
 	}
 }
 
-// activeRequest is the request of the active tab, nil when none is open.
+// activeRequest is the request of the current tab, nil when none is open.
 func (a *App) activeRequest() *request.Request {
-	if a.list.Active < 0 || a.list.Active >= len(a.list.Tabs) {
+	current := a.tabs.Current()
+	if current == nil {
 		return nil
 	}
-	return a.list.Tabs[a.list.Active].Req
+	return current.Req
 }
 
 // openTabs are the widget states of the open tabs, in the order of the strip.
 func (a *App) openTabs() []*reqTab {
-	open := make([]*reqTab, len(a.list.Tabs))
-	for i, tab := range a.list.Tabs {
+	open := make([]*reqTab, len(a.tabs.Tabs()))
+	for i, tab := range a.tabs.Tabs() {
 		open[i] = a.widgets[tab]
 	}
 	return open
@@ -149,7 +150,7 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 	return t
 }
 
-func (a *App) cur() *reqTab { return a.widgets[a.list.Tabs[a.list.Active]] }
+func (a *App) cur() *reqTab { return a.widgets[a.tabs.Current()] }
 
 // openRequest focuses the tab of req, opening one if needed.
 func (a *App) openRequest(req *request.Request) {

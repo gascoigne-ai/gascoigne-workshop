@@ -92,7 +92,7 @@ func (a *App) snapshot() state.State {
 		Window:    state.Window{W: a.windowPx(a.w), H: a.windowPx(a.h), X: a.winX, Y: a.winY},
 		SidebarW:  a.sidebarSplit.Size,
 		PaneSplit: a.paneSplit.Size,
-		Active:    a.list.Active,
+		Active:    a.tabs.Active(),
 		SettingsW: a.prefs.Size.W,
 		SettingsH: a.prefs.Size.H,
 		Trusted:   a.trusted.Keys(),
@@ -110,8 +110,8 @@ func (a *App) snapshot() state.State {
 			kept = append(kept, -1)
 		}
 	}
-	if a.list.Active < len(kept) {
-		s.Active = max(kept[a.list.Active], 0)
+	if a.tabs.Active() < len(kept) {
+		s.Active = max(kept[a.tabs.Active()], 0)
 	}
 	for name, w := range a.colWidths {
 		if len(w.Weights) > 0 {

@@ -135,8 +135,8 @@ func (a *App) deleteNode(node request.Node) {
 
 // closeTabsIn closes the tabs whose request is node or inside it.
 func (a *App) closeTabsIn(node request.Node) {
-	for i := len(a.list.Tabs) - 1; i >= 0; i-- {
-		if tree.Inside(node, a.list.Tabs[i].Req) {
+	for i := len(a.tabs.Tabs()) - 1; i >= 0; i-- {
+		if tree.Inside(node, a.tabs.Tabs()[i].Req) {
 			a.closeTab(i)
 		}
 	}

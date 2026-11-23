@@ -102,7 +102,7 @@ func TestClosingATabStopsItsRequest(t *testing.T) {
 	if !tab.Sending() {
 		t.Fatal("test setup: the request must be running")
 	}
-	a.closeTab(a.list.Active)
+	a.closeTab(a.tabs.Active())
 	if tab.Sending() {
 		t.Error("the request of the closed tab is still running")
 	}
@@ -113,7 +113,7 @@ func TestClosingATabClosesItsSession(t *testing.T) {
 	tab := a.cur()
 	session := &fakeSession{}
 	openSession(tab, session)
-	a.closeTab(a.list.Active)
+	a.closeTab(a.tabs.Active())
 	if !session.closed {
 		t.Error("the session of the closed tab is still open")
 	}

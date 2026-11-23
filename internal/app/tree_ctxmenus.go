@@ -16,11 +16,11 @@ var menuSeparator = MenuItem{Separator: true}
 // ---- request tabs ------------------------------------------------------------
 
 func (a *App) tabMenuItems(index int) []MenuItem {
-	t := a.widgets[a.list.Tabs[index]]
+	t := a.widgets[a.tabs.Tabs()[index]]
 	return []MenuItem{
 		{Label: "Close", Run: func() { a.closeTab(index) }},
-		{Label: "Close others", Disabled: len(a.list.Tabs) == 1, Run: func() { a.closeOthers(index) }},
-		{Label: "Close tabs to the right", Disabled: index == len(a.list.Tabs)-1, Run: func() { a.closeRightOf(index) }},
+		{Label: "Close others", Disabled: len(a.tabs.Tabs()) == 1, Run: func() { a.closeOthers(index) }},
+		{Label: "Close tabs to the right", Disabled: index == len(a.tabs.Tabs())-1, Run: func() { a.closeRightOf(index) }},
 		menuSeparator,
 		{Label: "Duplicate", Run: func() { a.duplicateTab(index) }},
 		{Label: "Copy URL", Run: func() { a.copyRequestURL(t.Req) }},
@@ -36,7 +36,7 @@ func (a *App) closeRightOf(index int) { a.updateTabs(tabs.CloseRightOf{Index: in
 // duplicateTab copies the tab's request next to the original in the
 // tree (or into the root when it is not in the tree) and opens the copy.
 func (a *App) duplicateTab(index int) {
-	req := a.list.Tabs[index].Req
+	req := a.tabs.Tabs()[index].Req
 	owner, ok := a.entryFor(req)
 	if !ok { // nothing is open: the copy is a tab of its own
 		clone := copyOf(req)

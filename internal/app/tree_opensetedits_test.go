@@ -20,7 +20,7 @@ import (
 // tabIndex is the place in the strip of the tab showing req.
 func tabIndex(t *testing.T, app *App, req *request.Request) int {
 	t.Helper()
-	for index, tab := range app.list.Tabs {
+	for index, tab := range app.tabs.Tabs() {
 		if tab.Req == req {
 			return index
 		}
@@ -112,8 +112,8 @@ func TestRenamingARequestInOneCollectionLeavesTheSamePathInTheOther(t *testing.T
 	alphaInner, betaInner := alpha.Folders[0].Requests[0], beta.Folders[0].Requests[0]
 	a.openRequest(betaInner)
 	a.openRequest(alphaInner) // the other collection's tab is the active one
-	if len(a.list.Tabs) != 4 {
-		t.Fatalf("%d tabs, want both Inners beside the two calls", len(a.list.Tabs))
+	if len(a.tabs.Tabs()) != 4 {
+		t.Fatalf("%d tabs, want both Inners beside the two calls", len(a.tabs.Tabs()))
 	}
 
 	a.renameNode(request.Of(betaInner))

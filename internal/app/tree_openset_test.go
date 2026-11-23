@@ -193,7 +193,7 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 	if len(a.open.Entries) != 1 || a.open.Entries[0].Dir != alphaDir {
 		t.Fatalf("open %+v", a.open.Entries)
 	}
-	for _, tab := range a.list.Tabs {
+	for _, tab := range a.tabs.Tabs() {
 		if beta.Folder.Contains(request.Of(tab.Req)) {
 			t.Fatalf("Beta's tab %q is still open", tab.Req.Name)
 		}
@@ -297,8 +297,8 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	if len(a.open.Entries) != 1 || a.workspace() != dir || a.envName() != "Dev" {
 		t.Fatalf("open %+v, environment %q", a.open.Entries, a.envName())
 	}
-	if len(a.list.Tabs) != 2 || a.cur().Req != a.col().Folders[0].Requests[0] || !a.side.Tree().Expanded()[a.col().Folders[0]] {
-		t.Fatalf("%d tabs, active %q", len(a.list.Tabs), a.cur().Req.Name)
+	if len(a.tabs.Tabs()) != 2 || a.cur().Req != a.col().Folders[0].Requests[0] || !a.side.Tree().Expanded()[a.col().Folders[0]] {
+		t.Fatalf("%d tabs, active %q", len(a.tabs.Tabs()), a.cur().Req.Name)
 	}
 	a.selectEnv(-1)
 	a.selectEnv(0)

@@ -108,16 +108,16 @@ func TestCtrlLFocusesAndSelectsTheURL(t *testing.T) {
 func TestCtrlTOpensAndCtrlWClosesTabs(t *testing.T) {
 	a := testApp(t)
 	a.Step(combo(ebiten.KeyT, true, false, false))
-	if len(a.list.Tabs) != 2 || a.list.Active != 1 {
-		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.list.Tabs), a.list.Active)
+	if len(a.tabs.Tabs()) != 2 || a.tabs.Active() != 1 {
+		t.Fatalf("Ctrl+T: %d tabs, active %d", len(a.tabs.Tabs()), a.tabs.Active())
 	}
 	a.Step(combo(ebiten.KeyW, true, false, false))
-	if len(a.list.Tabs) != 1 || a.list.Active != 0 || a.cur().Req.Name != "Search Repos" {
-		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.list.Tabs), a.list.Active, a.cur().Req.Name)
+	if len(a.tabs.Tabs()) != 1 || a.tabs.Active() != 0 || a.cur().Req.Name != "Search Repos" {
+		t.Fatalf("Ctrl+W: %d tabs, active %d (%s)", len(a.tabs.Tabs()), a.tabs.Active(), a.cur().Req.Name)
 	}
 	a.Step(combo(ebiten.KeyW, true, false, false))
-	if len(a.list.Tabs) != 1 || a.cur().Req.Name != "New Request" {
-		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.list.Tabs), a.cur().Req.Name)
+	if len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "New Request" {
+		t.Fatalf("closing the last tab must leave a blank request, got %d tabs (%s)", len(a.tabs.Tabs()), a.cur().Req.Name)
 	}
 }
 
@@ -126,12 +126,12 @@ func TestCtrlTabSwitchesTabsAndWraps(t *testing.T) {
 	a.newRequest()
 	a.newRequest() // three tabs, the last active
 	a.Step(combo(ebiten.KeyTab, true, false, false))
-	if a.list.Active != 0 {
-		t.Fatalf("Ctrl+Tab from the last tab must wrap to the first, active %d", a.list.Active)
+	if a.tabs.Active() != 0 {
+		t.Fatalf("Ctrl+Tab from the last tab must wrap to the first, active %d", a.tabs.Active())
 	}
 	a.Step(combo(ebiten.KeyTab, true, true, false))
-	if a.list.Active != 2 {
-		t.Fatalf("Ctrl+Shift+Tab must go back and wrap, active %d", a.list.Active)
+	if a.tabs.Active() != 2 {
+		t.Fatalf("Ctrl+Shift+Tab must go back and wrap, active %d", a.tabs.Active())
 	}
 }
 
@@ -148,8 +148,8 @@ func TestShortcutsNeedTheirModifiers(t *testing.T) {
 	for _, k := range []ebiten.Key{ebiten.KeyT, ebiten.KeyW, ebiten.KeyL, ebiten.KeyEnter, ebiten.KeyComma, ebiten.KeyTab} {
 		a.Step(combo(k, false, false, false)) // plain letters must never trigger anything
 	}
-	if len(a.list.Tabs) != 1 || a.menu || a.cur().Sending() {
-		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.list.Tabs), a.menu)
+	if len(a.tabs.Tabs()) != 1 || a.menu || a.cur().Sending() {
+		t.Fatalf("plain keys changed state: %d tabs, menu %v", len(a.tabs.Tabs()), a.menu)
 	}
 }
 
@@ -333,11 +333,11 @@ func TestRecordingANewBindingRebindsTheAction(t *testing.T) {
 		t.Fatalf("saved %+v", saved.Shortcuts)
 	}
 	a.Step(combo(ebiten.KeyW, true, false, false)) // the old key does nothing now
-	if len(a.list.Tabs) != 2 {
+	if len(a.tabs.Tabs()) != 2 {
 		t.Fatal("Ctrl+W must no longer close a tab")
 	}
 	a.Step(combo(ebiten.KeyQ, true, false, false))
-	if len(a.list.Tabs) != 1 {
+	if len(a.tabs.Tabs()) != 1 {
 		t.Fatal("Ctrl+Q closes a tab")
 	}
 	if shortcutpage.KeyText(a, "close-tab") != "Ctrl+Q" {
@@ -360,7 +360,7 @@ func TestEscapeCancelsRecordingAndBackspaceUnbinds(t *testing.T) {
 		t.Fatalf("shortcuts = %v: Backspace stores an empty (unbound) binding", a.settings.Shortcuts)
 	}
 	a.Step(combo(ebiten.KeyW, true, false, false))
-	if len(a.list.Tabs) != 2 {
+	if len(a.tabs.Tabs()) != 2 {
 		t.Fatal("an unbound action fires nothing")
 	}
 	if shortcutpage.KeyText(a, "close-tab") != "Unbound" {
@@ -424,11 +424,11 @@ func TestSavedBindingsApplyFromTheStart(t *testing.T) {
 	}
 	a.w, a.h = winW, winH
 	a.Step(combo(ebiten.KeyN, true, false, false))
-	if len(a.list.Tabs) != 2 {
+	if len(a.tabs.Tabs()) != 2 {
 		t.Fatal("the saved binding must work")
 	}
 	a.Step(combo(ebiten.KeyT, true, false, false))
-	if len(a.list.Tabs) != 2 {
+	if len(a.tabs.Tabs()) != 2 {
 		t.Fatal("the replaced default must not")
 	}
 }
