@@ -19,6 +19,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
@@ -143,6 +144,7 @@ func NewApp(opts Options) (*App, error) {
 		Menus: sidebarHost{a}, Sent: a,
 	})
 	a.kv = kvtable.New(kvtable.Deps{Tables: kvtableHost{a}, Tabs: kvtableHost{a}, Menus: kvtableHost{a}, Secrets: kvtableHost{a}, Styles: kvtableHost{a}})
+	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})
 	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: &a.calls, Welcome: a, Version: version})
 	if loadErr != nil {
 		a.notices.SetStatus(loadErr.Error())

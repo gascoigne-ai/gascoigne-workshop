@@ -11,6 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/viewer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"slices"
@@ -158,8 +159,8 @@ func (a *App) openRequest(req *request.Request) {
 // own, so the sidebar and the autosave see it at once.
 func editRequest(tab *reqTab, msg requestedit.Msg) { *tab.Req = requestedit.Update(*tab.Req, msg) }
 
-// dirtyMark is shown on tabs whose request changed since it was opened.
-const dirtyMark = "\u2022"
+// dirtyMark is shown on tabs and in the window title when a request changed since it was opened.
+const dirtyMark = tabstrip.DirtyMark
 
 // dirty reports whether the request differs from its state when opened.
 func dirty(tab *reqTab) bool { return tab.Dirty() }

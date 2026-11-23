@@ -61,9 +61,8 @@ type frameState struct {
 	title          string // the window title last set
 	tips           widget.TooltipState
 	sampler        core.Sampler
-	sidebarSplit   widget.SplitState  // width of the collections sidebar
-	paneSplit      widget.SplitState  // request pane share of the request/response area
-	tabsScroll     widget.ScrollState // sideways scroll of the request tab strip
+	sidebarSplit   widget.SplitState // width of the collections sidebar
+	paneSplit      widget.SplitState // request pane share of the request/response area
 	toasts         widget.ToastStack
 }
 

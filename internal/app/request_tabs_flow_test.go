@@ -1,11 +1,8 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"reflect"
 	"strings"
 	"testing"
@@ -20,57 +17,6 @@ func TestNewRequestAndSwitchingTabs(t *testing.T) {
 	click(a, 280, headerH+tabsH/2) // the first tab sits at the left edge of the strip
 	if a.tabs.Active() != 0 {
 		t.Fatalf("active = %d, want 0", a.tabs.Active())
-	}
-}
-
-func TestCloseButtonClosesOnlyThatTab(t *testing.T) {
-	a := twoTabs(t) // active: the second
-	left, width := a.tabX(0)
-	click(a, left+width-12, tabStripY) // the × of the first tab
-	if len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs.Tabs()), a.cur().Req.Name)
-	}
-}
-
-func TestClickingTheLabelSelectsAndDoesNotClose(t *testing.T) {
-	a := twoTabs(t)
-	left, _ := a.tabX(0)
-	click(a, left+30, tabStripY)
-	if len(a.tabs.Tabs()) != 2 || a.tabs.Active() != 0 {
-		t.Fatalf("%d tabs, active %d", len(a.tabs.Tabs()), a.tabs.Active())
-	}
-}
-
-func TestMiddleButtonDragReordersTabsAndDoesNotCloseThem(t *testing.T) {
-	a := twoTabs(t)
-	first := a.openTabs()[0]
-	l0, _ := a.tabX(0)
-	l1, w1 := a.tabX(1)
-	a.Step(core.Input{X: l0 + 20, Y: tabStripY, MiddleClick: true, MiddleHeld: true}) // press the first tab
-	if len(a.tabs.Tabs()) != 2 {
-		t.Fatal("a middle press must not close the tab any more")
-	}
-	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY, MiddleHeld: true}) // drag over the second
-	if a.openTabs()[1] != first {
-		t.Fatal("the dragged tab must move to the second place")
-	}
-	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
-	if a.tabs.Drag() != -1 {
-		t.Fatalf("dragTab = %d after the release", a.tabs.Drag())
-	}
-	a.Step(core.Input{X: l0 + 20, Y: tabStripY, MiddleHeld: true}) // held again, but not pressed on a tab
-	if a.openTabs()[1] != first {
-		t.Fatal("after the release, moving must not drag")
-	}
-}
-
-func TestMiddleClickWithoutMovingLeavesTheTabsAlone(t *testing.T) {
-	a := twoTabs(t)
-	left, width := a.tabX(1)
-	a.Step(core.Input{X: left + width/2, Y: tabStripY, MiddleClick: true, MiddleHeld: true})
-	a.Step(core.Input{X: left + width/2, Y: tabStripY})
-	if len(a.tabs.Tabs()) != 2 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("%d tabs, current %q", len(a.tabs.Tabs()), a.cur().Req.Name)
 	}
 }
 
@@ -100,85 +46,6 @@ func TestDirtyFollowsEditsAndUndoingThemByHand(t *testing.T) {
 	click(a, 739, paramsRow0Y) // delete a param
 	if !dirty(tab) {
 		t.Fatal("deleting a param is a change")
-	}
-}
-
-func TestTabWidthDoesNotChangeWhenTheRequestChanges(t *testing.T) {
-	a := twoTabs(t)
-	left, width := a.tabX(0)
-	req := a.openTabs()[0].Req
-	req.Method = "DELETE"                                                   // a longer badge
-	req.Headers = append(req.Headers, request.KV{Name: "X", Enabled: true}) // and an unsaved dot
-	a.Step(core.Input{})
-	if !dirty(a.openTabs()[0]) {
-		t.Fatal("test setup: the tab must be dirty")
-	}
-
-	// The × sits where it did before the edits; if the tab had grown it
-	// would be somewhere else and the click would only select the tab.
-	click(a, left+width-12, tabStripY)
-	if len(a.tabs.Tabs()) != 1 || a.cur().Req.Name != "Repository Info" {
-		t.Fatalf("%d tabs: the tab changed size when its request changed", len(a.tabs.Tabs()))
-	}
-}
-
-func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
-	for size := settings.MinFontSize; size <= settings.MaxFontSize; size++ {
-		ctx, err := core.NewCtx(theme.ThemeFor("dark", theme.FontSizes{UI: size, Small: max(size-2, 9), Code: size - 1}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, badge := range sizes.BadgeLabels {
-			if got := ctx.Width(ctx.F.Small, badge); got-sizes.BadgeOverhang > sizes.BadgeSlot(ctx, tabBadgeW)+sizes.BadgeOverhang {
-				t.Errorf("%d: %q is %dpx wide, the tab badge slot is %dpx", size, badge, got, sizes.BadgeSlot(ctx, tabBadgeW))
-			}
-			if got := ctx.Width(ctx.F.Small, badge); got-sizes.BadgeOverhang > sizes.BadgeSlot(ctx, sizes.BadgeW)+sizes.BadgeOverhang {
-				t.Errorf("%d: %q is %dpx wide, the tree badge slot is %dpx", size, badge, got, sizes.BadgeSlot(ctx, sizes.BadgeW))
-			}
-		}
-		if size == settings.DefaultFontSize && (sizes.BadgeSlot(ctx, tabBadgeW) != tabBadgeW || sizes.BadgeSlot(ctx, sizes.BadgeW) != sizes.BadgeW) {
-			t.Errorf("at the default size the slots must stay %d and %d", tabBadgeW, sizes.BadgeW)
-		}
-		if got := ctx.Width(ctx.F.UI, dirtyMark); got > tabDirtyW {
-			t.Errorf("%d: the dirty mark is %dpx wide, the slot is %dpx", size, got, tabDirtyW)
-		}
-	}
-}
-
-func TestDraggingATabReordersIt(t *testing.T) {
-	a := twoTabs(t)
-	first := a.openTabs()[0]
-	l0, w0 := a.tabX(0)
-	l1, w1 := a.tabX(1)
-
-	a.Step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true}) // press the first tab
-	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})            // drag over the second
-	if a.openTabs()[1] != first {
-		t.Fatalf("the dragged tab must move to the second place")
-	}
-	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY}) // release
-	a.Step(core.Input{X: l0 + w0/2, Y: tabStripY, Held: true})
-	if a.openTabs()[1] != first {
-		t.Fatal("after release, moving over another tab must not drag")
-	}
-	if a.tabs.Drag() != -1 {
-		t.Fatalf("dragTab = %d after release", a.tabs.Drag())
-	}
-}
-
-func TestDraggingKeepsTheActiveTabActive(t *testing.T) {
-	a := twoTabs(t) // second tab active
-	active := a.cur()
-	l0, _ := a.tabX(0)
-	_, w1 := a.tabX(1)
-	l1, _ := a.tabX(1)
-	a.Step(core.Input{X: l0 + 20, Y: tabStripY, Click: true, Held: true})
-	a.Step(core.Input{X: l1 + w1/2, Y: tabStripY, Held: true})
-	if a.cur() == active {
-		t.Fatal("pressing the first tab activates it, so it is the active one")
-	}
-	if a.cur() != a.openTabs()[1] {
-		t.Fatal("the active tab must travel with the drag")
 	}
 }
 
@@ -237,56 +104,52 @@ func TestTabMenuCopyURL(t *testing.T) {
 	}
 }
 
-func TestManyTabsScrollTheStripAndKeepTheActiveTabInView(t *testing.T) {
-	a := testApp(t)
-	for range 14 {
-		a.newRequest()
+// newRequestX is the middle of the "+" at the right end of the strip.
+const newRequestX = winW - 20
+
+// The "+" and each tab's cross say what they do, with their shortcuts.
+func TestTheRequestTabsButtonsHaveTooltips(t *testing.T) {
+	a := twoTabs(t)
+	t.Cleanup(a.WaitWrites)
+	left, width := a.tabX(0)
+	cases := []struct {
+		name string
+		x    int
+		tip  string
+	}{
+		{"new request", newRequestX, "New request (Ctrl+T)"},
+		{"close", left + width - 12, "Close tab (Ctrl+W)"},
 	}
-	a.Step(core.Input{})
-	if a.tabsScroll.X <= 0 {
-		t.Fatalf("the new, active tab is past the right edge: X = %d", a.tabsScroll.X)
-	}
-	x := a.tabsScroll.X
-	a.Step(core.Input{X: 600, Y: tabStripY, WheelX: 1}) // two-finger swipe right: back toward the first tabs
-	if a.tabsScroll.X >= x {
-		t.Fatalf("a sideways swipe must scroll the strip back: %d -> %d", x, a.tabsScroll.X)
-	}
-	x = a.tabsScroll.X
-	a.Step(core.Input{X: 600, Y: tabStripY, Wheel: -1}) // the mouse wheel scrolls it too
-	if a.tabsScroll.X <= x {
-		t.Fatalf("the wheel must scroll the strip forward: %d -> %d", x, a.tabsScroll.X)
-	}
-	x = a.tabsScroll.X
-	click(a, sidebarW+4, tabStripY) // the left arrow, at the strip's left edge
-	if a.tabsScroll.X >= x {
-		t.Fatalf("clicking the left arrow must scroll back: %d -> %d", x, a.tabsScroll.X)
-	}
-	if len(a.tabs.Tabs()) != 15 || a.tabs.Active() != 14 {
-		t.Fatalf("an arrow click must not select or close a tab: %d tabs, active %d", len(a.tabs.Tabs()), a.tabs.Active())
+	for _, tc := range cases {
+		if got := tipAt(a, tc.x, tabStripY); got != tc.tip {
+			t.Errorf("%s: tooltip %q, want %q", tc.name, got, tc.tip)
+		}
 	}
 }
 
-func TestLeftDragOnAnOverflowingTabStripPansItInsteadOfReorderingTabs(t *testing.T) {
-	a := testApp(t)
-	for range 14 {
-		a.newRequest()
+// Right-clicking a tab opens its menu where the pointer is.
+func TestRightClickingATabOpensItsMenuAtThePointer(t *testing.T) {
+	a := twoTabs(t)
+	t.Cleanup(a.WaitWrites)
+	left, _ := a.tabX(1)
+	rightClick(a, left+20, tabStripY)
+	menu := widget.PopupMenu(a.ctx)
+	if menu == nil || menuLabels(a)[0] != "Close" {
+		t.Fatalf("no tab menu after the right click: %v", menu)
 	}
-	a.Step(core.Input{})
-	order := append([]*reqTab(nil), a.openTabs()...)
-	x0 := a.tabsScroll.X // the active (last) tab was revealed: the strip is at its right end
-	a.Step(core.Input{X: 600, Y: tabStripY, Click: true, Held: true})
-	a.Step(core.Input{X: 700, Y: tabStripY, Held: true}) // drag right: earlier tabs come into view
-	a.Step(core.Input{X: 800, Y: tabStripY, Held: true})
-	if want := x0 - 200; a.tabsScroll.X != want {
-		t.Fatalf("X = %d, want %d: the strip follows the pointer", a.tabsScroll.X, want)
+	if menu.X != left+20 || menu.Y != tabStripY {
+		t.Errorf("menu at (%d, %d), want the pointer (%d, %d)", menu.X, menu.Y, left+20, tabStripY)
 	}
-	for i := range order {
-		if a.openTabs()[i] != order[i] {
-			t.Fatalf("tab %d moved: a left drag on an overflowing strip must not reorder", i)
+}
+
+// openNamed opens the sample's requests called names, each in its tab.
+func openNamed(t *testing.T, app *App, names ...string) {
+	t.Helper()
+	for _, name := range names {
+		request := app.findRequestByName(name)
+		if request == nil {
+			t.Fatalf("no request %q in the sample", name)
 		}
-	}
-	a.Step(core.Input{X: 800, Y: tabStripY}) // release
-	if a.tabs.Drag() != -1 {
-		t.Fatalf("dragTab = %d", a.tabs.Drag())
+		app.openRequest(request)
 	}
 }

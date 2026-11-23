@@ -52,7 +52,8 @@ flowchart LR
 
 ### Window
 
-The window is VML views (`window.go`, `tree_sidebar.go`, `requesttabs.go`, `request_urlbar.go`);
+The window is VML views (`window.go`, `tree_sidebar.go`, `request_urlbar.go`);
+the request tab strip is the component `ui/tabstrip` (`App.strip`, built in `NewApp`): it owns its scroll, ends a tab drag on release in `BeginFrame` (called in `beginFrame` before `kv.BeginFrame`), and asks `tabstripHost` (`window_hosts.go`) for the tabs (`Update` is `updateTabs`), the dirty and stripe marks, the tab menu (still built by the App), a new request and the hints; the drag index stays in `tabs.Set`;
 the status bar is the component `ui/statusbar` (`App.bar`, built in `NewApp`; it reads the status line and opens the log and the welcome dialog through its `Deps`), the fixed widths and `StatusH` are `ui/sizes`, and the status line is `workspace/notice` (`App.notices`; the toasts stay in `App` until the overlays move); `responseStatus` stays in `window.go` until the response pane moves; handlers are closures that change the `App`. Panes are tables, not switches:
 
 - `requestPanes`, `connectionRequestPanes`, `grpcRequestPanes` and `responsePanes` list the tabs;

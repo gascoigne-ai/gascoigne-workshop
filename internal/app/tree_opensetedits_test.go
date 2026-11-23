@@ -29,11 +29,19 @@ func tabIndex(t *testing.T, app *App, req *request.Request) int {
 	return -1
 }
 
-// shownTab is what the strip shows of the tab of req: its name and mark.
-func shownTab(t *testing.T, app *App, req *request.Request) requestTabItem {
+// stripTab is what the strip shows of one tab: its name, mark and stripe.
+type stripTab struct {
+	Name   string
+	Dirty  bool
+	Stripe core.Token
+}
+
+// shownTab is what the strip shows of the tab of req, as the host tells it.
+func shownTab(t *testing.T, app *App, req *request.Request) stripTab {
 	t.Helper()
-	index := tabIndex(t, app, req)
-	return app.requestTab(index, app.openTabs()[index])
+	tab := app.tabs.Tabs()[tabIndex(t, app, req)]
+	host := tabstripHost{app}
+	return stripTab{Name: tab.Req.Name, Dirty: host.Dirty(tab), Stripe: host.Stripe(tab.Req)}
 }
 
 // activate makes the tab of req the active one.

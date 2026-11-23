@@ -18,6 +18,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
 	"time"
@@ -35,9 +36,10 @@ type App struct {
 	settingsState
 
 	ctx        *core.Ctx
-	kv         *kvtable.Component // the key-value tables of the request pane
-	retryDelay time.Duration      // wait before a dropped connection reopens
-	baseScale  float64            // the platform's interface factor under the user's scale
+	kv         *kvtable.Component  // the key-value tables of the request pane
+	strip      *tabstrip.Component // the strip of open requests above the request pane
+	retryDelay time.Duration       // wait before a dropped connection reopens
+	baseScale  float64             // the platform's interface factor under the user's scale
 	reg        request.Registry
 	cols       *collections.Library      // the open collections, in tree order, each with its folder and environment, and what is done to whole ones
 	sample     func() request.Collection // the collection shown when nothing is saved or configured

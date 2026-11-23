@@ -13,6 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -474,7 +475,7 @@ func openBodyPane(t *testing.T) *App {
 func (a *App) tabX(index int) (left, width int) {
 	x := 260
 	for j, t := range a.openTabs() {
-		wd := 14 + tabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.Req.Name) + 8 + tabDirtyW + 24
+		wd := 14 + sizes.TabBadgeW + 8 + a.ctx.Width(a.ctx.F.UI, t.Req.Name) + 8 + sizes.TabDirtyW + 24
 		if j == index {
 			return x, wd
 		}

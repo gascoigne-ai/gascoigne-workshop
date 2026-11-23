@@ -66,6 +66,9 @@ const (
 	SendMsgMinW    = 70  // the Send button of the message composer
 
 	// Tabs, the header and the sidebar tree.
+	TabsH         = 42  // the request tab row: a tab's height plus the room above it
+	TabBadgeW     = 48  // the slot of a request tab's method badge, so editing never changes the tab's width
+	TabDirtyW     = 12  // the slot of a request tab's unsaved dot
 	TabStripeW    = 3   // the collection color stripe of a request tab
 	TabLabelInset = 11  // room before the label of a request tab, past the stripe
 	TabCloseW     = 24  // the close slot of a request tab

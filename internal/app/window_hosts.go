@@ -377,3 +377,34 @@ func (host kvtableHost) ToggleSecret(row int) { host.toggleSecret(row) }
 func (host kvtableHost) CellStyler(req *request.Request) func(string) []widget.Span {
 	return host.cellStyler(req)
 }
+
+// tabstripHost is what the request tab strip asks of the App (tabstrip.Deps).
+type tabstripHost struct{ *App }
+
+// Tabs are the open tabs, in the order of the strip.
+func (host tabstripHost) Tabs() []*tabs.Tab { return host.tabs.Tabs() }
+
+// Active is the index of the current tab.
+func (host tabstripHost) Active() int { return host.tabs.Active() }
+
+// Update applies msg to the open tabs, with what a change of them drags along.
+func (host tabstripHost) Update(msg tabs.Msg) { host.updateTabs(msg) }
+
+// Dirty reports whether tab's request differs from its saved copy.
+func (host tabstripHost) Dirty(tab *tabs.Tab) bool { return host.tabDirty(host.widgets[tab]) }
+
+// Stripe is the color of the collection holding req.
+func (host tabstripHost) Stripe(req *request.Request) w.Token {
+	return host.collectionToken(request.Node{Req: req})
+}
+
+// OpenTabMenu opens the menu of tab index at the pointer.
+func (host tabstripHost) OpenTabMenu(posX, posY, index int) {
+	host.openMenu(posX, posY, host.tabMenuItems(index))
+}
+
+// NewRequest opens a new request in the selected folder.
+func (host tabstripHost) NewRequest() { host.newRequest() }
+
+// Hint is label with the shortcut of action.
+func (host tabstripHost) Hint(label, action string) string { return host.hint(label, action) }

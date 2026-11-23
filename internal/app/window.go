@@ -16,18 +16,13 @@ import (
 const (
 	sidebarW = 260           // the collections tree's default width
 	headerH  = sizes.HeaderH // the banner: title, environment chip, settings
-	tabsH    = 42            // the request tab row: a tab's height plus the room above it
+	tabsH    = sizes.TabsH   // the request tab row: a tab's height plus the room above it
 	urlH     = 56            // the URL bar: its controls plus padding above and below
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
 	minMainW    = 420
 	minPaneSize = 220
-
-	// A request tab has fixed slots for the method badge and the unsaved
-	// dot, so editing a request never changes the tab's width.
-	tabBadgeW = 48
-	tabDirtyW = 12
 )
 
 // sidebarWidth is the current width of the sidebar in pixels.
@@ -54,7 +49,7 @@ func (a *App) view() Node {
 		"minMainW":       minMainW,
 		"sidebar":        a.side.View(a.ctx),
 		"header":         a.header(),
-		"requestTabs":    a.requestTabs(),
+		"requestTabs":    a.strip.View(a.ctx),
 		"urlBar":         a.urlBar(t),
 		"paneSplit":      &a.paneSplit,
 		"minPaneSize":    minPaneSize,

@@ -1,7 +1,6 @@
-package app
+package tabstrip
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
@@ -11,14 +10,14 @@ import (
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-var requestTabsTemplate = markup.Must("requesttabs.vml", requesttabsSource)
+var template = markup.Must("requesttabs.vml", source)
 
 // tabSeparatorInset keeps the line between two tabs off the strip's
 // edges, so the tabs read as one strip and not as boxes.
 const tabSeparatorInset = 12
 
-// requestTabItem is what the strip's template shows of one open request.
-type requestTabItem struct {
+// tabItem is what the strip's template shows of one open request.
+type tabItem struct {
 	Badge  string  // the request's method or protocol
 	Color  w.Token // the badge's color
 	Name   string
@@ -34,41 +33,41 @@ type requestTabItem struct {
 	Close       func()
 }
 
-// requestTabs is the strip of open requests, with a "+" for a new one.
-func (a *App) requestTabs() Node {
-	var items []requestTabItem
-	for i, tab := range a.openTabs() {
-		items = append(items, a.requestTab(i, tab))
+// View is the strip of open requests, with a "+" for a new one.
+func (c *Component) View(ctx *w.Ctx) Node {
+	var items []tabItem
+	for i, tab := range c.deps.Tabs.Tabs() {
+		items = append(items, c.item(i, tab))
 	}
-	return requestTabsTemplate.MustBuild(a.scope(markup.Scope{
+	return template.MustBuild(sizes.Scope(ctx, markup.Scope{
 		"looseGap":   w.LooseGap,
-		"tabsH":      tabsH,
+		"tabsH":      sizes.TabsH,
 		"tabGap":     w.TabGap,
-		"tabsScroll": &a.tabsScroll,
+		"tabsScroll": &c.scroll,
 		"tabs":       items,
-		"tabBadgeW":  sizes.BadgeSlot(a.ctx, tabBadgeW),
-		"tabDirtyW":  tabDirtyW,
-		"dirtyMark":  dirtyMark,
-		"closeTip":   a.hint("Close tab", "close-tab"),
-		"newRequest": a.newRequest,
-		"newTip":     a.hint("New request", "new-request"),
+		"tabBadgeW":  sizes.BadgeSlot(ctx, sizes.TabBadgeW),
+		"tabDirtyW":  sizes.TabDirtyW,
+		"dirtyMark":  DirtyMark,
+		"closeTip":   c.deps.Hints.Hint("Close tab", "close-tab"),
+		"newRequest": c.deps.Requests.NewRequest,
+		"newTip":     c.deps.Hints.Hint("New request", "new-request"),
 	}))
 }
 
-// requestTab is the view model of tab i: badge, name, dirty mark and handlers.
-func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
-	item := requestTabItem{
+// item is the view model of tab index: badge, name, dirty mark and handlers.
+func (c *Component) item(index int, tab *tabs.Tab) tabItem {
+	item := tabItem{
 		Badge:       theme.RequestBadge(tab.Req.Protocol, tab.Req.Method),
 		Color:       theme.MethodToken(tab.Req.Method),
 		Name:        tab.Req.Name,
-		Dirty:       a.tabDirty(tab),
-		Active:      index == a.tabs.Active(),
-		Stripe:      a.collectionToken(request.Node{Req: tab.Req}),
-		Press:       func() { a.pressTab(index) },
-		MiddlePress: func() { a.updateTabs(tabs.DragBegin{Index: index}) },
-		DragOver:    func() { a.updateTabs(tabs.DragOver{Index: index}) },
-		Menu:        func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.tabMenuItems(index)) },
-		Close:       func() { a.closeTab(index) },
+		Dirty:       c.deps.Marks.Dirty(tab),
+		Active:      index == c.deps.Tabs.Active(),
+		Stripe:      c.deps.Marks.Stripe(tab.Req),
+		Press:       func() { c.press(index) },
+		MiddlePress: func() { c.deps.Tabs.Update(tabs.DragBegin{Index: index}) },
+		DragOver:    func() { c.deps.Tabs.Update(tabs.DragOver{Index: index}) },
+		Menu:        func(pointerX, pointerY int) { c.deps.Menus.OpenTabMenu(pointerX, pointerY, index) },
+		Close:       func() { c.deps.Tabs.Update(tabs.Close{Index: index}) },
 	}
 	if index > 0 {
 		item.Separator = tabSeparatorInset
@@ -76,18 +75,18 @@ func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 	return item
 }
 
-// pressTab activates tab i and starts dragging it, unless the strip
+// press activates tab index and starts dragging it, unless the strip
 // overflows: a left drag then pans the strip, and the middle button reorders.
-func (a *App) pressTab(index int) {
-	a.updateTabs(tabs.Activate{Index: index})
-	if !a.tabsScroll.Overflowing {
-		a.updateTabs(tabs.DragBegin{Index: index})
+func (c *Component) press(index int) {
+	c.deps.Tabs.Update(tabs.Activate{Index: index})
+	if !c.scroll.Overflowing {
+		c.deps.Tabs.Update(tabs.DragBegin{Index: index})
 	}
 }
 
-// Templates, parsed once above.
+// Template, parsed once above.
 const (
-	requesttabsSource = `<row h="{{tabsH}}" pad-t="{{tabGap}}" bg="frame" control="tabstrip" border-b="border">
+	source = `<row h="{{tabsH}}" pad-t="{{tabGap}}" bg="frame" control="tabstrip" border-b="border">
   <hscroll state="tabsScroll" grow="1">
     <!-- inactive tabs blend into the strip; the active one joins the pane. A middle drag reorders, like a left one -->
     <row for="tab in tabs" active-tab="{{tab.Active}}" separator="{{tab.Separator}}" on-middle-click="tab.MiddlePress" on-right-click="tab.Menu">

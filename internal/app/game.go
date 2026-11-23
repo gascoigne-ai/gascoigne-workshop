@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -71,9 +70,7 @@ func (a *App) beginFrame(in core.Input) bool {
 	a.ctx.Tick++
 	a.ctx.In = in
 	a.ctx.Cursor = core.CursorDefault
-	if !in.Held && !in.MiddleHeld {
-		a.updateTabs(tabs.DragEnd{})
-	}
+	a.strip.BeginFrame(in)
 	a.kv.BeginFrame(in)
 	drained := a.drain()
 	pruned := a.pruneToasts()
