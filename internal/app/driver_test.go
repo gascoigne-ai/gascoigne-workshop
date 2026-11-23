@@ -541,7 +541,7 @@ func TestDriverOpensTheFormOfTheNamedTool(t *testing.T) {
 	if err != nil || !opened {
 		t.Fatalf("opened %v err %v, want the form open", opened, err)
 	}
-	if a.dialog == nil || a.dialog.form == nil || a.dialog.Title != "Call search" {
+	if a.dialog == nil || a.dialog.content == nil || a.dialog.Title != "Call search" {
 		t.Fatalf("dialog %+v, want the form of search", a.dialog)
 	}
 }

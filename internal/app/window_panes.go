@@ -222,7 +222,7 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 	paneAuth:       (*App).authPaneView,
 	paneResponse:   (*App).responsePaneView,
 	paneMessages:   (*App).messagesPane,
-	paneExplorer:   (*App).explorerPane,
+	paneExplorer:   (*App).explorerPaneView,
 	paneAssertions: (*App).assertionsPaneView,
 	paneTable:      (*App).tablePane,
 	paneProto:      (*App).protoPaneView,
@@ -242,6 +242,12 @@ func (a *App) responsePanesFor(tab *reqTab) []pane {
 		return viewOf(tab.Req.Protocol).streamPanes
 	}
 	return responsePanes
+}
+
+// explorerPaneView is the MCP explorer, drawn by the mcp component. It
+// ignores the scroll it is handed: the explorer scrolls its own lists.
+func (a *App) explorerPaneView(_ pane, tab *reqTab, _ *ScrollState) Node {
+	return a.mcp.View(a.ctx, tab.Tab)
 }
 
 // messagesPane is the Messages pane, drawn by the ws component. It ignores

@@ -2,11 +2,9 @@ package app
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 func searchTool() request.MCPTool {
@@ -26,88 +24,12 @@ func schemaOf(text string) request.JSONSchema {
 	return schema
 }
 
-func dialogButtonNamed(t *testing.T, app *App, label string) widget.DialogButton {
-	t.Helper()
-	for _, button := range app.dialog.Buttons {
-		if button.Label == label {
-			return button
-		}
-	}
-	t.Fatalf("no %q button in %+v", label, app.dialog.Buttons)
-	return widget.DialogButton{}
-}
-
-func TestPickingAToolWithPropertiesOpensAFormWithTheDefaults(t *testing.T) {
-	a := testApp(t)
-	a.openToolForm(a.cur(), searchTool())
-	if a.dialog == nil || a.dialog.form == nil {
-		t.Fatal("no form opened")
-	}
-	form := a.dialog.form
-	if got := form.Inputs["limit"].Text; got != "10" {
-		t.Errorf("the default fills the field, got %q", got)
-	}
-	if got := form.Inputs["query"].Text; got != "" {
-		t.Errorf("query = %q", got)
-	}
-	if form.Choices["safe"] != "" || form.Choices["sort"] != "" {
-		t.Errorf("an optional boolean and an optional enum start unset: %v", form.Choices)
-	}
-}
-
-func TestFillingTheFormComposesATypedCall(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	a.openToolForm(tab, searchTool())
-	form := a.dialog.form
-	form.Inputs["query"].Text = "go"
-	form.Inputs["limit"].Text = "5"
-	form.Choices["safe"] = "true"
-	form.Choices["sort"] = "desc"
-	dialogButtonNamed(t, a, "Fill composer").Run()
-	if a.dialog != nil {
-		t.Fatal("the form closes once the call is composed")
-	}
-	if want := `call search {"query":"go","limit":5,"safe":true,"sort":"desc"}`; a.ws.Composer(tab.Tab).Text != want {
-		t.Fatalf("composer = %q, want %q", a.ws.Composer(tab.Tab).Text, want)
-	}
-}
-
-func TestAFormWithAnInvalidValueStaysOpenAndSaysWhich(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	a.ws.Composer(tab.Tab).Text = "unchanged"
-	a.openToolForm(tab, searchTool())
-	form := a.dialog.form
-	form.Inputs["query"].Text = "go"
-	form.Inputs["limit"].Text = "lots"
-	dialogButtonNamed(t, a, "Fill composer").Run()
-	if a.dialog == nil || !strings.Contains(form.Problem, "limit must be a number") {
-		t.Fatalf("dialog %v problem %q", a.dialog, form.Problem)
-	}
-	if a.ws.Composer(tab.Tab).Text != "unchanged" {
-		t.Fatalf("the composer changed to %q", a.ws.Composer(tab.Tab).Text)
-	}
-}
-
-func TestPickingAToolWithoutPropertiesComposesItRightAway(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	a.openToolForm(tab, request.MCPTool{Name: "ping"})
-	if a.dialog != nil {
-		t.Fatal("a tool with no arguments needs no form")
-	}
-	if a.ws.Composer(tab.Tab).Text != "call ping {}" {
-		t.Fatalf("composer = %q", a.ws.Composer(tab.Tab).Text)
-	}
-}
-
 func TestDialogsWithAndWithoutAFormDrawWithoutPanicking(t *testing.T) {
 	a := testApp(t)
 	a.prompt("Name", "x", "OK", func(string) {})
 	a.Step(core.Input{})
 	a.closeDialog()
-	a.openToolForm(a.cur(), searchTool())
+	a.mcp.OpenToolForm(a.cur().Tab, searchTool())
 	a.Step(core.Input{})
 	if a.dialog == nil {
 		t.Fatal("the form closed by itself")

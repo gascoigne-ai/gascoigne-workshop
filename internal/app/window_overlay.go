@@ -6,7 +6,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/overlay"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
 
 	"github.com/hajimehoshi/ebiten/v2"
 
@@ -20,10 +19,11 @@ import (
 // built into the window's Stack after everything else, newest on top.
 
 // dialog is a message dialog (the toolkit's DialogState) that may also
-// carry the typed form of an MCP tool, drawn between its body and input.
+// carry a content of its own, drawn between its body and input: the typed
+// form of an MCP tool, which the mcp component owns and hands in through
+// mcpHost.Open.
 type dialog struct {
 	DialogState
-	form *mcpform.Form
 	move MoveState // where the user dragged it
 	// content builds the dialog's own body, between the lead text and the
 	// buttons; width is the panel's width, zero for a message dialog's.
@@ -182,15 +182,12 @@ func (a *App) pickerView() Node {
 	return a.picker.View(a.ctx, a.pickerHost)
 }
 
-// dialogForm is the typed form of a dialog, nothing for the others.
+// dialogForm is the content of a dialog, nothing for the others.
 func (a *App) dialogForm(open *dialog) Node {
-	if open.content != nil {
-		return open.content()
-	}
-	if open.form == nil {
+	if open.content == nil {
 		return nil
 	}
-	return open.form.View(a.ctx, a)
+	return open.content()
 }
 
 // openLayers are the things Escape can close right now.
@@ -230,7 +227,7 @@ func (a *App) escape() {
 
 // Templates, parsed once above.
 const (
-	dialogSource = `<!-- An MCP tool's typed form, when the dialog has one, sits between its body and its input. -->
+	dialogSource = `<!-- A dialog's own content, an MCP tool's typed form for one, sits between its body and its input. -->
 <message-dialog w="{{width}}" state="state" moved="move" on-dismiss="dismiss">
   <slot if="form" name="form"/>
 </message-dialog>

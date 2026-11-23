@@ -20,6 +20,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/graphql"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/grpc"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
@@ -51,6 +52,7 @@ type App struct {
 	ws         *ws.Component         // the Messages pane: the log, its toolbar and the composer of each socket tab
 	graphql    *graphql.Component    // the variables and schema buttons of a GraphQL body, per tab
 	grpc       *grpc.Component       // the gRPC method picker, the Stream switch and the Proto pane of each tab
+	mcp        *mcp.Component        // the MCP explorer, the tool call form and the sampling dialog of each tab
 	auth       *auth.Component       // the Auth pane, the trust prompt and the cookie jar view
 	body       *body.Component       // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab
 	urlbar     *urlbar.Component     // the bar above the request pane: URL fields, chips and the Send button

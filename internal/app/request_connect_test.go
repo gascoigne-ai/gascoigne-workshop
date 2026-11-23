@@ -218,8 +218,8 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if len(tab.Tools) != 2 {
 		t.Fatalf("tools %+v", tab.Tools)
 	}
-	a.openToolForm(tab, tab.Tools[0]) // a tool with properties opens its form; its defaults make the call
-	if a.dialog == nil || a.dialog.form == nil {
+	a.mcp.OpenToolForm(tab.Tab, tab.Tools[0]) // a tool with properties opens its form; its defaults make the call
+	if a.dialog == nil || a.dialog.content == nil {
 		t.Fatal("picking a tool with arguments opens the form")
 	}
 	for _, button := range a.dialog.Buttons {
@@ -230,7 +230,7 @@ func TestMCPToolsFillTheComposerFromTheirSchemas(t *testing.T) {
 	if got := a.ws.Composer(tab.Tab).Text; got != `call search {"q":"","limit":5}` {
 		t.Fatalf("composer %q", got)
 	}
-	a.openToolForm(tab, tab.Tools[1])
+	a.mcp.OpenToolForm(tab.Tab, tab.Tools[1])
 	if got := a.ws.Composer(tab.Tab).Text; got != "call ping {}" {
 		t.Fatalf("composer %q", got)
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
 	kvlogic "github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/respview"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
@@ -789,6 +790,63 @@ func (host responseHost) ResponseView() string { return host.settings.ResponseVi
 // Now is the time of the frame.
 func (host responseHost) Now() time.Time { return host.now() }
 
+// mcpHost is what the MCP component asks of the App (mcp.Deps).
+type mcpHost struct{ *App }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host mcpHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// Run does work in the background and runs the answer it returns on the UI
+// goroutine.
+func (host mcpHost) Run(work func() (answer func())) {
+	host.bus.Run(context.Background(), func(context.Context) bus.Msg {
+		if answer := work(); answer != nil {
+			return answer
+		}
+		return nil
+	})
+}
+
+// Dispatch runs run on the UI goroutine.
+func (host mcpHost) Dispatch(run func()) { host.bus.Dispatch(run) }
+
+// SetComposer replaces the text of the composer of tab.
+func (host mcpHost) SetComposer(tab *tabs.Tab, text string) { host.ws.SetComposer(tab, text) }
+
+// ComposeCall puts the call of tool into the composer of tab.
+func (host mcpHost) ComposeCall(tab *tabs.Tab, tool request.MCPTool) {
+	host.ws.ComposeCall(tab, tool)
+}
+
+// Open shows state as the dialog of the window, with content as its own
+// body when it has one. The returned func closes that dialog and no other.
+func (host mcpHost) Open(state widget.DialogState, content func(ctx *w.Ctx) Node) func() {
+	open := &dialog{DialogState: state}
+	if content != nil {
+		open.content = func() Node { return content(host.ctx) }
+	}
+	host.dialog = open
+	return func() {
+		if host.dialog == open {
+			host.dialog = nil
+		}
+	}
+}
+
+// Busy reports whether a dialog is open.
+func (host mcpHost) Busy() bool { return host.dialog != nil }
+
+// StateText is what the explorer says of a connection in state, the words
+// of the connection bar.
+func (host mcpHost) StateText(state tabs.ConnState) string { return ws.StateText(state) }
+
+// CodeLines are the colored lines of a JSON answer, as the response shows
+// them.
+func (host mcpHost) CodeLines(body []byte) []widget.Line { return respview.CodeLines(body) }
+
+// RawLines are the plain lines of an answer that is not JSON.
+func (host mcpHost) RawLines(body []byte) []widget.Line { return respview.RawLines(body) }
+
 // wsHost is what the Messages pane asks of the App (ws.Deps).
 type wsHost struct{ *App }
 
@@ -804,7 +862,7 @@ func (host wsHost) Queue(tab *tabs.Tab, send outbox.Send) { host.sendInOrder(hos
 
 // OpenToolForm shows the form of tool; its answer fills the composer of tab.
 func (host wsHost) OpenToolForm(tab *tabs.Tab, tool request.MCPTool) {
-	host.openToolForm(host.widgets[tab], tool)
+	host.mcp.OpenToolForm(tab, tool)
 }
 
 // Open shows a menu at the pointer.

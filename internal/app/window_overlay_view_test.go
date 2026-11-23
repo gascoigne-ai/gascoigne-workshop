@@ -1,12 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"strings"
 	"testing"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
@@ -27,17 +27,20 @@ var overlaySizes = []struct {
 // sampling request (a long body and an input).
 var dialogKinds = []struct {
 	name string
-	open func(app *App)
+	open func(t *testing.T, app *App)
 }{
-	{"confirm", func(app *App) {
+	{"confirm", func(_ *testing.T, app *App) {
 		app.confirm("Delete Search Repos?", "This cannot be undone.", "Delete", func() {})
 	}},
-	{"prompt", func(app *App) {
+	{"prompt", func(_ *testing.T, app *App) {
 		app.prompt("Rename", "Search Repos", "Rename", func(string) {})
 	}},
-	{"toolform", func(app *App) { app.openToolForm(app.cur(), searchTool()) }},
-	{"sampling", func(app *App) {
-		app.openSamplingDialog(samplingAsked, make(chan request.SamplingResult, 1), make(chan struct{}, 1))
+	{"toolform", func(_ *testing.T, app *App) { app.mcp.OpenToolForm(app.cur().Tab, searchTool()) }},
+	{"sampling", func(t *testing.T, app *App) {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+		go app.mcp.Sample(ctx, samplingAsked)
+		until(t, app, "the sampling dialog", func() bool { return app.dialog != nil })
 	}},
 }
 
@@ -50,7 +53,7 @@ func TestTheDialogLaysOutAsPinned(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.WaitWrites)
-				kind.open(a)
+				kind.open(t, a)
 				assertDumpPinned(t, a, Stack(a.dialogView()), name, size.width, size.height)
 			})
 		}

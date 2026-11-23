@@ -3,11 +3,9 @@ package app
 import (
 	"context"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp/mcpform"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"slices"
@@ -17,7 +15,6 @@ import (
 type reqTab struct {
 	*tabs.Tab
 	socketBlock
-	mcpBlock
 	responseBlock
 	paneTab   int
 	bodyView  widget.CodeView    // request body, read-only
@@ -31,15 +28,6 @@ type reqTab struct {
 type socketBlock struct {
 	wsCancel context.CancelFunc // ends the timeout of the connect in progress
 	outbox   outbox.Outbox      // the sends and pings in order, and whether one is in flight
-}
-
-// mcpBlock holds the state of an MCP tab: the explorer, the form of the open entry and its answer.
-type mcpBlock struct {
-	explorer     mcpexplorer.State  // the MCP explorer: the list shown, the open entry, its answer
-	form         *mcpform.Form      // the argument form of the open entry, nil for none
-	resultView   widget.CodeView    // the last answer of the explorer
-	listScroll   widget.ScrollState // scroll of the explorer's list
-	detailScroll widget.ScrollState // scroll of the open entry
 }
 
 // responseBlock holds what the response area keeps per tab outside the
@@ -105,7 +93,6 @@ func newTab(req *request.Request) *reqTab { return newReqTab(tabs.New(req)) }
 func newReqTab(tab *tabs.Tab) *reqTab {
 	t := &reqTab{Tab: tab}
 	t.wsCancel = func() {}
-	t.explorer = mcpexplorer.New()
 	return t
 }
 

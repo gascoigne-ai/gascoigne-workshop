@@ -240,7 +240,7 @@ func (d *Driver) OpenToolForm(name string) (opened bool, err error) {
 	tab := d.app.cur()
 	for _, tool := range tab.Tools {
 		if tool.Name == name {
-			d.app.openToolForm(tab, tool)
+			d.app.mcp.OpenToolForm(tab.Tab, tool)
 			return true, nil
 		}
 	}
