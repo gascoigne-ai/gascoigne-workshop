@@ -65,8 +65,15 @@ the status bar is the component `ui/statusbar` (`App.bar`, built in `NewApp`; it
 
 ### Collection tree in the UI
 
-`treeops.go`, `treemenu.go`, `treedrag.go`. Context menus and drag act on `App.selected`. A drop
-builds a `transfer.Drop` and `App.transferNode` applies it, in one collection or across two; Alt
+The sidebar is the component `ui/sidebar` (`App.side`, built in `NewApp`). It owns the filter, the sent log, the
+scroll and the tree state `ui/sidebar/logic.Tree`: the selected node, the open folders (a map keyed by folder
+pointer, read once per row per frame), who has the keyboard and the drag. `Drag.Phase` (idle, pressed, dragging)
+is computed from its fields, so no flag can disagree with them. Its menus and keys ask the App through the
+narrow interfaces of `sidebar.Deps`, which `sidebarHost` and `collectionHost` (`window_hosts.go`) answer;
+store work (`applyTree`, rename, delete, duplicate, `transferNode`, import, export, the destination picker)
+stays in `treeops.go`, `tree_import.go`, `tree_collections.go` and `tree_openset.go`. A drag is resolved in
+`beginFrame` (`side.BeginFrame`): a release over another row builds `transfer.Drop` and `App.transferNode`
+applies it, in one collection or across two; Alt
 copies (the user's choices and what was rejected: the `transfer` package doc). Across collections:
 
 - the target is written before the source (`flushMoved`); a failed target write leaves the source
@@ -82,8 +89,9 @@ The drop outline is the row's `DropBorder` token, empty when not the target.
 - **Focus**: `core.Ctx.FocusOwner` is the one owner of the keyboard. The app asks for focus by
   setting a state's `Focused`; `view.Update` makes the last asker the owner and blurs the rest, so
   no code clears the old owner by hand.
-- **Keys**: `routeKeys` (`game.go`) gives the frame's keys to the overlay, the tree, the shortcuts
-  or the table undo, in that order of claim. Escape closes one layer per press, the topmost in
+- **Keys**: `routeKeys` (`game.go`) gives the frame's keys to the overlay, the sidebar (`sidebar.Keys`:
+  Up, Down, Enter, F2 and Delete while the tree has the keyboard; its result is not read yet, the shortcuts
+  still run in that frame), the shortcuts or the table undo, in that order. Escape closes one layer per press, the topmost in
   `feature/workspace/overlay`'s order, ending with cancelling a running request.
 - **Shortcuts**: the `shortcuts` table (`settings_shortcuts.go`) holds each action with a stable `id` and its
   default. A user binding is `settings.Shortcuts[id]`, stored only when it differs from the default.

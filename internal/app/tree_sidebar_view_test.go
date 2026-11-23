@@ -39,14 +39,13 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 			app.typeText("search/repos")
 		}},
 		{"drop", func(app *App) {
-			app.dragNode = request.Of(findReq(app, "Repository Info"))
-			app.dropTarget = request.Of(app.col().Folders[1])
+			holdDrag(app, request.Of(findReq(app, "Repository Info")), request.Of(app.col().Folders[1]))
 		}},
 		{"drop-self", func(app *App) {
 			info := findReq(app, "Repository Info")
-			app.dragNode, app.dropTarget = request.Of(info), request.Of(info)
+			holdDrag(app, request.Of(info), request.Of(info))
 		}},
-		{"sent", func(app *App) { app.showSent = true }},
+		{"sent", func(app *App) { app.side.SetShowSent(true) }},
 		{"empty", func(app *App) { app.closeCollection(app.col()) }},
 	}
 	sizes := []struct {
@@ -63,7 +62,7 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 				a := testApp(t)
 				t.Cleanup(a.WaitWrites)
 				tc.setup(a)
-				root := a.sidebar()
+				root := a.side.View(a.ctx)
 				Layout(a.ctx, root, size.width, sidebarPinH)
 				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 				if err != nil {
@@ -83,11 +82,11 @@ func TestTheSidebarChipSwitchesBetweenTreeAndSentLog(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	clickText(t, a, "Collections", 0)
-	if !a.showSent {
+	if !a.side.ShowSent() {
 		t.Fatal("clicking Collections did not show the sent log")
 	}
 	clickText(t, a, "Sent", 0)
-	if a.showSent {
+	if a.side.ShowSent() {
 		t.Fatal("clicking Sent did not show the tree")
 	}
 	textCenter(t, a, "Collections")
@@ -112,7 +111,7 @@ func TestTheFilterMatchInATreeRowIsDrawnInTheAccentLine(t *testing.T) {
 			t.Cleanup(a.WaitWrites)
 			clickDumped(t, a, "control=field", 0) // the filter field, the first field of the window
 			a.typeText(tc.filter)
-			root := a.sidebar()
+			root := a.side.View(a.ctx)
 			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
 			line := dumpLineWithText(t, Dump(root), tc.match)
 			if want := "fg=" + string(core.AccentLine); !strings.Contains(line, want) {
@@ -143,8 +142,8 @@ func TestARootRowNameIsBoldAndAFolderNameIsNot(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a, _, _ := twoCollectionsApp(t)
 			t.Cleanup(a.WaitWrites)
-			a.filter.Text = tc.filter
-			root := a.sidebar()
+			a.side.Filter().Text = tc.filter
+			root := a.side.View(a.ctx)
 			Layout(a.ctx, root, sidebarW-1, sidebarPinH)
 			line := dumpLineWithText(t, Dump(root), tc.text)
 			if got := strings.Contains(line, "bold=true"); got != tc.bold {
@@ -185,11 +184,12 @@ func TestDraggingOverATreeRowMakesItTheDropTarget(t *testing.T) {
 			t.Cleanup(a.WaitWrites)
 			a.Step(core.Input{X: 100, Y: treeRowY(rowInfo), Click: true, Held: true})
 			a.Step(core.Input{X: 100, Y: treeRowY(tc.row), Held: true})
-			if a.dragNode != request.Of(findReq(a, "Repository Info")) {
-				t.Fatalf("dragging %v, want Repository Info", a.dragNode)
+			drag := a.side.Tree().Drag()
+			if drag.Node != request.Of(findReq(a, "Repository Info")) {
+				t.Fatalf("dragging %v, want Repository Info", drag.Node)
 			}
-			if want := tc.target(a); a.dropTarget != request.Of(want) {
-				t.Fatalf("drop target %v, want %v", a.dropTarget, want)
+			if want := tc.target(a); drag.Target != request.Of(want) {
+				t.Fatalf("drop target %v, want %v", drag.Target, want)
 			}
 		})
 	}

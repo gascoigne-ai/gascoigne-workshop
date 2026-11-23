@@ -30,13 +30,13 @@ func TestClickingARequestInTheTreeOpensItsTab(t *testing.T) {
 
 func TestClickingAFolderTogglesIt(t *testing.T) {
 	a := testApp(t)
-	before := len(collection.Rows(&a.col().Folder, a.expanded))
+	before := len(collection.Rows(&a.col().Folder, a.side.Tree().Expanded()))
 	click(a, 100, treeRowY(1)) // User folder, collapsed at start
-	if got := len(collection.Rows(&a.col().Folder, a.expanded)); got != before+1 {
+	if got := len(collection.Rows(&a.col().Folder, a.side.Tree().Expanded())); got != before+1 {
 		t.Fatalf("rows %d -> %d, want one more (Get User)", before, got)
 	}
 	click(a, 100, treeRowY(1))
-	if got := len(collection.Rows(&a.col().Folder, a.expanded)); got != before {
+	if got := len(collection.Rows(&a.col().Folder, a.side.Tree().Expanded())); got != before {
 		t.Fatalf("second click must collapse again, rows = %d", got)
 	}
 }
@@ -45,22 +45,22 @@ func TestTreeScrollsWhenItDoesNotFit(t *testing.T) {
 	a := testApp(t)
 	a.h = 200                       // the tree area is about 128px: five rows
 	for _, i := range []int{0, 2} { // User and Realtime
-		a.expanded[a.col().Folders[i]] = true
+		a.side.Tree().Expanded()[a.col().Folders[i]] = true
 	}
 	a.Step(core.Input{})
-	rowsN := len(collection.Rows(&a.col().Folder, a.expanded))
+	rowsN := len(collection.Rows(&a.col().Folder, a.side.Tree().Expanded()))
 	if rowsN*core.RowH <= a.h-headerH-sizes.StatusH {
 		t.Fatalf("test setup: %d rows fit, nothing to scroll", rowsN)
 	}
 
 	a.Step(core.Input{X: 100, Y: 100, Wheel: -5})
-	if a.treeScroll.Y <= 0 {
-		t.Fatalf("tree scroll = %d after wheeling over it", a.treeScroll.Y)
+	if a.side.ScrollY() <= 0 {
+		t.Fatalf("tree scroll = %d after wheeling over it", a.side.ScrollY())
 	}
 
 	// scroll to the end, then click the last row: it must open that request
 	a.Step(core.Input{X: 100, Y: 100, Wheel: -50})
-	last := collection.Rows(&a.col().Folder, a.expanded)[rowsN-1]
+	last := collection.Rows(&a.col().Folder, a.side.Tree().Expanded())[rowsN-1]
 	click(a, 100, a.h-sizes.StatusH-core.RowH/2)
 	if a.cur().Req != last.Req {
 		t.Fatalf("clicking the bottom row opened %q, want %q", a.cur().Req.Name, last.Name)
@@ -121,10 +121,10 @@ func TestRenameToATakenNameIsRefusedWithAToast(t *testing.T) {
 
 func TestDuplicateAddsACopyRightAfter(t *testing.T) {
 	a := testApp(t)
-	before := len(collection.Rows(&a.col().Folder, a.expanded))
+	before := len(collection.Rows(&a.col().Folder, a.side.Tree().Expanded()))
 	rightClick(a, 100, treeRowY(rowInfo))
 	pickMenu(t, a, "Duplicate")
-	rows := collection.Rows(&a.col().Folder, a.expanded)
+	rows := collection.Rows(&a.col().Folder, a.side.Tree().Expanded())
 	if len(rows) != before+1 || rows[rowInfo+1].Name != "Repository Info copy" {
 		t.Fatalf("rows = %d, next row %q", len(rows), rows[rowInfo+1].Name)
 	}
@@ -191,8 +191,8 @@ func TestNewRequestAndNewFolderFromTheFolderMenu(t *testing.T) {
 	}
 	rightClick(a, 100, treeRowY(rowRepo))
 	pickMenu(t, a, "New folder")
-	if len(repo.Folders) != 1 || repo.Folders[0].Name != "New Folder" || !a.expanded[repo] {
-		t.Fatalf("folders %v expanded %v", folderNames(repo), a.expanded[repo])
+	if len(repo.Folders) != 1 || repo.Folders[0].Name != "New Folder" || !a.side.Tree().Expanded()[repo] {
+		t.Fatalf("folders %v expanded %v", folderNames(repo), a.side.Tree().Expanded()[repo])
 	}
 }
 
@@ -234,7 +234,7 @@ func TestDraggingARequestOntoARequestInsertsBeforeIt(t *testing.T) {
 
 func TestADropThatIsNotAllowedChangesNothingAndSaysWhy(t *testing.T) {
 	a := testApp(t)
-	a.expanded[a.col().Folders[1]] = true
+	a.side.Tree().Expanded()[a.col().Folders[1]] = true
 	// drag the Repository folder onto its own request: that is moving it into itself's parent, fine;
 	// drag it onto a request inside itself is the refused case
 	a.Step(core.Input{X: 100, Y: treeRowY(rowRepo), Click: true, Held: true})
@@ -261,9 +261,9 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 	a := testApp(t)
 	clickDumped(t, a, "control=field", 0) // the filter field in the sidebar header, the first field of the window
 	a.typeText("tags")
-	rows := collection.Rows(&a.col().Folder, a.expanded)
+	rows := collection.Rows(&a.col().Folder, a.side.Tree().Expanded())
 	_ = rows
-	got := a.visibleRows()
+	got := a.side.VisibleRows()
 	var names []string
 	for _, r := range got {
 		names = append(names, r.Name)
@@ -272,24 +272,24 @@ func TestFilterShowsMatchesByNameAndURL(t *testing.T) {
 		t.Fatalf("filter %q shows %q", "tags", names)
 	}
 
-	a.filter.SelectAll()
+	a.side.Filter().SelectAll()
 	a.typeText("search/repos") // part of a URL, not of any name
 	names = nil
-	for _, r := range a.visibleRows() {
+	for _, r := range a.side.VisibleRows() {
 		names = append(names, r.Name)
 	}
 	if !reflect.DeepEqual(names, []string{"GitHub REST API", "Repository", "Search Repos"}) {
 		t.Fatalf("by URL: %q", names)
 	}
 
-	a.filter.SelectAll()
+	a.side.Filter().SelectAll()
 	a.typeText("zzz")
-	if got := a.visibleRows(); len(got) != 1 {
+	if got := a.side.VisibleRows(); len(got) != 1 {
 		t.Fatalf("no match leaves just the root, got %d rows", len(got))
 	}
-	a.filter.SelectAll()
+	a.side.Filter().SelectAll()
 	a.Step(core.Input{Edits: []core.Edit{core.EditBackspace}})
-	if got := a.visibleRows(); len(got) != len(collection.Rows(&a.col().Folder, a.expanded)) {
+	if got := a.side.VisibleRows(); len(got) != len(collection.Rows(&a.col().Folder, a.side.Tree().Expanded())) {
 		t.Fatal("an empty filter shows the tree as usual")
 	}
 }
@@ -308,12 +308,12 @@ func TestTreeKeyboardNavigation(t *testing.T) {
 	a := testApp(t)
 	click(a, 100, treeRowY(rowInfo)) // focuses the tree and selects Repository Info
 	a.Step(combo(ebiten.KeyArrowDown, false, false, false))
-	if a.selected != request.Of(findReq(a, "Repository Tags")) {
-		t.Fatalf("Down selects the next row, selected %v", a.selected)
+	if a.side.Tree().Selected() != request.Of(findReq(a, "Repository Tags")) {
+		t.Fatalf("Down selects the next row, selected %v", a.side.Tree().Selected())
 	}
 	a.Step(combo(ebiten.KeyArrowUp, false, false, false))
 	a.Step(combo(ebiten.KeyArrowUp, false, false, false))
-	if a.selected != request.Of(findReq(a, "Search Repos")) {
+	if a.side.Tree().Selected() != request.Of(findReq(a, "Search Repos")) {
 		t.Fatal("Up moves back")
 	}
 	a.Step(combo(ebiten.KeyArrowDown, false, false, false))
@@ -350,7 +350,7 @@ func TestTreeArrowKeysDoNothingWithoutRows(t *testing.T) {
 	a := driverApp(t, Options{})
 	a.Driver().CloseAllCollections()
 	for _, k := range []ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyArrowUp, ebiten.KeyEnter, ebiten.KeyF2, ebiten.KeyDelete} {
-		a.treeFocus = true
-		a.treeKeys(core.Input{Keys: []ebiten.Key{k}})
+		a.side.Tree().Focus()
+		a.side.Keys(core.Input{Keys: []ebiten.Key{k}}, false, a.sidebarWidth())
 	}
 }

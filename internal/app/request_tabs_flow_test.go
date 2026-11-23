@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"reflect"
@@ -127,16 +128,16 @@ func TestTheTabSlotsFitTheirContentAtEveryTextSize(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, badge := range badgeLabels {
-			if got := ctx.Width(ctx.F.Small, badge); got-badgeOverhang > badgeSlot(ctx, tabBadgeW)+badgeOverhang {
-				t.Errorf("%d: %q is %dpx wide, the tab badge slot is %dpx", size, badge, got, badgeSlot(ctx, tabBadgeW))
+		for _, badge := range sizes.BadgeLabels {
+			if got := ctx.Width(ctx.F.Small, badge); got-sizes.BadgeOverhang > sizes.BadgeSlot(ctx, tabBadgeW)+sizes.BadgeOverhang {
+				t.Errorf("%d: %q is %dpx wide, the tab badge slot is %dpx", size, badge, got, sizes.BadgeSlot(ctx, tabBadgeW))
 			}
-			if got := ctx.Width(ctx.F.Small, badge); got-badgeOverhang > badgeSlot(ctx, badgeW)+badgeOverhang {
-				t.Errorf("%d: %q is %dpx wide, the tree badge slot is %dpx", size, badge, got, badgeSlot(ctx, badgeW))
+			if got := ctx.Width(ctx.F.Small, badge); got-sizes.BadgeOverhang > sizes.BadgeSlot(ctx, sizes.BadgeW)+sizes.BadgeOverhang {
+				t.Errorf("%d: %q is %dpx wide, the tree badge slot is %dpx", size, badge, got, sizes.BadgeSlot(ctx, sizes.BadgeW))
 			}
 		}
-		if size == settings.DefaultFontSize && (badgeSlot(ctx, tabBadgeW) != tabBadgeW || badgeSlot(ctx, badgeW) != badgeW) {
-			t.Errorf("at the default size the slots must stay %d and %d", tabBadgeW, badgeW)
+		if size == settings.DefaultFontSize && (sizes.BadgeSlot(ctx, tabBadgeW) != tabBadgeW || sizes.BadgeSlot(ctx, sizes.BadgeW) != sizes.BadgeW) {
+			t.Errorf("at the default size the slots must stay %d and %d", tabBadgeW, sizes.BadgeW)
 		}
 		if got := ctx.Width(ctx.F.UI, dirtyMark); got > tabDirtyW {
 			t.Errorf("%d: the dirty mark is %dpx wide, the slot is %dpx", size, got, tabDirtyW)

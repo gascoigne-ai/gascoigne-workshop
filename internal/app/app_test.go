@@ -84,21 +84,6 @@ func TestParamsChangedRewritesURL(t *testing.T) {
 	}
 }
 
-func TestRequestBadge(t *testing.T) {
-	tests := []struct {
-		protocol     request.Protocol
-		method, want string
-	}{
-		{"rest", "GET", "GET"}, {"", "POST", "POST"}, {"rest", "DELETE", "DEL"},
-		{"websocket", "", "WS"}, {"mcp", "GET", "MCP"},
-	}
-	for _, tt := range tests {
-		if got := requestBadge(tt.protocol, tt.method); got != tt.want {
-			t.Errorf("requestBadge(%q,%q) = %q, want %q", tt.protocol, tt.method, got, tt.want)
-		}
-	}
-}
-
 func folderNames(folder *request.Folder) (out []string) {
 	for _, s := range folder.Folders {
 		out = append(out, s.Name)

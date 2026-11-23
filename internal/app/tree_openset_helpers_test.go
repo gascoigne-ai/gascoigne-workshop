@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 )
@@ -23,4 +24,28 @@ func (a *App) setWorkspace(dir string) {
 func (a *App) envIndex() int {
 	entry, _ := a.focus()
 	return entry.Env
+}
+
+// rowOf is the tree row that stands for node.
+func rowOf(node request.Node) collection.Row {
+	return collection.Row{Name: node.Name(), Folder: node.Dir != nil, Dir: node.Dir, Req: node.Req}
+}
+
+// holdDrag leaves the tree as a frame in the middle of a drag does: node
+// pressed and the pointer over target, either of them none. The selection
+// and the keyboard stay as they were, since a test sets up a drag without
+// clicking.
+func holdDrag(app *App, node, target request.Node) {
+	tree := app.side.Tree()
+	selected, focused := tree.Selected(), tree.Focused()
+	tree.Clear()
+	tree.Release(false)
+	if !node.None() {
+		tree.Press(rowOf(node), false)
+	}
+	tree.Over(target)
+	tree.Select(selected)
+	if !focused {
+		tree.Blur()
+	}
 }

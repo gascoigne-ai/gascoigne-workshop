@@ -8,7 +8,7 @@ import (
 )
 
 // Right-click menus for tabs, table rows, text widgets and the response.
-// The tree's own menu is in treemenu.go. Every item does what its button
+// The tree's own menu is in ui/sidebar/menu.go. Every item does what its button
 // or shortcut does, through the same code.
 
 var menuSeparator = MenuItem{Separator: true}

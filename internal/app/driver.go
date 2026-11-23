@@ -175,7 +175,7 @@ func (d *Driver) RecordShortcut(spec string) error {
 }
 
 // ShowSentLog shows the log of sent requests in the sidebar.
-func (d *Driver) ShowSentLog() { d.app.showSent = true }
+func (d *Driver) ShowSentLog() { d.app.side.SetShowSent(true) }
 
 // OpenCallLog opens the Log dialog of calls, as the status bar's Log button does.
 func (d *Driver) OpenCallLog() { d.app.calls.Open() }
@@ -223,7 +223,7 @@ func (d *Driver) OpenAllRequests() {
 }
 
 // FilterTree types text into the sidebar's filter.
-func (d *Driver) FilterTree(text string) { d.app.filter.Insert(text) }
+func (d *Driver) FilterTree(text string) { d.app.side.Filter().Insert(text) }
 
 // ChangeSetting changes a setting through the path the settings dialog takes,
 // so the window reacts as it does to a click there.

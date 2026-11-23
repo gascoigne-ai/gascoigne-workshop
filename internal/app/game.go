@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -87,11 +86,7 @@ func (a *App) beginFrame(in core.Input) bool {
 		a.ctx.RestartCaret()
 	}
 	a.lastIn = in
-	if in.Held {
-		a.dropTarget = request.Node{} // set again by the row under the pointer
-	} else {
-		a.finishDrag()
-	}
+	a.side.BeginFrame(in)
 	return active || drained || pruned
 }
 
@@ -106,7 +101,7 @@ func (a *App) routeKeys(in core.Input) {
 		a.swallowMenuKeys()
 	}
 	if !hadOverlay && !a.overlayOpen() && !wasRecording {
-		a.treeKeys(in)
+		a.side.Keys(in, a.textFocused(), a.sidebarWidth())
 	}
 	if wasRecording {
 		a.shortcutKeys.RecordKey(a, in)
@@ -208,7 +203,7 @@ func (a *App) SetSize(width, height int) { a.w, a.h = width, height }
 // textFocused reports whether a text widget has the keyboard.
 func (a *App) textFocused() bool {
 	t := a.cur()
-	focused := a.filter.Focused || t.url.Focused || t.find.Focused || t.timeout.Focused || t.body.Focused ||
+	focused := a.side.Filter().Focused || t.url.Focused || t.find.Focused || t.timeout.Focused || t.body.Focused ||
 		t.tests.Focused || t.gqlVars.Focused || t.file.Focused || t.msg.Focused || a.edit != nil ||
 		(a.bulk != nil && a.bulk.area.Focused)
 	for _, in := range t.auth {

@@ -256,32 +256,32 @@ func TestGraphQLBodyTypeSendsAQueryAndCanLoadTheSchema(t *testing.T) {
 func TestADragRestingOverAClosedFolderOpensIt(t *testing.T) {
 	a := testApp(t)
 	closed := a.col().Folders[0]
-	a.expanded[closed] = false
+	a.side.Tree().Expanded()[closed] = false
 	req := a.col().Folders[1].Requests[0]
-	a.dragNode, a.dropTarget = request.Of(req), request.Of(closed)
-	for i := 0; i < dragExpandTicks-1; i++ {
-		a.dragHover()
+	holdDrag(a, request.Of(req), request.Of(closed))
+	for i := 0; i < 29; i++ { // one tick short of opening the folder
+		a.side.Tick()
 	}
-	if a.expanded[closed] {
+	if a.side.Tree().Expanded()[closed] {
 		t.Fatal("opened too early")
 	}
-	a.dragHover()
-	if !a.expanded[closed] {
+	a.side.Tick()
+	if !a.side.Tree().Expanded()[closed] {
 		t.Fatal("the folder did not open")
 	}
 	other := a.col().Folders[2]
-	a.expanded[other] = false
-	a.dropTarget = request.Of(other)
-	a.dragHover()
-	a.expanded[closed] = false
-	a.dropTarget = request.Of(closed) // moved away before the time was up
-	a.dragHover()
-	if a.hoverFolder != closed || a.hoverTicks != 1 {
-		t.Fatalf("the rest time must start over on a new folder: %v %d", a.hoverFolder, a.hoverTicks)
+	a.side.Tree().Expanded()[other] = false
+	a.side.Tree().Over(request.Of(other))
+	a.side.Tick()
+	a.side.Tree().Expanded()[closed] = false
+	a.side.Tree().Over(request.Of(closed)) // moved away before the time was up
+	a.side.Tick()
+	if drag := a.side.Tree().Drag(); drag.Hover != closed || drag.Ticks != 1 {
+		t.Fatalf("the rest time must start over on a new folder: %v %d", drag.Hover, drag.Ticks)
 	}
-	a.dragNode = request.Node{}
-	a.dragHover()
-	if a.hoverFolder != nil {
+	holdDrag(a, request.Node{}, request.Of(closed))
+	a.side.Tick()
+	if a.side.Tree().Drag().Hover != nil {
 		t.Fatal("without a drag nothing hovers")
 	}
 }

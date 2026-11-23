@@ -1,8 +1,10 @@
-package app
+package sidebar
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -10,52 +12,43 @@ import (
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
-// sidebarWidth is the current width of the sidebar in pixels.
-func (a *App) sidebarWidth() int {
-	if a.sidebarSplit.Size > 0 {
-		return int(a.sidebarSplit.Size)
-	}
-	return sidebarW - 1
-}
-
-// ── Sidebar ────────────────────────────────────────────────────────────
-
 var (
 	sidebarTemplate     = markup.Must("sidebar.vml", sidebarSource)
 	treeFolderTemplate  = markup.Must("treefolder.vml", treefolderSource)
 	treeRequestTemplate = markup.Must("treerequest.vml", treerequestSource)
 )
 
-// sidebar is the header (the chip that switches between the collection
+// View is the header (the chip that switches between the collection
 // tree and the log of sent requests, and the filter) above the one shown.
-func (a *App) sidebar() Node {
-	label, switchTo := "Collections", func() { a.showSent = true }
-	if a.showSent {
-		label, switchTo = "Sent", func() { a.showSent = false }
+func (c *Component) View(ctx *w.Ctx) Node {
+	label, switchTo := "Collections", func() { c.showSent = true }
+	if c.showSent {
+		label, switchTo = "Sent", func() { c.showSent = false }
 	}
 	var sentList Node
 	var rows []Node
-	if a.showSent {
-		sentList = a.sent.List(a.ctx, a, a.filter.Text)
+	if c.showSent {
+		sentList = c.sent.List(ctx, c.deps.Sent, c.filter.Text)
 	} else {
-		for _, row := range a.visibleRows() {
-			rows = append(rows, a.treeRow(row, row.Node() == a.selected))
+		for _, row := range c.VisibleRows() {
+			rows = append(rows, c.treeRow(ctx, row))
 		}
 	}
-	return sidebarTemplate.MustBuild(a.scope(markup.Scope{
+	entries := len(c.deps.Collections.Set().Entries)
+	return sidebarTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
 		"mode":           label,
 		"switchMode":     switchTo,
-		"collectionMenu": func(posX, posY int) { a.openMenu(posX, posY, a.collectionMenu()) },
-		"filter":         &a.filter,
-		"showSent":       a.showSent,
-		"showTree":       !a.showSent && len(a.open.Entries) > 0,
-		"noCollection":   !a.showSent && len(a.open.Entries) == 0,
-		"openFolder":     a.promptWorkspace,
-		"newCollection":  a.promptNewCollection,
+		"collectionMenu": func(posX, posY int) { c.deps.Menus.Open(posX, posY, c.CollectionMenu()) },
+		"filter":         &c.filter,
+		"showSent":       c.showSent,
+		"showTree":       !c.showSent && entries > 0,
+		"noCollection":   !c.showSent && entries == 0,
+		"openFolder":     c.deps.Workspace.OpenFolder,
+		"newCollection":  c.deps.Workspace.NewCollection,
 		"sentList":       sentList,
-		"treeScroll":     &a.treeScroll,
+		"treeScroll":     &c.scroll,
 		"rows":           rows,
-		"headerH":        headerH,
+		"headerH":        sizes.HeaderH,
 	}))
 }
 
@@ -83,31 +76,31 @@ type treeItem struct {
 
 // treeRow is one row of the tree, a folder or a request: one template
 // each, since their rows differ in padding and alignment.
-func (a *App) treeRow(row collection.Row, selected bool) Node {
-	item := a.treeItemOf(row)
-	item.Selected = selected
+func (c *Component) treeRow(ctx *w.Ctx, row collection.Row) Node {
+	item := c.treeItemOf(ctx, row)
+	item.Selected = row.Node() == c.tree.Selected()
 	template := treeFolderTemplate
 	if !row.Folder {
 		template = treeRequestTemplate
 	}
-	return template.MustBuild(a.scope(markup.Scope{"row": item, "badgeW": badgeSlot(a.ctx, badgeW)}))
+	return template.MustBuild(sizes.Scope(ctx, markup.Scope{"row": item, "badgeW": sizes.BadgeSlot(ctx, sizes.BadgeW)}))
 }
 
 // treeItemOf is the view model of one tree row, except whether it is selected.
-func (a *App) treeItemOf(row collection.Row) treeItem {
+func (c *Component) treeItemOf(ctx *w.Ctx, row collection.Row) treeItem {
 	node := row.Node()
 	item := treeItem{
 		Name:     row.Name,
-		Indent:   w.Gutter + row.Depth*treeIndent,
-		Press:    func() { a.pressTreeRow(row) },
-		Menu:     func(pointerX, pointerY int) { a.openMenu(pointerX, pointerY, a.treeMenuItems(row)) },
-		DragOver: func() { a.dropTarget = node },
+		Indent:   w.Gutter + row.Depth*sizes.TreeIndent,
+		Press:    func() { c.press(row) },
+		Menu:     func(pointerX, pointerY int) { c.deps.Menus.Open(pointerX, pointerY, c.RowMenu(row)) },
+		DragOver: func() { c.tree.Over(node) },
 	}
-	item.Before, item.Match, item.After = collection.SplitMatch(row.Name, a.filter.Text)
+	item.Before, item.Match, item.After = collection.SplitMatch(row.Name, c.filter.Text)
 	if row.Folder {
-		item.Root = a.isRoot(row.Dir)
+		item.Root = c.isRoot(row.Dir)
 		if item.Root {
-			item.Stripe = a.collectionToken(node)
+			item.Stripe = c.stripe(node)
 		}
 		item.Triangle = "triangle-right"
 		if row.Open {
@@ -115,45 +108,54 @@ func (a *App) treeItemOf(row collection.Row) treeItem {
 		}
 	} else {
 		item.Indent += 6
-		item.Badge = requestBadge(row.Req.Protocol, row.Req.Method)
+		item.Badge = theme.RequestBadge(row.Req.Protocol, row.Req.Method)
 		item.Color = theme.MethodToken(row.Req.Method)
 	}
-	if !a.dragNode.None() && a.dropTarget == node && node != a.dragNode {
+	if drag := c.tree.Drag(); drag.Phase() == logic.Dragging && drag.Target == node {
 		item.DropBorder = w.AccentLine
-		if a.ctx.In.Alt { // released now, it copies: the outline turns green
+		if ctx.In.Alt { // released now, it copies: the outline turns green
 			item.DropBorder = w.OK
 		}
 	}
 	return item
 }
 
-// pressTreeRow is a press on a row: it selects it, gives the tree the
-// keyboard and starts a drag. A request opens at once; a folder toggles
-// when the button is released on the same row (see finishDrag), so an
-// open folder can still be dragged.
-func (a *App) pressTreeRow(row collection.Row) {
-	a.treeFocus = true
-	a.dragNode = row.Node()
-	if a.isRoot(row.Dir) {
-		a.dragNode = request.Node{} // the collection itself cannot be moved
+// press is a press on a row: the tree selects it, takes the keyboard and
+// starts a drag (logic.Tree.Press); a request opens at once, a folder
+// toggles when the button is released on the same row, so an open folder
+// can still be dragged.
+func (c *Component) press(row collection.Row) {
+	c.tree.Press(row, c.isRoot(row.Dir))
+	if !row.Folder {
+		c.deps.Requests.Show(row.Req)
 	}
-	if row.Folder {
-		a.selectNode(row.Node())
-		a.pressedFolder = row.Dir
-		return
-	}
-	a.clickTree(row)
 }
 
-// requestBadge is the short label shown before a request name.
-func requestBadge(protocol request.Protocol, method string) string {
-	if info := protocol.Info(); info.Label != "" && info.Method != request.MethodHTTP {
-		return info.Label
+// stripe is the color of the open collection that holds node, "" for a
+// node of none.
+func (c *Component) stripe(node request.Node) w.Token {
+	for index, entry := range c.deps.Collections.Set().Entries {
+		if entry.Collection.Folder.Contains(node) {
+			return theme.CollectionToken(index)
+		}
 	}
-	if method == "DELETE" {
-		return "DEL"
+	return ""
+}
+
+// activateSelected is Enter on the selected row of rows: a folder toggles,
+// a request is shown.
+func (c *Component) activateSelected(rows []collection.Row) {
+	for _, row := range rows {
+		if row.Node() != c.tree.Selected() {
+			continue
+		}
+		if row.Folder {
+			c.tree.Toggle(row.Dir)
+			return
+		}
+		c.deps.Requests.Show(row.Req)
+		return
 	}
-	return method
 }
 
 // Templates, parsed once above.

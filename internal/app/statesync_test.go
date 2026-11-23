@@ -47,7 +47,7 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	a.openRequest(a.col().Folders[0].Requests[0])
 	a.cur().paneTab = 3
 	a.sidebarSplit.Size = 300
-	a.expanded[a.col().Folders[2]] = true
+	a.side.Tree().Expanded()[a.col().Folders[2]] = true
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
@@ -55,10 +55,10 @@ func TestStateRestoreRoundTripsThroughTheFile(t *testing.T) {
 	if len(b.list.Tabs) != 2 || b.list.Active != 1 || b.cur().paneTab != 3 {
 		t.Fatalf("tabs %d active %d pane %d", len(b.list.Tabs), b.list.Active, b.cur().paneTab)
 	}
-	if b.cur().Req != b.col().Folders[0].Requests[0] || b.selected != request.Of(b.cur().Req) {
+	if b.cur().Req != b.col().Folders[0].Requests[0] || b.side.Tree().Selected() != request.Of(b.cur().Req) {
 		t.Fatal("the restored tab must be the request in the new tree")
 	}
-	if b.sidebarSplit.Size != 300 || !b.expanded[b.col().Folders[2]] {
+	if b.sidebarSplit.Size != 300 || !b.side.Tree().Expanded()[b.col().Folders[2]] {
 		t.Fatal("split and expanded folders restored")
 	}
 }

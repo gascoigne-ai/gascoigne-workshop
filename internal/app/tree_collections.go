@@ -6,7 +6,6 @@ import (
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
 // Whole collections: new, open, rename, save, close, move and delete. A collection is a
@@ -22,26 +21,6 @@ func (a *App) collectionsDir() string {
 		return ""
 	}
 	return filepath.Join(filepath.Dir(a.defaultWorkspace), "collections")
-}
-
-// collectionMenu is the menu of the Collections chip, which acts on the
-// focused collection.
-func (a *App) collectionMenu() []MenuItem { return a.collectionMenuOf(a.focusCol()) }
-
-// collectionMenuOf is the collection menu acting on col; with nothing open
-// (col nil) only New and Open act.
-func (a *App) collectionMenuOf(col *request.Collection) []MenuItem {
-	none := col == nil
-	return []MenuItem{
-		{Label: "New collection...", Run: a.promptNewCollection},
-		{Label: "Open collection folder...", Run: a.promptWorkspace},
-		menuSeparator,
-		{Label: "Rename collection...", Disabled: none, Run: func() { a.promptRenameCollection(col) }},
-		{Label: "Save collection", Disabled: none, Run: func() { a.saveCollection(col) }},
-		menuSeparator,
-		{Label: "Close collection", Disabled: none, Run: func() { a.requestCloseCollection(col) }},
-		{Label: "Delete collection...", Disabled: none, Run: func() { a.confirmDeleteCollection(col) }},
-	}
 }
 
 // promptNewCollection asks for a name, then makes the collection and opens

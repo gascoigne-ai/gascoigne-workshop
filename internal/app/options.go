@@ -15,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -124,7 +125,6 @@ func NewApp(opts Options) (*App, error) {
 			now: opts.now(), histories: opts.History, fonts: opts.Fonts, display: opts.Display, system: opts.System,
 			settingFiles: opts.SettingsFiles, previews: opts.Previews,
 		},
-		treeState:    treeState{expanded: map[*request.Folder]bool{}},
 		frameState:   frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
 		persistState: persistState{saves: map[*request.Collection]*autosave.Debounce{}, defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
 		settingsState: settingsState{
@@ -133,6 +133,11 @@ func NewApp(opts Options) (*App, error) {
 	}
 	a.driver.app = a
 	a.notices.SetStatus("Ready")
+	a.side = sidebar.New(sidebar.Deps{
+		Collections: sidebarHost{a}, Requests: sidebarHost{a}, Nodes: sidebarHost{a}, Drops: sidebarHost{a},
+		Folders: sidebarHost{a}, Extras: sidebarHost{a}, Collection: collectionHost{a}, Workspace: sidebarHost{a},
+		Menus: sidebarHost{a}, Sent: a,
+	})
 	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: &a.calls, Welcome: a, Version: version})
 	if loadErr != nil {
 		a.notices.SetStatus(loadErr.Error())
@@ -161,7 +166,7 @@ func NewApp(opts Options) (*App, error) {
 	if opts.Welcome && (opts.WelcomeEvery || a.welcomed != version) {
 		a.OpenWelcome()
 	}
-	a.sent.Load(a)
+	a.side.Sent().Load(a)
 	a.notices.SetStatus(stateNote(a.notices.Status(), stateErr))
 	if len(themeProblems) > 0 {
 		a.notices.SetStatus(stateNote(a.notices.Status(), fmt.Errorf("%s", themeProblems[0])))

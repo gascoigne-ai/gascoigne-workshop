@@ -16,7 +16,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/colorpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/sentlog"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -42,22 +41,6 @@ type ports struct {
 	system       SystemInfo // what the System page of the settings shows; nil has no report
 	settingFiles settings.SettingsStore
 	previews     send.BodyPreview // shows a response body in the browser, replaced in tests
-}
-
-// treeState holds the sidebar: selection, filter, drag, expanded folders and scroll.
-type treeState struct {
-	expanded      map[*request.Folder]bool
-	selected      request.Node     // the tree node last clicked or moved to
-	treeFocus     bool             // the tree has the keyboard
-	filter        widget.TextField // the sidebar filter
-	sent          sentlog.Log      // requests sent in this workspace, newest first
-	showSent      bool             // the sidebar lists sent requests instead of the tree
-	dragNode      request.Node     // the tree node being dragged, none when not dragging
-	pressedFolder *request.Folder  // the folder row the button went down on, toggled on release there
-	hoverFolder   *request.Folder  // the closed folder a drag has been over
-	hoverTicks    int              // for how many frames
-	dropTarget    request.Node     // the node the pointer is over while dragging
-	treeScroll    widget.ScrollState
 }
 
 // tableState holds the key-value tables: the cell edit, the row drag, bulk edit, the selected row and the column widths.

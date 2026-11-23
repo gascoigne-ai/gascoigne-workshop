@@ -1,10 +1,13 @@
 package app
 
-import "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar/logic"
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
 
 // treeDragging reports whether a tree row is held and over another row.
 func (a *App) treeDragging() bool {
-	return !a.dragNode.None() && !a.dropTarget.None() && a.dropTarget != a.dragNode
+	return a.side.Tree().Drag().Phase() == logic.Dragging
 }
 
 // grabbing reports whether the pointer holds something that moves: a

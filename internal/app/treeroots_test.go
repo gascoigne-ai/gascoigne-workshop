@@ -21,7 +21,7 @@ import (
 // rootRow is the index of the tree row of the collection called name.
 func rootRow(t *testing.T, app *App, name string) int {
 	t.Helper()
-	for i, row := range app.visibleRows() {
+	for i, row := range app.side.VisibleRows() {
 		if app.isRoot(row.Dir) && row.Name == name {
 			return i
 		}
@@ -223,7 +223,7 @@ func TestTheEmptyTreeOffersOpenAndNew(t *testing.T) {
 func TestTheCollectionMenuIsDisabledForACollectionWithNothingOpen(t *testing.T) {
 	a, _ := collectionsApp(t)
 	a.closeCollection(a.col())
-	for _, item := range a.collectionMenu() {
+	for _, item := range a.side.CollectionMenu() {
 		acts := item.Label == "New collection..." || item.Label == "Open collection folder..."
 		if !item.Separator && item.Disabled == acts {
 			t.Fatalf("%q disabled %v with nothing open", item.Label, item.Disabled)

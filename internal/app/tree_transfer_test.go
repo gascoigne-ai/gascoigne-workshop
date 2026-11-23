@@ -12,12 +12,13 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // release is a drag of node that ends on target with the pointer released,
 // holding Alt when alt is set.
 func release(app *App, node, target request.Node, alt bool) {
-	app.dragNode, app.dropTarget = node, target
+	holdDrag(app, node, target)
 	app.Step(core.Input{Alt: alt})
 }
 
@@ -49,8 +50,8 @@ func TestDragOntoAnotherCollectionsFolderMovesTheRequest(t *testing.T) {
 	if got := a.collectionToken(request.Of(req)); got != theme.CollectionToken(1) {
 		t.Fatalf("owner stripe %q, want Beta's", got)
 	}
-	if a.selected != request.Of(req) || !a.expanded[beta.Folders[0]] {
-		t.Fatalf("selected %v, folder expanded %v", a.selected, a.expanded[beta.Folders[0]])
+	if a.side.Tree().Selected() != request.Of(req) || !a.side.Tree().Expanded()[beta.Folders[0]] {
+		t.Fatalf("selected %v, folder expanded %v", a.side.Tree().Selected(), a.side.Tree().Expanded()[beta.Folders[0]])
 	}
 	if got, err := storeDisk.Load(betaDir); err != nil || got.Folders[0].Requests[len(got.Folders[0].Requests)-1].URL != "http://edited.test" {
 		t.Fatalf("Beta on disk: %+v %v", got.Folders, err)
@@ -95,8 +96,8 @@ func TestAltAtReleaseCopies(t *testing.T) {
 		t.Fatal("a copy must leave the source")
 	}
 	copied := beta.Folders[0].Requests[len(beta.Folders[0].Requests)-1]
-	if copied == req || copied.Name != req.Name || a.selected != request.Of(copied) {
-		t.Fatalf("copy %p of %p named %q, selected %v", copied, req, copied.Name, a.selected)
+	if copied == req || copied.Name != req.Name || a.side.Tree().Selected() != request.Of(copied) {
+		t.Fatalf("copy %p of %p named %q, selected %v", copied, req, copied.Name, a.side.Tree().Selected())
 	}
 }
 
@@ -189,15 +190,16 @@ func TestMovingAFolderResetsAVarsPaneThatEditedIt(t *testing.T) {
 func TestTheDropRowShowsACopyCueWhileAltIsHeldDuringADrag(t *testing.T) {
 	a, _, _ := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
-	a.dragNode, a.dropTarget = request.Of(alpha.Requests[0]), request.Of(beta.Folders[0])
-	row := collection.Row{Name: "Nested", Folder: true, Dir: beta.Folders[0]}
+	holdDrag(a, request.Of(alpha.Requests[0]), request.Of(beta.Folders[0]))
 	for _, test := range []struct {
 		alt  bool
 		want core.Token
 	}{{false, core.AccentLine}, {true, core.OK}} {
 		a.ctx.In = core.Input{Held: true, Alt: test.alt}
-		if got := a.treeItemOf(row).DropBorder; got != test.want {
-			t.Fatalf("alt %v: drop border %q, want %q", test.alt, got, test.want)
+		root := a.side.View(a.ctx)
+		Layout(a.ctx, root, sidebarW-1, sidebarPinH)
+		if got := Dump(root); !strings.Contains(got, "border="+string(test.want)) {
+			t.Fatalf("alt %v: no row outlined %q in:\n%s", test.alt, test.want, got)
 		}
 	}
 }
@@ -278,7 +280,7 @@ func TestTheRowMenuHasMoveToAndCopyToForRequestsAndFoldersButNotRoots(t *testing
 		t.Run(test.name, func(t *testing.T) {
 			row := collection.Row{Name: test.node.Name(), Req: test.node.Req, Dir: test.node.Dir, Folder: test.node.Dir != nil}
 			var labels []string
-			for _, item := range a.treeMenuItems(row) {
+			for _, item := range a.side.RowMenu(row) {
 				labels = append(labels, item.Label)
 			}
 			joined := strings.Join(labels, "|")
@@ -298,7 +300,7 @@ func TestPickingMoveToFromTheMenuOpensTheMovePicker(t *testing.T) {
 		label string
 		move  bool
 	}{{"Move to...", true}, {"Copy to...", false}} {
-		for _, item := range a.treeMenuItems(row) {
+		for _, item := range a.side.RowMenu(row) {
 			if item.Label == test.label {
 				item.Run()
 			}

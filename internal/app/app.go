@@ -8,7 +8,6 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
@@ -16,6 +15,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response/calltrace"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sidebar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/statusbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"net/http"
@@ -29,7 +29,6 @@ const (
 // App is the whole window. It implements ebiten.Game.
 type App struct {
 	ports
-	treeState
 	tableState
 	frameState
 	persistState
@@ -46,6 +45,7 @@ type App struct {
 	bus        *bus.Bus                  // what goroutines report back, drained once per frame
 	notices    notice.Notices            // the status line under the window
 	bar        *statusbar.Component
+	side       *sidebar.Component
 	driver     Driver             // what the end-to-end screenshots drive the window with
 	err        error              // a failure that ends the run, reported by Err
 	browser    *fileBrowser       // the in-app file browser while it is open
@@ -55,15 +55,6 @@ type App struct {
 	dialog     *dialog            // the open dialog, if any
 	varsTarget varsTarget         // what the Vars pane edits; the zero value is the active environment's or the collection's
 	jar        http.CookieJar     // cookies the server set, kept until the app closes
-}
-
-func (a *App) clickTree(row collection.Row) {
-	a.selectNode(row.Node())
-	if row.Folder {
-		a.expanded[row.Dir] = !a.expanded[row.Dir]
-		return
-	}
-	a.openRequest(row.Req)
 }
 
 func (a *App) newRequest() { a.newRequestIn(a.selectedFolder()) }

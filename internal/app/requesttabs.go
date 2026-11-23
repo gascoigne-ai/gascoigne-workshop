@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
@@ -45,7 +46,7 @@ func (a *App) requestTabs() Node {
 		"tabGap":     w.TabGap,
 		"tabsScroll": &a.tabsScroll,
 		"tabs":       items,
-		"tabBadgeW":  badgeSlot(a.ctx, tabBadgeW),
+		"tabBadgeW":  sizes.BadgeSlot(a.ctx, tabBadgeW),
 		"tabDirtyW":  tabDirtyW,
 		"dirtyMark":  dirtyMark,
 		"closeTip":   a.hint("Close tab", "close-tab"),
@@ -57,7 +58,7 @@ func (a *App) requestTabs() Node {
 // requestTab is the view model of tab i: badge, name, dirty mark and handlers.
 func (a *App) requestTab(index int, tab *reqTab) requestTabItem {
 	item := requestTabItem{
-		Badge:       requestBadge(tab.Req.Protocol, tab.Req.Method),
+		Badge:       theme.RequestBadge(tab.Req.Protocol, tab.Req.Method),
 		Color:       theme.MethodToken(tab.Req.Method),
 		Name:        tab.Req.Name,
 		Dirty:       a.tabDirty(tab),

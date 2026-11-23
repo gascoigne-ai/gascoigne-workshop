@@ -78,5 +78,5 @@ func TestStartWithoutASampleOptionUsesTheGitHubSample(t *testing.T) {
 }
 
 func selectedName(app *App) string {
-	return app.selected.Name()
+	return app.side.Tree().Selected().Name()
 }

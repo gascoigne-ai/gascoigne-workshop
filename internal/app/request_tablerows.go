@@ -159,7 +159,7 @@ func (a *App) dragRowOver(over int) {
 // deleteRow removes the selected row (not while a cell is edited, when
 // Delete belongs to the text).
 func (a *App) deleteRow() {
-	if a.edit != nil || a.textFocused() || a.treeFocus {
+	if a.edit != nil || a.textFocused() || a.side.Tree().Focused() {
 		return
 	}
 	p, t, row, _, _, ok := a.rowTarget()

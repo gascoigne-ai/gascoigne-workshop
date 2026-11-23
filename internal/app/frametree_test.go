@@ -291,9 +291,11 @@ func TestAStepThatChangesWhatTheViewShowsMarksTheTreeStale(t *testing.T) {
 			a.closeBulk()
 		},
 		"a drag resting over a folder": func(a *App) {
-			a.expanded = map[*request.Folder]bool{}
-			a.dragNode, a.dropTarget = request.Node{Req: &request.Request{}}, request.Node{Dir: folder}
-			a.hoverFolder, a.hoverTicks = folder, dragExpandTicks-1
+			a.side.Tree().Reset()
+			holdDrag(a, request.Node{Req: &request.Request{}}, request.Node{Dir: folder})
+			for range 29 { // one tick short of opening the folder
+				a.side.Tick()
+			}
 			a.dragHover()
 		},
 	}

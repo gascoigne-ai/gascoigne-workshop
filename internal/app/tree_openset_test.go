@@ -3,6 +3,8 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 )
 
 // savedCollection writes a collection called name to a new folder: one
@@ -76,7 +79,7 @@ func TestASecondCollectionOpensBesideTheFirst(t *testing.T) {
 		t.Fatalf("the new collection's first request is shown, got %q", a.cur().Req.Name)
 	}
 	roots := 0
-	for _, row := range a.visibleRows() {
+	for _, row := range a.side.VisibleRows() {
 		if a.isRoot(row.Dir) {
 			roots++
 		}
@@ -199,8 +202,8 @@ func TestClosingACollectionClosesItsTabsAndTheLastLeavesAnEmptyTree(t *testing.T
 		t.Fatalf("closing must leave the folder on disk: %v", err)
 	}
 	a.closeCollection(a.col())
-	if len(a.open.Entries) != 0 || len(a.visibleRows()) != 0 || a.Title() != appName {
-		t.Fatalf("open %d, rows %d, title %q", len(a.open.Entries), len(a.visibleRows()), a.Title())
+	if len(a.open.Entries) != 0 || len(a.side.VisibleRows()) != 0 || a.Title() != appName {
+		t.Fatalf("open %d, rows %d, title %q", len(a.open.Entries), len(a.side.VisibleRows()), a.Title())
 	}
 	a.Step(core.Input{}) // the window still draws with nothing open
 	st, err := settingsDisk.Load(a.settingsPath)
@@ -247,7 +250,7 @@ func TestARestartRestoresEveryOpenCollectionWithItsTabsAndEnvironment(t *testing
 	beta := entryNamed(t, a, "Beta").Collection
 	a.openRequest(beta.Folders[0].Requests[0])
 	a.selectEnv(0)
-	a.expanded[entryNamed(t, a, "Alpha").Collection.Folders[0]] = false
+	a.side.Tree().Expanded()[entryNamed(t, a, "Alpha").Collection.Folders[0]] = false
 	if err := a.SaveState(); err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +297,7 @@ func TestTheSingleSavedCollectionOfAnOlderVersionStillOpens(t *testing.T) {
 	if len(a.open.Entries) != 1 || a.workspace() != dir || a.envName() != "Dev" {
 		t.Fatalf("open %+v, environment %q", a.open.Entries, a.envName())
 	}
-	if len(a.list.Tabs) != 2 || a.cur().Req != a.col().Folders[0].Requests[0] || !a.expanded[a.col().Folders[0]] {
+	if len(a.list.Tabs) != 2 || a.cur().Req != a.col().Folders[0].Requests[0] || !a.side.Tree().Expanded()[a.col().Folders[0]] {
 		t.Fatalf("%d tabs, active %q", len(a.list.Tabs), a.cur().Req.Name)
 	}
 	a.selectEnv(-1)
@@ -316,14 +319,16 @@ func TestTabsAndRootRowsShowTheColorOfTheirCollection(t *testing.T) {
 	if got, want := shownTab(t, a, betaReq).Stripe, theme.CollectionToken(1); got != want {
 		t.Fatalf("tab of Beta stripe = %q, want %q", got, want)
 	}
-	for _, row := range a.visibleRows() {
-		if !a.isRoot(row.Dir) {
-			continue
+	root := a.side.View(a.ctx)
+	Layout(a.ctx, root, sidebarW-1, sidebarPinH)
+	var stripes []string // the root rows' stripes, in tree order: Alpha, then Beta
+	for _, line := range strings.Split(Dump(root), "\n") {
+		if _, token, ok := strings.Cut(line, "bg=collection."); ok {
+			stripes = append(stripes, "collection."+strings.Fields(token)[0])
 		}
-		owner, _ := a.open.Owner(request.Of(row.Dir))
-		if got := a.treeItemOf(row).Stripe; got == "" || (owner.Collection == beta.Collection) == (got == theme.CollectionToken(0)) {
-			t.Fatalf("root row of %s has stripe %q", owner.Collection.Name, got)
-		}
+	}
+	if want := []string{string(theme.CollectionToken(0)), string(theme.CollectionToken(1))}; !reflect.DeepEqual(stripes, want) {
+		t.Fatalf("root row stripes %q, want %q", stripes, want)
 	}
 }
 
@@ -334,14 +339,14 @@ func TestSwitchingTabsSelectsAndRevealsTheRequestInTheTree(t *testing.T) {
 	alpha := entryNamed(t, a, "Alpha")
 	req := alpha.Collection.Folder.Requests[0]
 	a.openRequest(req)
-	a.selected = request.Node{}
-	a.expanded[&alpha.Collection.Folder] = false
+	a.side.Tree().Select(request.Node{})
+	a.side.Tree().Expanded()[&alpha.Collection.Folder] = false
 	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, entryNamed(t, a, "Beta").Collection.Folder.Requests[0])})
 	a.updateTabs(tabs.Activate{Index: tabIndex(t, a, req)})
-	if a.selected != request.Of(req) {
-		t.Fatalf("selected = %v, want the request of the active tab", a.selected)
+	if a.side.Tree().Selected() != request.Of(req) {
+		t.Fatalf("selected = %v, want the request of the active tab", a.side.Tree().Selected())
 	}
-	if !a.expanded[&alpha.Collection.Folder] {
+	if !a.side.Tree().Expanded()[&alpha.Collection.Folder] {
 		t.Fatal("the collection holding the active request is not expanded")
 	}
 }

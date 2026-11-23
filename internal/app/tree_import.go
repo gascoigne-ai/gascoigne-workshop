@@ -77,7 +77,7 @@ func (a *App) importFolder(dir *request.Folder, kind importKind) {
 
 // attachImport puts got into dir under a name free there and returns it.
 func (a *App) attachImport(dir *request.Folder, got imported) string {
-	a.expanded[dir] = true
+	a.side.Tree().Expand(dir)
 	if got.request != nil {
 		got.request.Name = dir.UniqueName(got.request.Name)
 		a.openRequest(dir.AddRequest(*got.request))
@@ -92,7 +92,7 @@ func (a *App) attachImport(dir *request.Folder, got imported) string {
 			}
 		}
 	}
-	a.expandAll(got.folder)
+	a.side.Tree().ExpandAll(got.folder)
 	if first := tree.FirstRequest(got.folder); first != nil {
 		a.openRequest(first)
 	}

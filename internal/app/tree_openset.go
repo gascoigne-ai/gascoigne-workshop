@@ -29,7 +29,7 @@ func (a *App) focus() (collections.Entry, bool) {
 			return entry, true
 		}
 	}
-	if entry, ok := a.open.Owner(a.selected); ok {
+	if entry, ok := a.open.Owner(a.side.Tree().Selected()); ok {
 		return entry, true
 	}
 	if len(a.open.Entries) == 0 {
@@ -138,7 +138,7 @@ func (a *App) loadCollection(dir, env string) (*request.Collection, error) {
 // openLoaded opens a collection read from dir, with its folders expanded.
 func (a *App) openLoaded(loaded request.Collection, dir, env string) *request.Collection {
 	col := &loaded
-	a.expandAll(&col.Folder)
+	a.side.Tree().ExpandAll(&col.Folder)
 	a.include(col, dir, env)
 	return col
 }
@@ -248,8 +248,8 @@ func (a *App) forget(col *request.Collection) {
 	if a.varsTarget.refersTo(col) {
 		a.varsTarget = varsTarget{}
 	}
-	if col.Folder.Contains(a.selected) {
-		a.selected = request.Node{}
+	if col.Folder.Contains(a.side.Tree().Selected()) {
+		a.side.Tree().Select(request.Node{})
 	}
 	a.open = collections.Update(a.open, collections.Close{Collection: col})
 	delete(a.saves, col)

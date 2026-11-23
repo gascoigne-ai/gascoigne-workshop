@@ -27,7 +27,7 @@ func collectionsApp(t *testing.T) (*App, string) {
 func TestTheCollectionMenuListsTheCollectionActions(t *testing.T) {
 	a, _ := collectionsApp(t)
 	var labels []string
-	for _, item := range a.collectionMenu() {
+	for _, item := range a.side.CollectionMenu() {
 		labels = append(labels, item.Label)
 	}
 	want := []string{"New collection...", "Open collection folder...", "", "Rename collection...", "Save collection", "", "Close collection", "Delete collection..."}

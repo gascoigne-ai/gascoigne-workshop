@@ -1,30 +1,17 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/tree"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/destpicker"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// ---- what the tree shows -------------------------------------------------
-
-// visibleRows are the tree rows shown, after the filter.
-func (a *App) visibleRows() []collection.Row {
-	var rows []collection.Row
-	a.eachRoot(func(root *request.Folder) {
-		rows = append(rows, collection.FilteredRows(root, a.expanded, a.filter.Text)...)
-	})
-	return rows
-}
-
 // ---- selection and the rows' menus --------------------------------------
-
-// selectNode marks a folder or request as the one the tree acts on.
-func (a *App) selectNode(node request.Node) { a.selected = node }
 
 // collectionToken is the color of the open collection that holds node, ""
 // for a node of none.
@@ -39,28 +26,25 @@ func (a *App) collectionToken(node request.Node) core.Token {
 
 // revealRequest selects req in the tree and opens the folders above it.
 func (a *App) revealRequest(req *request.Request) {
-	a.selectNode(request.Node{Req: req})
 	owner, ok := a.open.Owner(request.Node{Req: req})
 	if !ok {
+		a.side.Tree().Reveal(nil, req)
 		return
 	}
-	root := &owner.Collection.Folder
-	a.expanded[root] = true
-	for folder, found := root.Parent(request.Node{Req: req}); found && folder != root; folder, found = root.Parent(request.Node{Dir: folder}) {
-		a.expanded[folder] = true
-	}
+	a.side.Tree().Reveal(&owner.Collection.Folder, req)
 }
 
 // selectedFolder is where a new request goes: the selected folder, the
 // folder of the selected request, or the root of the focused collection;
 // nil when nothing is open.
 func (a *App) selectedFolder() *request.Folder {
+	selected := a.side.Tree().Selected()
 	switch {
-	case a.selected.Dir != nil:
-		return a.selected.Dir
-	case a.selected.Req != nil:
-		if owner, ok := a.open.Owner(a.selected); ok {
-			if parent, ok := owner.Collection.Folder.Parent(a.selected); ok {
+	case selected.Dir != nil:
+		return selected.Dir
+	case selected.Req != nil:
+		if owner, ok := a.open.Owner(selected); ok {
+			if parent, ok := owner.Collection.Folder.Parent(selected); ok {
 				return parent
 			}
 		}
@@ -103,14 +87,15 @@ func (a *App) ownerOf(node request.Node) *request.Collection {
 // node and takes over what it says: the selection, the folder to open,
 // the request to show.
 func (a *App) applyTree(msg tree.Msg) tree.Result {
+	selected := a.side.Tree().Selected()
 	col := a.treeOwner(msg)
 	if col == nil {
-		return tree.Result{Selected: a.selected}
+		return tree.Result{Selected: selected}
 	}
-	res := tree.Update(col, a.selected, msg)
-	a.selected = res.Selected
+	res := tree.Update(col, selected, msg)
+	a.side.Tree().Select(res.Selected)
 	if res.Expand != nil {
-		a.expanded[res.Expand] = true
+		a.side.Tree().Expand(res.Expand)
 	}
 	if res.Open != nil {
 		a.openRequest(res.Open)
@@ -161,43 +146,108 @@ func (a *App) copyRequestURL(req *request.Request) {
 	_ = a.ctx.Clipboard.Write(request.Expand(req.URL, a.varsFor(req)))
 }
 
-// treeKeys handles Up, Down, Enter, F2 and Delete while the tree has the
-// keyboard and nothing is being typed.
-func (a *App) treeKeys(in core.Input) {
-	if a.textFocused() || in.Click && in.X > a.sidebarWidth() {
-		a.treeFocus = false
-	}
-	if !a.treeFocus {
+// ---- drag and drop, and the destination picker ---------------------------------
+
+// transferHost is the destination picker's view of the App: where a pick
+// goes and what closes it.
+type transferHost struct {
+	*App
+	node request.Node
+	mode transfer.Mode
+}
+
+// Pick closes the picker and moves or copies the node to the destination.
+func (host transferHost) Pick(destination transfer.Destination) {
+	host.picker = nil
+	host.transferNode(transfer.Transfer{
+		Node: host.node, From: host.ownerOf(host.node),
+		To: destination.Collection, Into: destination.Folder, Mode: host.mode,
+	})
+}
+
+// Dismiss closes the picker.
+func (host transferHost) Dismiss() { host.picker = nil }
+
+// openTransferPicker asks where node goes. A collection's root and nothing
+// cannot be moved or copied, so no picker opens for them.
+func (a *App) openTransferPicker(node request.Node, mode transfer.Mode) {
+	if node.None() || a.isRoot(node.Dir) || a.ownerOf(node) == nil {
 		return
 	}
-	rows := a.visibleRows()
-	if len(rows) == 0 {
+	stripe := func(col *request.Collection) core.Token { return a.collectionToken(request.Node{Dir: &col.Folder}) }
+	a.picker = destpicker.New(node, mode, transfer.Destinations(a.open, node, mode), stripe)
+	a.pickerHost = transferHost{App: a, node: node, mode: mode}
+}
+
+// pickerKeys hands the picker the frame's keys and takes them from the
+// input, so the field under it does not act on them too.
+func (a *App) pickerKeys(in core.Input) {
+	in.Enter = in.Enter || in.Pressed(ebiten.KeyEnter)
+	a.ctx.In.Consume(ebiten.KeyEnter, ebiten.KeyArrowUp, ebiten.KeyArrowDown)
+	a.picker.Keys(in, a.pickerHost)
+}
+
+func (a *App) closePicker() { a.picker = nil }
+
+// transferNode moves or copies a node to the place t names, in this or
+// another open collection, and tells what happened: a refusal, a rename and
+// the variables the node uses that its new collection lacks. A move between
+// collections writes the target first, so a failed write never loses the
+// node from disk.
+func (a *App) transferNode(t transfer.Transfer) {
+	a.commitEdit()
+	if entry, ok := a.open.ByCollection(t.To); ok {
+		t.ToEnv = entry.Environment()
+	}
+	verb := "move"
+	if t.Mode == transfer.Copy {
+		verb = "copy"
+	}
+	out := transfer.Apply(t)
+	if out.Err != nil {
+		a.toast("Cannot "+verb+": "+out.Err.Error(), severity.Error)
 		return
 	}
-	current := -1
-	for i, r := range rows {
-		if r.Node() == a.selected {
-			current = i
-		}
+	a.side.Tree().Select(out.Node)
+	a.side.Tree().Expand(&t.To.Folder)
+	a.side.Tree().Expand(t.Into)
+	if t.Mode == transfer.Move && a.varsTarget.kind == varsFolder && !out.Node.None() && out.Node.Dir != nil && out.Node.Dir.Contains(request.Node{Dir: a.varsTarget.folder}) {
+		a.varsTarget = varsTarget{}
 	}
-	for _, k := range in.Keys {
-		switch k {
-		case ebiten.KeyArrowDown:
-			current = min(current+1, len(rows)-1)
-			a.selectNode(rows[current].Node())
-		case ebiten.KeyArrowUp:
-			current = max(current-1, 0)
-			a.selectNode(rows[current].Node())
-		case ebiten.KeyEnter:
-			if current >= 0 {
-				a.clickTree(rows[current])
-			}
-		case ebiten.KeyF2:
-			if !a.selected.None() {
-				a.renameNode(a.selected)
-			}
-		case ebiten.KeyDelete:
-			a.deleteNode(a.selected)
-		}
+	if out.Renamed {
+		a.toast("Renamed to "+out.Name+", the name was taken", severity.Info)
+	}
+	if len(out.Missing) > 0 {
+		a.toast(transfer.MissingText(out.Missing, t.To.Name), severity.Info)
+	}
+	if t.Mode == transfer.Move && t.From != t.To {
+		a.flushMoved(t.From, t.To)
+	}
+}
+
+// flushMoved writes the target of a move between collections, then the
+// source; when the target cannot be written the source keeps the node on
+// disk and an error says so. A target that has no folder yet is not written,
+// and then the source is not either, so the node is never on disk nowhere.
+func (a *App) flushMoved(from, to *request.Collection) {
+	target, okTarget := a.open.ByCollection(to)
+	source, okSource := a.open.ByCollection(from)
+	if !okTarget || !okSource || target.Dir == "" {
+		return
+	}
+	if err := a.flushCollection(target); err != nil {
+		a.toast("Saving "+to.Name+" failed, "+from.Name+" still has the node on disk: "+err.Error(), severity.Error)
+		return
+	}
+	if err := a.flushCollection(source); err != nil {
+		a.toast("Saving "+from.Name+" failed: "+err.Error(), severity.Error)
+	}
+}
+
+// dragHover lets a drag resting over a closed folder open it, and marks the
+// tree stale when it did, since the view was built before this step.
+func (a *App) dragHover() {
+	if a.side.Tick() {
+		a.treeStale = true
 	}
 }

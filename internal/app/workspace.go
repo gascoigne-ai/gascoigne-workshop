@@ -87,10 +87,10 @@ func (a *App) includeStart(env string) (sample *request.Collection) {
 	}
 	col, isSample := a.startCollection()
 	if folder, _, ok := collection.SampleStart(col); ok && isSample { // the sample opens on its search call
-		a.expanded[&col.Folder] = true
-		a.expanded[folder] = true
+		a.side.Tree().Expand(&col.Folder)
+		a.side.Tree().Expand(folder)
 	} else {
-		a.expandAll(&col.Folder)
+		a.side.Tree().ExpandAll(&col.Folder)
 	}
 	a.include(col, "", env)
 	if isSample {
@@ -113,13 +113,6 @@ func (a *App) startCollection() (col *request.Collection, isSample bool) {
 	}
 	sample := startCollection(a.sample)
 	return &sample, true
-}
-
-func (a *App) expandAll(folder *request.Folder) {
-	a.expanded[folder] = true
-	for _, sub := range folder.Folders {
-		a.expandAll(sub)
-	}
 }
 
 // saveWorkspace writes the focused collection now (Ctrl+S).
@@ -267,8 +260,7 @@ func (a *App) openWorkspaceAt(dir string) {
 		a.forget(entry.Collection)
 	}
 	a.updateTabs(tabs.Reset{})
-	a.selected = request.Node{}
-	a.expanded = map[*request.Folder]bool{}
+	a.side.Tree().Reset()
 	a.showOpened(a.openLoaded(loaded, dir, env))
 	a.notices.SetStatus("Opened " + dir)
 }

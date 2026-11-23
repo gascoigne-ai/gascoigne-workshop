@@ -129,7 +129,7 @@ func (a *App) snapshot() state.State {
 func (a *App) snapshotExpanded(saved *state.State, entry collections.Entry) {
 	var paths []string
 	tree.WalkFolders(&entry.Collection.Folder, "", func(name string, folder *request.Folder) {
-		if a.expanded[folder] {
+		if a.side.Tree().Expanded()[folder] {
 			paths = append(paths, name)
 		}
 	})
@@ -154,7 +154,7 @@ func (a *App) expandPaths(col *request.Collection, paths []string) {
 	for _, p := range paths {
 		tree.WalkFolders(&col.Folder, "", func(path string, folder *request.Folder) {
 			if path == p {
-				a.expanded[folder] = true
+				a.side.Tree().Expand(folder)
 			}
 		})
 	}
@@ -220,7 +220,7 @@ func (a *App) restore(stateValue state.State) {
 			}
 		}
 		a.updateTabs(tabs.Activate{Index: active})
-		a.selected = request.Node{Req: a.cur().Req}
+		a.side.Tree().Select(request.Node{Req: a.cur().Req})
 	}
 	for name, ws := range stateValue.Columns {
 		if len(ws) == 0 {

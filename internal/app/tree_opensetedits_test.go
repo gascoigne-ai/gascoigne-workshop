@@ -232,8 +232,8 @@ func TestRenamingARequestWhileAnotherCollectionsTabIsActive(t *testing.T) {
 	a, alphaDir, betaDir := twoCollectionsApp(t)
 	alpha, beta := entryNamed(t, a, "Alpha").Collection, entryNamed(t, a, "Beta").Collection
 	alphaCall, betaCall := alpha.Requests[0], beta.Requests[0]
-	if a.cur().Req != betaCall || a.selected != request.Of(betaCall) {
-		t.Fatalf("active %q, selected %v", a.cur().Req.Name, a.selected)
+	if a.cur().Req != betaCall || a.side.Tree().Selected() != request.Of(betaCall) {
+		t.Fatalf("active %q, selected %v", a.cur().Req.Name, a.side.Tree().Selected())
 	}
 
 	if err := a.applyTree(tree.Rename{Node: request.Of(alphaCall), Name: "Beta call"}).Err; err != nil {

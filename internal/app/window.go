@@ -14,17 +14,15 @@ import (
 
 // Sizes of the window chrome, in logical pixels.
 const (
-	sidebarW = 260 // the collections tree's default width
-	headerH  = 44  // the banner: title, environment chip, settings
-	tabsH    = 42  // the request tab row: a tab's height plus the room above it
-	urlH     = 56  // the URL bar: its controls plus padding above and below
+	sidebarW = 260           // the collections tree's default width
+	headerH  = sizes.HeaderH // the banner: title, environment chip, settings
+	tabsH    = 42            // the request tab row: a tab's height plus the room above it
+	urlH     = 56            // the URL bar: its controls plus padding above and below
 
 	// Smallest sizes the dividers allow.
 	minSidebarW = 160
 	minMainW    = 420
 	minPaneSize = 220
-	treeIndent  = 16
-	badgeW      = 40
 
 	// A request tab has fixed slots for the method badge and the unsaved
 	// dot, so editing a request never changes the tab's width.
@@ -32,23 +30,12 @@ const (
 	tabDirtyW = 12
 )
 
-// badgeLabels are the method and protocol badges the tree and the tabs show.
-var badgeLabels = []string{"GET", "POST", "PUT", "PATCH", "DEL", "WS", "SSE", "MCP", "gRPC"}
-
-const badgeOverhang = 1
-
-// badgeSlot is the width of a badge slot: base, or the widest badge in the
-// small face when a large text size makes that wider, so no size clips a
-// badge. It is one width for every row, so a changed method moves nothing.
-// A badge may overhang its slot by badgeOverhang px, as PATCH does in the
-// tree at the default size, where the gap to the name absorbs it; that keeps
-// the default size as it was.
-func badgeSlot(ctx *w.Ctx, base int) int {
-	widest := base
-	for _, label := range badgeLabels {
-		widest = max(widest, ctx.Width(ctx.F.Small, label)-badgeOverhang)
+// sidebarWidth is the current width of the sidebar in pixels.
+func (a *App) sidebarWidth() int {
+	if a.sidebarSplit.Size > 0 {
+		return int(a.sidebarSplit.Size)
 	}
-	return widest
+	return sidebarW - 1
 }
 
 var windowTemplate = markup.Must("window.vml", windowSource)
@@ -65,7 +52,7 @@ func (a *App) view() Node {
 		"sidebarDefault": sidebarW - 1,
 		"minSidebarW":    minSidebarW,
 		"minMainW":       minMainW,
-		"sidebar":        a.sidebar(),
+		"sidebar":        a.side.View(a.ctx),
 		"header":         a.header(),
 		"requestTabs":    a.requestTabs(),
 		"urlBar":         a.urlBar(t),

@@ -109,7 +109,7 @@ func TestDriverActionsApply(t *testing.T) {
 			}
 		}},
 		{"show the sent log", Options{}, func(driver *Driver) error { driver.ShowSentLog(); return nil }, func(t *testing.T, a *App) {
-			if !a.showSent {
+			if !a.side.ShowSent() {
 				t.Error("the sidebar should list the sent requests")
 			}
 		}},
@@ -174,8 +174,8 @@ func TestDriverActionsApply(t *testing.T) {
 			}
 		}},
 		{"filter the tree", Options{}, func(driver *Driver) error { driver.FilterTree("Echo"); return nil }, func(t *testing.T, a *App) {
-			if a.filter.Text != "Echo" {
-				t.Fatalf("filter %q, want %q", a.filter.Text, "Echo")
+			if a.side.Filter().Text != "Echo" {
+				t.Fatalf("filter %q, want %q", a.side.Filter().Text, "Echo")
 			}
 		}},
 	}
@@ -500,7 +500,7 @@ func TestDriverSendsTheNextRequestAfterTheEarlierAnswers(t *testing.T) {
 	if !done() {
 		t.Fatal("never answered: the named request was not sent or not waited for")
 	}
-	rows := a.sent.Rows("")
+	rows := a.side.Sent().Rows("")
 	if len(rows) != 2 || rows[0].Path != a.requestPath(named) || rows[1].Path != a.requestPath(first) {
 		t.Fatalf("sent rows = %+v, want Get User then %s", rows, first.Name)
 	}

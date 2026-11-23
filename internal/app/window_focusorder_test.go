@@ -14,7 +14,7 @@ import (
 func focusName(app *App) string {
 	t := app.cur()
 	switch {
-	case app.filter.Focused:
+	case app.side.Filter().Focused:
 		return "filter"
 	case t.url.Focused:
 		return "url"

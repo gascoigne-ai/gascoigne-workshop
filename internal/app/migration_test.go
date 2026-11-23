@@ -68,10 +68,10 @@ func assertOldSessionRestored(t *testing.T, app *App, dir string) {
 	col := app.col()
 	open := map[string]bool{}
 	for _, folder := range col.Folders {
-		open[folder.Name] = app.expanded[folder]
+		open[folder.Name] = app.side.Tree().Expanded()[folder]
 	}
-	if !app.expanded[&col.Folder] || !open["Repository"] || !open["Realtime"] {
-		t.Fatalf("root open %v, folders %v", app.expanded[&col.Folder], open)
+	if !app.side.Tree().Expanded()[&col.Folder] || !open["Repository"] || !open["Realtime"] {
+		t.Fatalf("root open %v, folders %v", app.side.Tree().Expanded()[&col.Folder], open)
 	}
 }
 

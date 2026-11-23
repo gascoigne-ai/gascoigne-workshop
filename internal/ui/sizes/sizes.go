@@ -93,3 +93,30 @@ var fixedSizes = map[string]any{
 	"treeStripeW": TreeStripeW, "treeStripeH": TreeStripeH, "treeTriangleW": TreeTriangleW,
 	"detailGap": DetailGap, "dialogButtonMinW": core.DialogButtonMinW,
 }
+
+// Sizes the sidebar shares with the window and the tabs.
+const (
+	HeaderH    = 44 // the banner: title, environment chip, settings; the sidebar's header row is as high
+	TreeIndent = 16 // how far each folder level of the tree moves right
+	BadgeW     = 40 // the slot of a method or protocol badge in a tree row
+)
+
+// BadgeLabels are the method and protocol badges the tree and the tabs show.
+var BadgeLabels = []string{"GET", "POST", "PUT", "PATCH", "DEL", "WS", "SSE", "MCP", "gRPC"}
+
+// BadgeOverhang is how far a badge may stick out of its slot.
+const BadgeOverhang = 1
+
+// BadgeSlot is the width of a badge slot: base, or the widest badge in the
+// small face when a large text size makes that wider, so no size clips a
+// badge. It is one width for every row, so a changed method moves nothing.
+// A badge may overhang its slot by BadgeOverhang px, as PATCH does in the
+// tree at the default size, where the gap to the name absorbs it; that keeps
+// the default size as it was.
+func BadgeSlot(ctx *core.Ctx, base int) int {
+	widest := base
+	for _, label := range BadgeLabels {
+		widest = max(widest, ctx.Width(ctx.F.Small, label)-BadgeOverhang)
+	}
+	return widest
+}

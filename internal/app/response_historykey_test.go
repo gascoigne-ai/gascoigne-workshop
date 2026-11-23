@@ -53,18 +53,18 @@ func TestASentRowOpensTheRequestOfItsOwnCollection(t *testing.T) {
 	pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	row := a.sent.Rows("")[0]
+	row := a.side.Sent().Rows("")[0]
 	if row.Collection != betaDir || row.Path != "Nested/Inner" {
 		t.Fatalf("row %+v", row)
 	}
 
 	a.openRequest(alphaInner)
-	a.sent.Open(a, row)
+	a.side.Sent().Open(a, row)
 	if a.cur().Req != betaInner {
 		t.Fatalf("opened %q of the wrong collection", a.cur().Req.Name)
 	}
 	// a row written before rows named their collection is the first one's
-	a.sent.Open(a, history.Sent{Path: "Nested/Inner"})
+	a.side.Sent().Open(a, history.Sent{Path: "Nested/Inner"})
 	if a.cur().Req != alphaInner {
 		t.Fatal("an old row did not open the first collection's request")
 	}
