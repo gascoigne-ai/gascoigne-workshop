@@ -99,8 +99,8 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Tests = "status == 200\njson ok == true\nstatus == 404"
 	answer(a, tab, request.Response{Status: 200, StatusText: "OK", Body: []byte(`{"ok":true}`)})
-	if len(tab.testResults) != 3 || !tab.testResults[0].OK || !tab.testResults[1].OK || tab.testResults[2].OK {
-		t.Fatalf("%+v", tab.testResults)
+	if results := a.assertions.Results(tab.Tab); len(results) != 3 || !results[0].OK || !results[1].OK || results[2].OK {
+		t.Fatalf("%+v", results)
 	}
 	if !strings.Contains(a.notices.Status(), "Tests: 2/3 passed") {
 		t.Fatalf("status %q", a.notices.Status())
@@ -117,7 +117,7 @@ func TestAssertionsRunWhenAResponseArrivesAndAfterEdits(t *testing.T) {
 	if got := reqTests.badge(a, tab); got != 3 {
 		t.Fatalf("the request Tests tab counts assertions: %d", got)
 	}
-	if d := view.Dump(a.resultsPane(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
+	if d := view.Dump(a.resultsPaneView(responsePanes[3], tab, nil)); !strings.Contains(d, "2/3 passed") || !strings.Contains(d, "status == 404") {
 		t.Fatalf("results pane:\n%s", d)
 	}
 }
@@ -364,4 +364,19 @@ func lineText(line widget.Line) string {
 		text.WriteString(span.Text)
 	}
 	return text.String()
+}
+
+// A failed send is still checked (a "status == 0" line can pass), but its
+// status line stays "Request failed": no tests summary is added to it.
+func TestAFailedSendIsCheckedButNotSummedUpInTheStatus(t *testing.T) {
+	a := testApp(t)
+	tab := a.cur()
+	tab.Req.Tests = "status == 200"
+	answer(a, tab, request.Response{Err: "connection refused"})
+	if results := a.assertions.Results(tab.Tab); len(results) != 1 || results[0].OK {
+		t.Fatalf("results %+v, want one failed", results)
+	}
+	if got := a.notices.Status(); got != "Request failed" {
+		t.Fatalf("status %q, want it unchanged by the tests", got)
+	}
 }

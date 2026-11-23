@@ -298,3 +298,18 @@ const (
 </row>
 `
 )
+
+// setVariable stores a value captured from the response to req in the
+// active environment of the collection that holds req, else in the
+// collection's own variables.
+func (a *App) setVariable(req *request.Request, name, value string) {
+	entry, ok := a.entryFor(req)
+	if !ok {
+		return
+	}
+	if env := entry.Environment(); env != nil {
+		env.Vars = request.UpsertVar(env.Vars, name, value)
+		return
+	}
+	entry.Collection.Vars = request.UpsertVar(entry.Collection.Vars, name, value)
+}

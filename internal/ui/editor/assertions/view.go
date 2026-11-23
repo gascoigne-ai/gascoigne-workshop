@@ -1,28 +1,17 @@
-package app
+package assertions
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-)
+	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 
-// runTests checks the tab's assertions against its shown response.
-func (a *App) runTests(tab *reqTab) {
-	tab.testResults = assert.Run(tab.Req.Tests, tab.Resp)
-	for _, c := range assert.Captures(tab.Req.Tests, tab.Resp) {
-		a.setVariable(tab.Req, c.Name, c.Value)
-	}
-	if len(tab.testResults) == 0 {
-		return
-	}
-	if sum := assert.Summary(tab.testResults); sum != "" && tab.Resp != nil && tab.Resp.Err == "" {
-		a.notices.SetStatus(a.notices.Status() + "  Tests: " + sum)
-	}
-}
+	// The view DSL is dot-imported so views read like markup.
+	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
+)
 
 var (
 	assertionsTemplate = markup.Must("assertions.vml", assertionsSource)
@@ -39,18 +28,20 @@ const assertionsHelp = "One assertion per line: status == 200, time < 500ms, hea
 	"json items[0].name == \"a\". set token = json access_token keeps a value\n" +
 	"as {{token}} for later requests. Lines starting with # are notes."
 
-// assertionsPane is where the assertions are written, one per line.
-func (a *App) assertionsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
+// View is the request's Tests pane of tab: how assertions are written, and
+// the area they are typed in.
+func (c *Component) View(_ *w.Ctx, tab *tabs.Tab, _ *widget.ScrollState) Node {
+	state := c.state(tab)
 	sync := func() {
-		editRequest(tab, requestedit.TestsTyped{Text: tab.tests.Text})
-		tab.testResults = assert.Run(tab.Req.Tests, tab.Resp) // live, against the response on screen
+		c.edit(tab, requestedit.TestsTyped{Text: state.tests.Text})
+		state.results = assert.Run(tab.Req.Tests, tab.Resp) // live, against the response on screen
 	}
 	return assertionsTemplate.MustBuild(markup.Scope{
 		"looseGap":  w.LooseGap,
 		"gutter":    w.Gutter,
 		"help":      assertionsHelp,
-		"tests":     &tab.tests,
-		"testsText": &tab.tests.TextField,
+		"tests":     &state.tests,
+		"testsText": &state.tests.TextField,
 		"sync":      sync,
 	})
 }
@@ -62,13 +53,15 @@ type resultRow struct {
 	Color w.Token
 }
 
-// resultsPane lists what the assertions found.
-func (a *App) resultsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
-	if len(tab.testResults) == 0 {
+// ResultsView is the response's Tests pane of tab: what the assertions
+// found, scrolled with scroll.
+func (c *Component) ResultsView(ctx *w.Ctx, tab *tabs.Tab, scroll *widget.ScrollState) Node {
+	results := c.Results(tab)
+	if len(results) == 0 {
 		return noResultsTemplate.MustBuild(markup.Scope{"gutter": w.Gutter})
 	}
-	rows := make([]resultRow, 0, len(tab.testResults))
-	for _, r := range tab.testResults {
+	rows := make([]resultRow, 0, len(results))
+	for _, r := range results {
 		mark, color := "\u2713 ", w.OK
 		text := r.Line
 		if !r.OK {
@@ -79,27 +72,12 @@ func (a *App) resultsPane(_ pane, tab *reqTab, _ *ScrollState) Node {
 		}
 		rows = append(rows, resultRow{Text: mark + text, Color: color})
 	}
-	return resultsTemplate.MustBuild(a.scope(markup.Scope{
+	return resultsTemplate.MustBuild(sizes.Scope(ctx, markup.Scope{
 		"gutter":  w.Gutter,
-		"scroll":  &tab.respScroll,
-		"summary": assert.Summary(tab.testResults),
+		"scroll":  scroll,
+		"summary": assert.Summary(results),
 		"rows":    rows,
 	}))
-}
-
-// setVariable stores a value captured from the response to req in the
-// active environment of req's collection, or in that collection's
-// variables when none is active (request.UpsertVar).
-func (a *App) setVariable(req *request.Request, name, value string) {
-	entry, ok := a.entryFor(req)
-	if !ok {
-		return
-	}
-	if env := entry.Environment(); env != nil {
-		env.Vars = request.UpsertVar(env.Vars, name, value)
-		return
-	}
-	entry.Collection.Vars = request.UpsertVar(entry.Collection.Vars, name, value)
 }
 
 // Templates, parsed once above.

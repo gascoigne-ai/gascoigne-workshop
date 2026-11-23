@@ -51,9 +51,7 @@ func TestFocusInAnyEditorOfTheTabCountsAsTyping(t *testing.T) {
 	}{
 		{"url", func(a *App, tab *reqTab) { a.urlbar.Field(tab.Tab).Focused = true }},
 		{"find", func(a *App, tab *reqTab) { tab.find.Focused = true }},
-		{"timeout", func(a *App, tab *reqTab) { tab.timeout.Focused = true }},
 		{"body", func(a *App, tab *reqTab) { a.body.Area(tab.Tab).Focused = true }},
-		{"tests", func(a *App, tab *reqTab) { tab.tests.Focused = true }},
 		{"graphql variables", func(a *App, tab *reqTab) { tab.gqlVars.Focused = true }},
 		{"file path", func(a *App, tab *reqTab) { a.body.File(tab.Tab).Focused = true }},
 		{"message composer", func(a *App, tab *reqTab) { tab.msg.Focused = true }},

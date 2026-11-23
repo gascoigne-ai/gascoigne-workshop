@@ -101,9 +101,9 @@ func (a *App) apply(result sends.Result) {
 	a.refreshView(t)
 	if result.Response.Err != "" {
 		a.notices.SetStatus("Request failed")
-		a.runTests(t)
+		a.assertions.Run(t.Tab)
 		return
 	}
 	a.notices.SetStatus(fmt.Sprintf("%s %s: %d %s in %s", t.Req.Method, t.Req.URL, result.Response.Status, result.Response.StatusText, format.Duration(result.Response.Duration)))
-	a.runTests(t)
+	a.assertions.Run(t.Tab)
 }

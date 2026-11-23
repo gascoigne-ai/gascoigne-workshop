@@ -4,7 +4,6 @@ import (
 	"context"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/assert"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/mcpexplorer"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
@@ -57,13 +56,12 @@ type mcpBlock struct {
 	detailScroll widget.ScrollState // scroll of the open entry
 }
 
-// responseBlock holds the state of the response pane: the body shown, the response mode and find bar, the assertion results and the pane scroll.
+// responseBlock holds the state of the response pane: the body shown, the response mode and find bar and the pane scroll.
 type responseBlock struct {
 	respTab     int
 	view        widget.CodeView    // response body
 	picture     *ebiten.Image      // the response body when it is an image
 	pictureInfo string             // "PNG 640x480, 12.5KB"
-	testResults []assert.Result    // what the assertions found in the shown response
 	look        viewer.Model       // the response mode, the find bar and its active match
 	compactAll  []widget.Line      // the unfiltered compact lines, kept while a search filters the view
 	find        widget.TextField   // the search text
@@ -130,8 +128,6 @@ func newReqTab(tab *tabs.Tab) *reqTab {
 	t.wsView.Follow = true
 	t.wsCancel = func() {}
 	t.explorer = mcpexplorer.New()
-	t.timeout = widget.NewTextField(timeoutText(req.TimeoutSec))
-	t.tests = widget.NewTextArea(req.Tests)
 	t.gqlVars = widget.NewTextArea(req.GraphQLVars)
 	return t
 }

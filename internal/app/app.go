@@ -14,6 +14,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/bus"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/notice"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/assertions"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/auth"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/body"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/kvtable"
@@ -40,13 +41,14 @@ type App struct {
 	settingsState
 
 	ctx        *core.Ctx
-	kv         *kvtable.Component  // the key-value tables of the request pane
-	auth       *auth.Component     // the Auth pane, the trust prompt and the cookie jar view
-	body       *body.Component     // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab
-	urlbar     *urlbar.Component   // the bar above the request pane: URL fields, chips and the Send button
-	strip      *tabstrip.Component // the strip of open requests above the request pane
-	retryDelay time.Duration       // wait before a dropped connection reopens
-	baseScale  float64             // the platform's interface factor under the user's scale
+	kv         *kvtable.Component    // the key-value tables of the request pane
+	assertions *assertions.Component // the Tests and Settings panes, the response Tests pane and the assertion results of each tab
+	auth       *auth.Component       // the Auth pane, the trust prompt and the cookie jar view
+	body       *body.Component       // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab
+	urlbar     *urlbar.Component     // the bar above the request pane: URL fields, chips and the Send button
+	strip      *tabstrip.Component   // the strip of open requests above the request pane
+	retryDelay time.Duration         // wait before a dropped connection reopens
+	baseScale  float64               // the platform's interface factor under the user's scale
 	reg        request.Registry
 	cols       *collections.Library      // the open collections, in tree order, each with its folder and environment, and what is done to whole ones
 	sample     func() request.Collection // the collection shown when nothing is saved or configured

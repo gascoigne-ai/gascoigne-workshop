@@ -159,7 +159,7 @@ func (p pane) badge(app *App, tab *reqTab) int {
 		return assert.Count(tab.Req.Tests)
 	case paneResults: // how many failed
 		n := 0
-		for _, r := range tab.testResults {
+		for _, r := range app.assertions.Results(tab.Tab) {
 			if !r.OK {
 				n++
 			}
@@ -201,13 +201,13 @@ func paneEmpty(app *App, panel pane, tab *reqTab) (string, bool) {
 var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *ScrollState) Node{
 	paneNote:       (*App).notePane,
 	paneBody:       (*App).bodyPaneView,
-	paneSettings:   (*App).settingsPane,
+	paneSettings:   (*App).settingsPaneView,
 	paneAuth:       (*App).authPaneView,
 	paneResponse:   (*App).responsePane,
 	paneMessages:   (*App).messagesPane,
 	paneExplorer:   (*App).explorerPane,
-	paneAssertions: (*App).assertionsPane,
-	paneResults:    (*App).resultsPane,
+	paneAssertions: (*App).assertionsPaneView,
+	paneResults:    (*App).resultsPaneView,
 	paneTable:      (*App).tablePane,
 	paneProto:      (*App).protoPane,
 	paneSchema:     (*App).schemaPaneView,
@@ -221,6 +221,22 @@ func (a *App) bodyPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
 // authPaneView is the Auth pane, drawn by the auth component.
 func (a *App) authPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
 	return a.auth.View(a.ctx, tab.Tab, scroll)
+}
+
+// assertionsPaneView is the request's Tests pane, drawn by the assertions component.
+func (a *App) assertionsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.assertions.View(a.ctx, tab.Tab, scroll)
+}
+
+// resultsPaneView is the response's Tests pane, drawn by the assertions component.
+// It scrolls with the tab's response scroll, whichever scroll it is handed.
+func (a *App) resultsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.assertions.ResultsView(a.ctx, tab.Tab, &tab.respScroll)
+}
+
+// settingsPaneView is the request's Settings pane, drawn by the assertions component.
+func (a *App) settingsPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.assertions.SettingsView(a.ctx, tab.Tab, scroll)
 }
 
 // schemaPaneView is the Schema pane of a gRPC tab, drawn by the body component.

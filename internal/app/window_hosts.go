@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/transfer"
@@ -616,3 +617,27 @@ func (host authHost) Confirm(title, body, action string, run func()) {
 
 // Toast shows text for a moment.
 func (host authHost) Toast(text string, level severity.Level) { host.toast(text, level) }
+
+// assertionsHost is what the assertions component asks of the App
+// (assertions.Deps).
+type assertionsHost struct{ *App }
+
+// Current is the tab shown.
+func (host assertionsHost) Current() *tabs.Tab { return host.tabs.Current() }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host assertionsHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// SetVar keeps a captured value as a variable of the request's collection.
+func (host assertionsHost) SetVar(req *request.Request, name, value string) {
+	host.setVariable(req, name, value)
+}
+
+// Status is the status line.
+func (host assertionsHost) Status() string { return host.notices.Status() }
+
+// SetStatus replaces the status line.
+func (host assertionsHost) SetStatus(text string) { host.notices.SetStatus(text) }
+
+// DefaultTimeout is how long a request without its own timeout may run.
+func (host assertionsHost) DefaultTimeout() time.Duration { return host.timeoutFor(request.Request{}) }
