@@ -287,14 +287,23 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	if e.hidden {
 		return
 	}
-	if ctx.Stats != nil {
-		ctx.Stats.Elements++
-	}
-	r := e.rect
 	if e.modal {
 		defer func(was bool) { ctx.HoverOff = was }(ctx.HoverOff)
 		ctx.HoverOff = false // hover works inside the overlay
 	}
+	e.drawSelf(ctx, dst)
+	kidsDst := e.kidsDst(ctx, dst)
+	e.drawKids(ctx, kidsDst, e.kids)
+	e.drawAfter(ctx, dst)
+}
+
+// drawSelf paints what lies under the children: shadow, backgrounds, the
+// side borders and the behavior.
+func (e *El) drawSelf(ctx *core.Ctx, dst *ebiten.Image) {
+	if ctx.Stats != nil {
+		ctx.Stats.Elements++
+	}
+	r := e.rect
 	style := ctx.Th.Style(e.control)
 	if e.shadow {
 		sh := ctx.Color(core.Shadow)
@@ -335,16 +344,32 @@ func (e *El) draw(ctx *core.Ctx, dst *ebiten.Image) {
 	}
 
 	e.b.Draw(e, ctx, dst)
-	kidsDst := dst
+}
+
+// kidsDst is the image the children draw into: dst, or its clip.
+func (e *El) kidsDst(ctx *core.Ctx, dst *ebiten.Image) *ebiten.Image {
 	if e.clip {
-		kidsDst = ctx.Clip(dst, r)
+		return ctx.Clip(dst, e.rect)
 	}
+	return dst
+}
+
+// drawKids draws kids into kidsDst, skipping those it cannot reach.
+func (e *El) drawKids(ctx *core.Ctx, kidsDst *ebiten.Image, kids []*El) {
 	reach := drawReach(ctx.Scale)
-	for _, k := range e.kids {
+	for _, k := range kids {
 		if reaches(kidsDst.Bounds(), k.rect, ctx.Scale, reach) {
 			k.draw(ctx, kidsDst)
 		}
 	}
+}
+
+// drawAfter paints what lies over the children: the style border, the
+// behavior's DrawOver and the tab edge. ModalLayer refuses a root that has
+// any of them, so a split of the root's children never changes paint order.
+func (e *El) drawAfter(ctx *core.Ctx, dst *ebiten.Image) {
+	r := e.rect
+	style := ctx.Th.Style(e.control)
 	border := e.border
 	if border == "" {
 		border = style.Border

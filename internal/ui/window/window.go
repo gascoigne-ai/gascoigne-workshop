@@ -74,6 +74,7 @@ type Component struct {
 	drawTree       *El          // the tree the last step built and updated; Draw paints it
 	treeStale      bool         // a handler or a step after the build changed what drawTree shows
 	builds         int          // view trees built, so tests can count them
+	snap           baseSnapshot // the window under a modal overlay, drawn once; see baseSnapshot
 	lastIn         core.Input   // the previous frame's input
 	pacer          engine.Pacer // update rate from idle time
 	windowScale    float64      // window units per logical pixel, set by Resize

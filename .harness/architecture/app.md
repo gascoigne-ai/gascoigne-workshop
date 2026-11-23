@@ -194,6 +194,22 @@ toast, a size change, a screenshot, or the floor of `engine.MinFPS` frames a sec
 lost picture comes back). Idle updates slow down (`engine.Pacer`). This follows Ebitengine's
 skip-draw pattern, since `ScheduleFrame` and `SetFPSMode` are deprecated.
 
+While a modal overlay is open (the settings dialog first) the window under it is kept in an image
+(`window.baseSnapshot`, `snapshot.go`): `view.ModalLayer` splits the root's children at the first
+modal, the base column and the dim scrim before it are drawn once with `view.DrawBelow` into an
+offscreen image, and every later frame blits that image and draws only `view.DrawFrom` (the dialog
+panel, menus, a confirm over it, the call log, toasts, tooltips). The frame still builds the tree,
+lays it out and runs `Update`; only drawing is skipped. The image is drawn again (`snapshotStep`) when
+a `Step` raised a `frameSignals` field that `changesBase` ORs: a drained message, an expired toast,
+input beyond the pointer's place (a click, text, the wheel, a key), a handler that fired, a step after
+the build that marked the tree stale (`Tick`s, `over.Tick`'s settings poll), or a capture that draws
+every frame; a resize or scale change (`setSize`) marks it too. A signal makes the image stale and only
+a `Draw` makes it fresh, so several `Update`s per `Draw` lose nothing. The size (from the screen's
+bounds), the scale, the layer and the caret phase (when a base field read it, `Ctx.CaretReads`) are
+the key of the image. With no modal the image is deallocated. It costs 4 bytes a device pixel while
+a modal is open. Blinks and drags of the dialog reuse it; typing in the dialog is a key frame and
+draws the base each time, as before. The doc comment of `baseSnapshot` has the rejected alternatives.
+
 ### Welcome dialog
 
 `ui/overlays/welcome` holds the release notes as a table and opens them as the window's dialog through `Dialogs`; `Component.OpenWelcome` records the version as welcomed through `StateFile.Welcome` and calls it. It opens once per version (`state.State.Welcomed`), or

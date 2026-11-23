@@ -82,3 +82,21 @@ func TestCursorAtOnALongLineIsFastAndStillExact(t *testing.T) {
 		t.Errorf("right of the text: %d", got)
 	}
 }
+
+// A drawing kept across frames needs to know whether it shows the blink
+// phase; CaretReads counts the reads, whatever they answer.
+func TestCaretVisibleCountsReads(t *testing.T) {
+	ctx, err := NewCtx(testTheme())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ctx.CaretReads != 0 {
+		t.Fatalf("CaretReads = %d before any read", ctx.CaretReads)
+	}
+	ctx.CaretVisible() // CaretSince is zero: shown without reading the clock
+	ctx.RestartCaret()
+	ctx.CaretVisible()
+	if ctx.CaretReads != 2 {
+		t.Fatalf("CaretReads = %d after two reads, want 2", ctx.CaretReads)
+	}
+}

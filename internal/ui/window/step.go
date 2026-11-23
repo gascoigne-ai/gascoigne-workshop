@@ -16,24 +16,27 @@ import (
 // change the window's state. Tests drive the window through Step without a
 // GPU; the app calls it once per Update.
 func (a *Component) Step(in core.Input) {
-	moved := a.beginFrame(in)
+	signals := a.beginFrame(in)
 	a.Keys(in)
-	a.endFrame(moved)
+	a.endFrame(signals)
 }
 
-// beginFrame takes in the input and what goroutines reported, and reports
-// whether anything moved: input, a finished send or an expired toast.
-func (a *Component) beginFrame(in core.Input) bool {
+// beginFrame takes in the input and what goroutines reported, and returns
+// what it noticed (see frameSignals): input, a finished send or an expired toast.
+func (a *Component) beginFrame(in core.Input) frameSignals {
 	a.ctx.Tick++
 	a.ctx.In = in
 	a.ctx.Cursor = core.CursorDefault
 	a.strip.BeginFrame(in)
 	a.editor.Tables.BeginFrame(in)
-	drained := a.drain()
-	pruned := a.over.Toasts.Prune()
-	active := engine.InputActive(a.lastIn, in)
+	signals := frameSignals{
+		drained: a.drain(),
+		pruned:  a.over.Toasts.Prune(),
+		active:  engine.InputActive(a.lastIn, in),
+		keys:    inputEvents(in),
+	}
 	a.keys.NoteGeometry([4]int{a.w, a.h, a.winX, a.winY})
-	if active || drained || pruned {
+	if signals.moved() {
 		a.keys.MarkStale()
 	}
 	if in.RestartsCaret() {
@@ -41,18 +44,20 @@ func (a *Component) beginFrame(in core.Input) bool {
 	}
 	a.lastIn = in
 	a.side.BeginFrame(in)
-	return active || drained || pruned
+	return signals
 }
 
 // endFrame builds the view once, lets it react and runs the per-frame
-// upkeep; moved is what beginFrame reported. Draw paints the tree built here
+// upkeep; signals is what beginFrame noticed, and endFrame adds what the build
+// and the steps below noticed, then tells the snapshot of the base whether it is stale. Draw paints the tree built here
 // unless treeStale says that a handler or a step below changed what it shows.
-func (a *Component) endFrame(moved bool) {
+func (a *Component) endFrame(signals frameSignals) {
 	root := a.buildTree()
 	view.Layout(a.ctx, root, a.w, a.h)
 	fired := a.ctx.Fired
 	view.Update(a.ctx, root)
-	a.drawTree, a.treeStale = root, a.ctx.Fired != fired
+	signals.fired = a.ctx.Fired != fired
+	a.drawTree, a.treeStale = root, signals.fired
 	// The steps below run after the tree was built. Each one that changes
 	// what the view shows reports it (the Tick of a child, dragHover) or sets
 	// a.treeStale itself (commitEdit, saveCollection, a toast); the others
@@ -64,7 +69,11 @@ func (a *Component) endFrame(moved bool) {
 	a.showGrab()
 	a.stateFile.Tick(a.keys.State(), a.now())
 	a.workspaceTick()
-	busy := moved || a.tips.Waiting()
+	signals.stale, signals.everyFrame = a.treeStale, a.alwaysDraw()
+	if changesBase(signals) {
+		a.snap.mark()
+	}
+	busy := signals.moved() || a.tips.Waiting()
 	a.markFrame(busy)
 	a.pacer.NoteIdle(busy)
 }
@@ -75,7 +84,7 @@ func (a *Component) Draw(screen *ebiten.Image) {
 	if !a.dirty && !a.alwaysDraw() {
 		return // nothing changed: the screen keeps what it has and the GPU stays idle
 	}
-	view.Draw(a.ctx, a.frameTree(), screen)
+	a.snap.draw(a.ctx, a.frameTree(), screen)
 	a.dirty = false
 }
 

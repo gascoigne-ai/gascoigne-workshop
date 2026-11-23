@@ -109,6 +109,9 @@ type Ctx struct {
 	// when the caret last became visible (the last input).
 	Now        func() time.Time
 	CaretSince time.Time
+	// CaretReads counts the CaretVisible calls: a drawing kept across frames
+	// shows the blink phase when the count moved while it was drawn.
+	CaretReads int
 	Scale      float64
 
 	// Clipboard is used by text widgets for copy, cut and paste.
@@ -240,6 +243,7 @@ func (c *Ctx) RestartCaret() { c.CaretSince = c.now() }
 // The phase follows the clock, so it does not depend on how often the app
 // updates or draws.
 func (c *Ctx) CaretVisible() bool {
+	c.CaretReads++
 	if c.CaretSince.IsZero() {
 		return true
 	}

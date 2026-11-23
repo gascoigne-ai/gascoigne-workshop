@@ -66,6 +66,23 @@ func BenchmarkDrawTree(b *testing.B) {
 	}
 }
 
+// BenchmarkDrawTop is the part of BenchmarkDrawTree that a snapshot of the
+// window under the dialog would still draw every frame: the root's children
+// from the settings panel on (the base column and the scrim sit before it).
+func BenchmarkDrawTop(b *testing.B) {
+	a := newBenchApp(b, true)
+	root := a.view()
+	view.Layout(a.ctx, root, a.w, a.h)
+	const panel = 2
+	top := root.Children()[panel:]
+	screen := ebiten.NewImage(winW, winH)
+	for i := 0; i < b.N; i++ {
+		for _, kid := range top {
+			view.Draw(a.ctx, kid, screen)
+		}
+	}
+}
+
 // BenchmarkDragFrame is one frame of dragging the dialog: the pointer moves,
 // Update builds and lays out the tree, Draw builds, lays out and paints it.
 func BenchmarkDragFrame(b *testing.B) {
@@ -109,6 +126,7 @@ func BenchmarkDrawStats(b *testing.B) {
 		a.ctx.Stats = &core.DrawStats{}
 		a.Draw(screen)
 	}
+	b.ReportMetric(float64(a.ctx.Stats.Elements), "elements/frame")
 	b.ReportMetric(float64(a.ctx.Stats.MaskFills), "maskfills/frame")
 	b.ReportMetric(float64(a.ctx.Stats.RingFills), "ringfills/frame")
 	b.ReportMetric(float64(a.ctx.Stats.Widths), "widths/frame")
