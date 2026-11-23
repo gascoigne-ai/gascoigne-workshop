@@ -27,6 +27,8 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header/envchip"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
@@ -182,6 +184,7 @@ func NewApp(opts Options) (*App, error) {
 	a.ws = ws.New(ws.Deps{Tabs: wsHost{a}, Outbox: wsHost{a}, Tools: wsHost{a}, Window: wsHost{a}, Composers: wsHost{a}})
 	a.resp = response.New(response.Deps{Tabs: responseHost{a}, Slots: responseHost{a}, Headers: responseHost{a}, Files: responseHost{a}, Exports: responseHost{a}, Window: responseHost{a}, Hints: responseHost{a}, Defaults: responseHost{a}})
 	a.strip = tabstrip.New(tabstrip.Deps{Tabs: tabstripHost{a}, Marks: tabstripHost{a}, Menus: tabstripHost{a}, Requests: tabstripHost{a}, Hints: tabstripHost{a}})
+	a.header = header.New(header.Deps{Title: headerHost{a}, Settings: headerHost{a}, Hints: headerHost{a}, Env: envchip.Deps{Envs: envchipHost{a}, Menus: envchipHost{a}, Dialogs: envchipHost{a}}})
 	a.bar = statusbar.New(statusbar.Deps{Status: &a.notices, Log: a.over.Calls(), Welcome: a, Version: version})
 	if loadErr != nil {
 		a.notices.SetStatus(loadErr.Error())

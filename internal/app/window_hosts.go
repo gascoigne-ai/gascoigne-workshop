@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	envs "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/environments"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"image/color"
@@ -446,6 +447,53 @@ func (host tabstripHost) NewRequest() { host.newRequest() }
 
 // Hint is label with the shortcut of action.
 func (host tabstripHost) Hint(label, action string) string { return host.hint(label, action) }
+
+// headerHost is what the banner asks of the App (header.Deps).
+type headerHost struct{ *App }
+
+// Title is the name of the focused collection, "" when none is open.
+func (host headerHost) Title() string { return host.headerTitle() }
+
+// Toggle opens the settings dialog, or closes it.
+func (host headerHost) Toggle() { host.over.Settings.Toggle() }
+
+// Hint is label with the shortcut of action.
+func (host headerHost) Hint(label, action string) string { return host.hint(label, action) }
+
+// envchipHost is what the environment chip asks of the App (envchip.Deps).
+type envchipHost struct{ *App }
+
+// Focused is the focused collection and its environment choice.
+func (host envchipHost) Focused() (*request.Collection, envs.Selection, bool) {
+	return host.focusedSelection()
+}
+
+// Select makes environment index the active one of the focused collection.
+func (host envchipHost) Select(index int) { host.selectEnv(index) }
+
+// Add creates an environment in the focused collection and makes it active.
+func (host envchipHost) Add(name string) { host.addEnv(name) }
+
+// Rename gives environment index of the focused collection a new name.
+func (host envchipHost) Rename(index int, name string) { host.renameEnv(index, name) }
+
+// Delete removes environment index from the focused collection.
+func (host envchipHost) Delete(index int) { host.deleteEnv(index) }
+
+// Open shows the chip's menu at the pointer.
+func (host envchipHost) Open(posX, posY int, items []widget.MenuItem) {
+	host.openMenu(posX, posY, items)
+}
+
+// Prompt asks for a line of text.
+func (host envchipHost) Prompt(title, initial, okLabel string, onOK func(text string)) {
+	host.prompt(title, initial, okLabel, onOK)
+}
+
+// Confirm asks a yes/no question.
+func (host envchipHost) Confirm(title, body, okLabel string, onOK func()) {
+	host.confirm(title, body, okLabel, onOK)
+}
 
 // urlbarHost is what the URL bar asks of the App (urlbar.Deps).
 type urlbarHost struct{ *App }

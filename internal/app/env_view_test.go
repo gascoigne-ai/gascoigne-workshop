@@ -50,7 +50,7 @@ func TestTheEnvironmentChipLaysOutAsPinned(t *testing.T) {
 				for _, env := range tc.envs {
 					a.addEnv(env)
 				}
-				root := a.header()
+				root := a.header.View(a.ctx)
 				Layout(a.ctx, root, size.width, headerH)
 				want, err := os.ReadFile(filepath.Join("testdata", name+".dump"))
 				if err != nil {
@@ -75,7 +75,7 @@ func TestALongEnvironmentNameKeepsTheSettingsButtonInTheWindow(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
 	a.addEnv(longEnvName)
-	root := a.header()
+	root := a.header.View(a.ctx)
 	Layout(a.ctx, root, envFitW, headerH)
 	children := root.Children()
 	button := children[len(children)-1]
@@ -117,7 +117,7 @@ func TestANarrowWindowKeepsTheSettingsButtonInside(t *testing.T) {
 			for _, env := range tc.envs {
 				a.addEnv(env)
 			}
-			root := a.header()
+			root := a.header.View(a.ctx)
 			Layout(a.ctx, root, envNarrowW, headerH)
 			children := root.Children()
 			button := children[len(children)-1]

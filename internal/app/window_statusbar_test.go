@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header/envchip"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/sizes"
 	"testing"
 
@@ -35,13 +36,13 @@ func TestHeaderTemplateMatchesTheGoView(t *testing.T) {
 	goView := Row(H(headerH), PadX(w.Gutter), Bg(w.Hero), Control("hero"),
 		Text(a.col().Name, Bold(), Ellipsis(), Shrink(), MinW(48), Color(w.HeroText)),
 		Spacer(),
-		a.envChip(),
+		envchip.New(envchip.Deps{Envs: envchipHost{a}, Menus: envchipHost{a}, Dialogs: envchipHost{a}}).View(a.ctx),
 		Spacer(W(w.Gutter)),
 		Row(W(headerH), toggle, Tooltip(a.hint("Settings", "settings")),
 			GearIcon(Grow(1), Color(w.HeroMuted), HoverColor(w.HeroText)),
 		),
 	)
-	tplView := a.header()
+	tplView := a.header.View(a.ctx)
 	Layout(a.ctx, goView, 900, headerH)
 	Layout(a.ctx, tplView, 900, headerH)
 	if got, want := Dump(tplView), Dump(goView); got != want {

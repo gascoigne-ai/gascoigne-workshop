@@ -5,12 +5,10 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/environments"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/theme"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
-	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -144,60 +142,6 @@ func (a *App) toggleSecret(index int) {
 	e.Vars[index].Secret = !e.Vars[index].Secret
 }
 
-// envMenu is the menu of the environment chip: envs.Menu decides the rows,
-// this says what each one does.
-func (a *App) envMenu() []MenuItem {
-	col, selection, ok := a.focusedSelection()
-	if !ok {
-		return nil
-	}
-	rows := envs.Menu(selection, col)
-	items := make([]MenuItem, len(rows))
-	for i, row := range rows {
-		items[i] = MenuItem{Label: row.Label, Disabled: row.Disabled, Run: a.envAction(row)}
-		if row.Checked {
-			items[i].Icon = "check"
-		}
-		if row.Action == envs.Separator {
-			items[i] = menuSeparator
-		}
-	}
-	return items
-}
-
-// envAction is what a row of the chip's menu does.
-func (a *App) envAction(row envs.Row) func() {
-	switch row.Action {
-	case envs.Select:
-		return func() { a.selectEnv(row.Env) }
-	case envs.New:
-		return func() { a.prompt("New environment", "", "Create", a.addEnv) }
-	case envs.Rename:
-		return func() {
-			a.prompt("Rename environment", a.envName(), "Rename", func(text string) { a.renameEnv(row.Env, text) })
-		}
-	case envs.Delete:
-		return func() {
-			a.confirm("Delete environment", "Delete \""+a.envName()+"\" and its variables?", "Delete", func() { a.deleteEnv(row.Env) })
-		}
-	}
-	return nil
-}
-
-var envChipTemplate = markup.Must("envchip.vml", envchipSource)
-
-// envChip is the environment switcher in the header.
-func (a *App) envChip() Node {
-	label := "No environment"
-	if n := a.envName(); n != "" {
-		label = n
-	}
-	return envChipTemplate.MustBuild(a.scope(markup.Scope{
-		"label":    label,
-		"openMenu": func(posX, posY int) { a.openMenu(posX, posY, a.envMenu()) },
-	}))
-}
-
 // urlTip is the tooltip of the URL field: what the URL resolves to with the
 // active variables, and the names that do not resolve. Empty when the URL
 // uses no variables.
@@ -286,18 +230,6 @@ func (a *App) insertVariable(tab *reqTab, name string, from int) {
 	field.Focused = true
 	a.urlbar.Edited(tab.Tab)
 }
-
-// Templates, parsed once above.
-const (
-	envchipSource = `<!-- The chip stops at 200 px and cuts a long name, so the settings button
-     beside it stays in a 400 px window; "No environment" (111 px) fits.
-     Narrower, it shrinks after the title, down to its padding and a few
-     pixels: a larger min-w would widen the chip of a short name. -->
-<row pad-x="{{labelPad}}" h="{{compactH}}" max-w="{{envMaxW}}" min-w="{{envMinW}}" shrink bg="hero-text" control="pill" align-items="center" on-click-at="openMenu" tooltip="Environment: variables that override the collection's">
-  <text small bold ellipsis grow="1" color="hero">{{label}}</text>
-</row>
-`
-)
 
 // setVariable stores a value captured from the response to req in the
 // active environment of the collection that holds req, else in the

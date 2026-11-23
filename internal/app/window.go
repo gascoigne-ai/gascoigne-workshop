@@ -5,9 +5,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/markup"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
-
-	// The view DSL is dot-imported so views read like markup: Row(...), Text(...).
-	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
 // Sizes of the window chrome, in logical pixels.
@@ -46,7 +43,7 @@ func (a *App) view() Node {
 		"minSidebarW":    minSidebarW,
 		"minMainW":       minMainW,
 		"sidebar":        a.side.View(a.ctx),
-		"header":         a.header(),
+		"header":         a.header.View(a.ctx),
 		"requestTabs":    a.strip.View(a.ctx),
 		"urlBar":         a.urlbar.View(a.ctx),
 		"paneSplit":      &a.paneSplit,
@@ -66,21 +63,6 @@ func (a *App) view() Node {
 }
 
 // ── Main column ────────────────────────────────────────────────────────
-
-var headerTemplate = markup.Must("header.vml", headerSource)
-
-// header is the banner over the main column: the collection's name, the
-// environment chip and the settings menu button.
-func (a *App) header() Node {
-	return headerTemplate.MustBuild(a.scope(markup.Scope{
-		"headerH":     headerH,
-		"gutter":      w.Gutter,
-		"title":       a.headerTitle(),
-		"env":         a.envChip(),
-		"toggleMenu":  a.over.Settings.Toggle,
-		"settingsTip": a.hint("Settings", "settings"),
-	}))
-}
 
 var paneTemplate = markup.Must("pane.vml", paneSource)
 
@@ -129,19 +111,6 @@ const (
   <slot if="toasts" name="toasts"/>
   <slot name="tooltips"/>
 </stack>
-`
-
-	headerSource = `<!-- In a window too narrow for everything the title gives up room first,
-     down to 48 px, then the chip, so the settings button stays inside. -->
-<row h="{{headerH}}" pad-x="{{gutter}}" bg="hero" control="hero">
-  <text bold ellipsis shrink min-w="{{titleMinW}}" color="hero-text">{{title}}</text>
-  <spacer/>
-  <slot name="env"/>
-  <spacer w="{{gutter}}"/>
-  <row w="{{headerH}}" on-click="toggleMenu" tooltip="{{settingsTip}}">
-    <icon name="gear" grow="1" color="hero-muted" hover-color="hero-text"/>
-  </row>
-</row>
 `
 
 	paneSource = `<col grow="1" bg="bg">

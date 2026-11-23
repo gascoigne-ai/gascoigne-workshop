@@ -29,6 +29,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/mcp"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/urlbar"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/editor/ws"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/header"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/shortcutpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/response"
@@ -64,6 +65,7 @@ type App struct {
 	body       *body.Component       // the Body and Schema panes: text areas, file paths and the gRPC message schema of each tab
 	urlbar     *urlbar.Component     // the bar above the request pane: URL fields, chips and the Send button
 	strip      *tabstrip.Component   // the strip of open requests above the request pane
+	header     *header.Component     // the banner over the main column: the title, the environment chip and the settings button
 	retryDelay time.Duration         // wait before a dropped connection reopens
 	baseScale  float64               // the platform's interface factor under the user's scale
 	reg        request.Registry
