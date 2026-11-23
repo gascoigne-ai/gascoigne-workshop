@@ -315,6 +315,16 @@ func TestCheckLayersSentLogTestsMayNotImportHistoryfile(t *testing.T) {
 	}
 }
 
+// The form page is tested over a fake host that keeps the written settings in
+// memory, so its tests may not import the settings file adapter.
+func TestCheckLayersFormPageTestsMayNotImportSettingsfile(t *testing.T) {
+	test := synthetic("internal/ui/overlays/settingsdialog/formpage")
+	test.TestImports = []string{testModule + "/internal/feature/settings/adapter/settingsfile"}
+	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) == 0 {
+		t.Error("a formpage test importing settingsfile must be a violation")
+	}
+}
+
 // The whole-window tests run on the real adapters, as apptest does; the rows
 // are for test files only.
 func TestCheckLayersWindowTestFixtures(t *testing.T) {

@@ -2,13 +2,10 @@ package formpage
 
 import (
 	"image/color"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
@@ -17,13 +14,11 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// settingsDisk is the settings store the form tests write files through.
-var settingsDisk settingsfile.Files
-
-// fakeHost keeps the settings in memory and records what the form asked.
+// fakeHost keeps the settings in memory and records what the form asked;
+// written is the settings file the form would have saved.
 type fakeHost struct {
 	current   settings.Settings
-	path      string
+	written   []byte
 	toasts    []string
 	pickTitle string
 	pickDone  func(path string)
@@ -34,7 +29,7 @@ type fakeHost struct {
 }
 
 func newHost(t *testing.T) *fakeHost {
-	return &fakeHost{current: settings.Default(), path: filepath.Join(t.TempDir(), "settings.json")}
+	return &fakeHost{current: settings.Default()}
 }
 
 func (h *fakeHost) Size() (int, int)                   { return 1280, 800 }
@@ -50,7 +45,7 @@ func (h *fakeHost) Send(msg prefs.Msg) {
 	case prefs.Change:
 		h.changes++
 		msg.Edit(&h.current)
-		_ = settingsDisk.Save(h.path, h.current)
+		h.written, _ = settings.Encode(h.current)
 	case prefs.ScaleLive:
 		h.current.UIScalePct = msg.Percent
 	case prefs.Save:
@@ -140,8 +135,8 @@ func TestResetRemovesTheKeyFromTheFile(t *testing.T) {
 	host := newHost(t)
 	host.Send(prefs.Change{Edit: func(current *settings.Settings) { current.Layout = "side" }})
 	d.Reset(host, "layout")
-	if data, _ := os.ReadFile(host.path); strings.Contains(string(data), "layout") || host.current.Layout != "stacked" {
-		t.Fatalf("layout %q, file %q", host.current.Layout, data)
+	if strings.Contains(string(host.written), "layout") || host.current.Layout != "stacked" {
+		t.Fatalf("layout %q, file %q", host.current.Layout, host.written)
 	}
 }
 
