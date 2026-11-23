@@ -161,6 +161,11 @@ Each is also said in the doc comment of what breaks the rule; a new exception ad
 - **Caret blink** follows the clock (`Ctx.CaretVisible`), not ticks, so its rate holds when the idle
   app drops from 60 to 30 updates. `engine.MinFPS` (10) draws at least every 100 ms, so a phase
   change shows.
+- **CodeView layout cache.** The runes of every line and the wrap layout are kept between calls
+  (`codeview_cache.go`), so an Update or Draw with nothing changed costs no allocation per line (a
+  40k-line body went from 6-18 ms to under 0.1 ms per Update). The layout is rebuilt when the
+  lines (`SetLines`, or `Lines` reassigned), the folded lines, the wrap width or the font advance
+  change. Spans edited in place without `SetLines` are not seen.
 - **Monospace columns.** `CodeView` and `TextArea` share `monoGrid`, which places columns by the
   exact advance so the caret, selection, matches and clicks stay on the text. A tab advances to
   the next stop of `core.TabStop` columns along its line (`core.ColumnAfter`); the wrap layout keeps

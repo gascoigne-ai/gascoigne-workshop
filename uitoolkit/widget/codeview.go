@@ -56,6 +56,14 @@ type CodeView struct {
 	// laidWrap is the Wrap the scroll position was last laid out with, so
 	// switching it can keep the top line in place.
 	laidWrap bool
+
+	// gen counts SetLines calls; texts and laid are valid for the lines of
+	// one gen.
+	gen   uint64
+	texts textCache
+	laid  layoutCache
+	// layoutBuilds counts the layouts built, for the tests of the cache.
+	layoutBuilds int
 }
 
 // noReveal is the reveal of a view with nothing to scroll to.
@@ -75,12 +83,18 @@ func (v *CodeView) layout(geometry codeGeometry, rect core.Rect) wrapLayout {
 }
 
 func (v *CodeView) layoutAt(width float64, geometry codeGeometry) wrapLayout {
+	key := layoutKey{lines: v.linesKey(), folds: v.foldsKey(), width: width, adv: geometry.adv}
+	if v.laid.ok && v.laid.key == key {
+		return v.laid.layout
+	}
+	v.layoutBuilds++
 	visible := v.Visible()
 	lines := make([]wrapLine, len(visible))
 	for i, line := range visible {
-		lines[i] = wrapLine{line: line, text: []rune(v.lineText(line)), whole: v.folded(line)}
+		lines[i] = wrapLine{line: line, text: v.lineRunes(line), whole: v.folded(line)}
 	}
-	return layoutWrap(lines, width, monoColumns(geometry.adv))
+	v.laid = layoutCache{key: key, layout: layoutWrap(lines, width, monoColumns(geometry.adv)), ok: true}
+	return v.laid.layout
 }
 
 // folded reports whether line i is shown folded, as one row of its preview.
@@ -120,8 +134,9 @@ func (v *CodeView) SetLines(lines []Line) {
 	v.HasSel, v.dragging, v.drag = false, false, barDrag{}
 	v.ScrollX, v.maxCols = 0, 0
 	v.matches, v.current, v.reveal = nil, -1, noReveal
-	for i := range lines {
-		runes := []rune(spanText(lines[i].Spans))
+	v.gen++
+	v.texts = v.runesOfLines()
+	for _, runes := range v.texts.runes {
 		v.maxCols = max(v.maxCols, core.TextColumn(runes, len(runes)))
 	}
 }
@@ -182,7 +197,7 @@ func (p textPos) before(other textPos) bool {
 }
 
 // lineLen is the number of runes in line i.
-func (v *CodeView) lineLen(index int) int { return len([]rune(v.lineText(index))) }
+func (v *CodeView) lineLen(index int) int { return len(v.lineRunes(index)) }
 
 // selRange returns the selection low to high; ok is false when it is empty.
 func (v *CodeView) selRange() (lo, hi textPos, ok bool) {
