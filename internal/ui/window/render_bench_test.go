@@ -88,6 +88,15 @@ func BenchmarkDragFrameNoDialog(b *testing.B) {
 	}
 }
 
+// BenchmarkIdleStep is a tick with no input and nothing drawn: the cost of
+// the 30 ticks per second an idle window still runs.
+func BenchmarkIdleStep(b *testing.B) {
+	a := newBenchApp(b, false)
+	for i := 0; i < b.N; i++ {
+		a.Step(core.Input{})
+	}
+}
+
 // BenchmarkDrawStats reports what one drag frame asks the GPU for, as
 // metrics per frame: the counts the batching items bring down.
 func BenchmarkDrawStats(b *testing.B) {

@@ -1,4 +1,4 @@
-.PHONY: check fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
+.PHONY: check bench fuzz fmt-check vet test vet-release release-packages check-release-scope test-release build release run example-server shot install
 
 check: fmt-check vet test vet-release check-release-scope test-release
 
@@ -10,6 +10,12 @@ vet:
 
 test:
 	go test -race ./...
+
+# Frame-cost benchmarks (CPU side, no display needed beyond what the tests
+# use); not part of check. Compare two runs with benchstat when installed.
+BENCHCOUNT ?= 6
+bench:
+	go test -run '^$$' -bench . -benchmem -count $(BENCHCOUNT) ./internal/ui/window ./uitoolkit/...
 
 # Short run of every fuzz target (package:Target pairs below); not part of
 # check. A crasher lands in the package's testdata/fuzz and becomes a

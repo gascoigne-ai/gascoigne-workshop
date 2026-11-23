@@ -48,6 +48,7 @@ const previewLifetime = 5 * time.Minute
 type launch struct {
 	opts    app.Options
 	iconPNG *string
+	cpuProf *string
 }
 
 func main() {
@@ -61,6 +62,11 @@ func main() {
 		return
 	}
 	// A normal run opens the welcome dialog once per version.
+	stopProfile, err := startProfile(*run.cpuProf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stopProfile()
 	run.opts.Welcome = true
 	run.opts.WelcomeEvery = welcomeEveryStart
 	run.opts.BaseScale = settings.BaseScale(runtime.GOOS)
@@ -91,6 +97,7 @@ func defineFlags(set *flag.FlagSet) *launch {
 	set.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	set.StringVar(&opts.ThemesDir, "themes", settingsfile.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
 	set.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build) or the example server (default build)")
+	run.cpuProf = set.String("cpuprofile", "", "write a CPU profile of the run to this file, for `go tool pprof`")
 	run.iconPNG = set.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	return run
 }
