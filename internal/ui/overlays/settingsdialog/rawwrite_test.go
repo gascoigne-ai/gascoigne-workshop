@@ -2,25 +2,20 @@ package settingsdialog
 
 import (
 	"errors"
-	"os"
 	"strings"
 	"testing"
-
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 )
 
-// failingStore is the real files with a write that always fails.
-type failingStore struct{ settingsfile.Files }
+// failingStore is the in-memory files with a write that always fails.
+type failingStore struct{ *memoryStore }
 
 func (failingStore) WriteText(string, []byte) error { return errors.New("disk full") }
 
 func rawHostWithFailingWrites(t *testing.T) (*fakeHost, *SettingsDialog) {
 	t.Helper()
 	host := newHost(t)
-	if err := os.WriteFile(host.path, []byte("{}"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	host.store = failingStore{}
+	host.files.write(host.path, "{}")
+	host.store = failingStore{host.files}
 	var d SettingsDialog
 	d.OpenRaw(host)
 	return host, &d

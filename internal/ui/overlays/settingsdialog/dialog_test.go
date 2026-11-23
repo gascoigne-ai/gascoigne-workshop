@@ -4,13 +4,11 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
 	"image/color"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	w "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/view"
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
@@ -28,12 +26,13 @@ type fakeHost struct {
 	pickDone  func(path string)
 	saved     int
 	fontsSet  int                    // how many times the dialog applied the fonts
-	store     settings.SettingsStore // replaces the real files when a test sets it
+	files     *memoryStore           // the settings files, in memory
+	store     settings.SettingsStore // replaces files when a test sets it
 	changes   int                    // how many Change messages the dialog sent
 }
 
 func newHost(t *testing.T) *fakeHost {
-	return &fakeHost{current: settings.Default(), path: filepath.Join(t.TempDir(), "settings.json")}
+	return &fakeHost{current: settings.Default(), files: newMemoryStore(), path: filepath.Join(t.TempDir(), "settings.json")}
 }
 
 func (h *fakeHost) Size() (int, int)            { return 1280, 800 }
@@ -41,7 +40,7 @@ func (h *fakeHost) Settings() settings.Settings { return h.current }
 func (h *fakeHost) Change(edit func(*settings.Settings)) {
 	h.changes++
 	edit(&h.current)
-	_ = settingsDisk.Save(h.path, h.current)
+	_ = h.files.Save(h.path, h.current)
 }
 func (h *fakeHost) SetScaleLive(percent int)            { h.current.UIScalePct = percent }
 func (h *fakeHost) Save()                               { h.saved++ }
@@ -80,8 +79,8 @@ func TestRawTextWithProblemsChangesNothingAndGoodTextIsWrittenAsTyped(t *testing
 	if host.current.Layout != "side" || len(d.Problems) != 0 {
 		t.Fatalf("layout %q problems %+v", host.current.Layout, d.Problems)
 	}
-	if data, _ := os.ReadFile(host.path); string(data) != d.RawText.Text {
-		t.Fatalf("file %q", data)
+	if got := host.files.text(host.path); got != d.RawText.Text {
+		t.Fatalf("file %q", got)
 	}
 }
 
@@ -95,9 +94,7 @@ func TestAChangeOnDiskIsPickedUpOnceAndAnOwnWriteIsNot(t *testing.T) {
 	if host.current.Corners != "square" {
 		t.Fatal("the dialog reloaded the file it had just written")
 	}
-	if err := os.WriteFile(host.path, []byte(`{"corners": "soft"}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	host.files.write(host.path, `{"corners": "soft"}`)
 	d.Poll(host)
 	if host.current.Corners != "soft" {
 		t.Fatalf("Corners = %q after an outside change", host.current.Corners)
@@ -121,12 +118,12 @@ func TestCompletionOffersWhatSettingsCompleteGivesAtTheCaret(t *testing.T) {
 }
 func (h *fakeHost) Pointer() (int, int) { return 400, 300 }
 func (h *fakeHost) Unsaved() bool       { return h.unsaved }
-func (h *fakeHost) Persist()            { _ = settingsDisk.Save(h.path, h.current); h.unsaved = false; h.saved++ }
+func (h *fakeHost) Persist()            { _ = h.files.Save(h.path, h.current); h.unsaved = false; h.saved++ }
 func (h *fakeHost) SettingsStore() settings.SettingsStore {
 	if h.store != nil {
 		return h.store
 	}
-	return settingsfile.Files{}
+	return h.files
 }
 
 func (h *fakeHost) PickFile(title string, done func(path string)) {
@@ -256,6 +253,3 @@ func TestEveryVisibleCategoryHasAPageInTheDialog(t *testing.T) {
 		}
 	}
 }
-
-// settingsDisk is the settings store the dialog tests write files through.
-var settingsDisk settingsfile.Files

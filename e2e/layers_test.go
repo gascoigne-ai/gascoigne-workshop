@@ -325,6 +325,16 @@ func TestCheckLayersFormPageTestsMayNotImportSettingsfile(t *testing.T) {
 	}
 }
 
+// The settings dialog is tested over an in-memory settings store, so its tests
+// may not import the settings file adapter.
+func TestCheckLayersSettingsDialogTestsMayNotImportSettingsfile(t *testing.T) {
+	test := synthetic("internal/ui/overlays/settingsdialog")
+	test.TestImports = []string{testModule + "/internal/feature/settings/adapter/settingsfile"}
+	if got := checkLayers(testModule, layerRules, []listedPackage{test}); len(got) == 0 {
+		t.Error("a settingsdialog test importing settingsfile must be a violation")
+	}
+}
+
 // The whole-window tests run on the real adapters, as apptest does; the rows
 // are for test files only.
 func TestCheckLayersWindowTestFixtures(t *testing.T) {

@@ -23,6 +23,7 @@ import (
 // fakeApp answers every Deps interface of the component and records what the
 // component asked of the application.
 type fakeApp struct {
+	files    *memoryStore // the settings files the component reads and writes
 	current  settings.Settings
 	themeErr error
 	scale    int
@@ -83,23 +84,17 @@ func (f *fakeApp) Keymap() keymap.Keymap {
 	return keymap.Resolve(f.current.Shortcuts, commands, shortcutpage.ParseChord)
 }
 
-// newComponent is a component over a settings file in a temp dir, with the
-// application in its default settings.
+// newComponent is a component over an in-memory settings file at a path in a
+// temp dir, with the application in its default settings.
 func newComponent(t *testing.T, access storage.Access) (*Component, *fakeApp, string) {
 	t.Helper()
-	app := &fakeApp{current: settings.Default(), colors: map[w.Token]color.RGBA{}}
+	app := &fakeApp{current: settings.Default(), colors: map[w.Token]color.RGBA{}, files: newMemoryStore()}
 	path := filepath.Join(t.TempDir(), "settings.json")
 	component := New(Deps{
 		Settings: app, Window: app, Files: app, Dialogs: app, Bus: app, Looks: app, Keys: app,
-		Path: path, Store: settingsDisk, Access: access, Fonts: fonts.System{},
+		Path: path, Store: app.files, Access: access, Fonts: fonts.System{},
 	})
 	return component, app, path
-}
-
-func fileText(t *testing.T, path string) string {
-	t.Helper()
-	data, _ := os.ReadFile(path)
-	return string(data)
 }
 
 // press runs the button of the open question that has label.
@@ -147,16 +142,16 @@ func TestClosingWithUnsavedChangesAsksWhatToDo(t *testing.T) {
 		component, app, path := unsavedComponent(t)
 		component.Close()
 		press(t, app, "Save")
-		if component.Open() || component.Unsaved() || !strings.Contains(fileText(t, path), `"layout": "side"`) {
-			t.Fatalf("open %v unsaved %v file %q", component.Open(), component.Unsaved(), fileText(t, path))
+		if component.Open() || component.Unsaved() || !strings.Contains(app.files.text(path), `"layout": "side"`) {
+			t.Fatalf("open %v unsaved %v file %q", component.Open(), component.Unsaved(), app.files.text(path))
 		}
 	})
 	t.Run("discard reverts to what was stored and closes", func(t *testing.T) {
 		component, app, path := unsavedComponent(t)
 		component.Close()
 		press(t, app, "Discard")
-		if component.Open() || component.Unsaved() || app.current.Layout != settings.Default().Layout || strings.Contains(fileText(t, path), "side") {
-			t.Fatalf("open %v unsaved %v layout %q file %q", component.Open(), component.Unsaved(), app.current.Layout, fileText(t, path))
+		if component.Open() || component.Unsaved() || app.current.Layout != settings.Default().Layout || strings.Contains(app.files.text(path), "side") {
+			t.Fatalf("open %v unsaved %v layout %q file %q", component.Open(), component.Unsaved(), app.current.Layout, app.files.text(path))
 		}
 	})
 }
@@ -185,16 +180,14 @@ func TestToggleOpensAndClosesTheDialog(t *testing.T) {
 func TestPersistWritesTheFileAndAnOwnWriteIsNotReloaded(t *testing.T) {
 	component, app, path := unsavedComponent(t)
 	component.Send(prefs.Persist{})
-	if component.Unsaved() || !strings.Contains(fileText(t, path), `"layout": "side"`) {
-		t.Fatalf("unsaved %v file %q", component.Unsaved(), fileText(t, path))
+	if component.Unsaved() || !strings.Contains(app.files.text(path), `"layout": "side"`) {
+		t.Fatalf("unsaved %v file %q", component.Unsaved(), app.files.text(path))
 	}
 	component.Poll()
 	if len(app.applied) != 0 {
 		t.Fatalf("the file just written was applied again: %+v", app.applied)
 	}
-	if err := os.WriteFile(path, []byte(`{"autoSave": false, "corners": "square"}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	app.files.write(path, `{"autoSave": false, "corners": "square"}`)
 	component.Poll()
 	if len(app.applied) != 1 || app.current.Corners != "square" {
 		t.Fatalf("applied %d, corners %q: an outside change must be picked up", len(app.applied), app.current.Corners)
@@ -232,8 +225,8 @@ func TestEveryMessageMarksTheViewStale(t *testing.T) {
 func TestDraggingTheScaleSliderSetsTheScaleWithoutWriting(t *testing.T) {
 	component, app, path := newComponent(t, storage.Writable)
 	component.Send(prefs.ScaleLive{Percent: 150})
-	if app.scale != 150 || fileText(t, path) != "" {
-		t.Fatalf("scale %d, file %q", app.scale, fileText(t, path))
+	if app.scale != 150 || app.files.text(path) != "" {
+		t.Fatalf("scale %d, file %q", app.scale, app.files.text(path))
 	}
 }
 
@@ -252,8 +245,8 @@ func TestANewerFileIsNeverWritten(t *testing.T) {
 	if len(app.toasts) == 0 || !strings.Contains(app.toasts[0], "newer version") {
 		t.Fatalf("toasts %q, want the refusal named", app.toasts)
 	}
-	if _, err := os.Stat(path); err == nil {
-		t.Fatalf("the file was written: %q", fileText(t, path))
+	if app.files.has(path) {
+		t.Fatalf("the file was written: %q", app.files.text(path))
 	}
 }
 
@@ -261,8 +254,8 @@ func TestAFailedThemeStopsTheWrite(t *testing.T) {
 	component, app, path := newComponent(t, storage.Writable)
 	app.themeErr = os.ErrInvalid
 	component.Edit(func(current *settings.Settings) { current.Layout = "side" })
-	if len(app.status) != 1 || fileText(t, path) != "" {
-		t.Fatalf("status %q file %q, want the error shown and nothing written", app.status, fileText(t, path))
+	if len(app.status) != 1 || app.files.text(path) != "" {
+		t.Fatalf("status %q file %q, want the error shown and nothing written", app.status, app.files.text(path))
 	}
 }
 

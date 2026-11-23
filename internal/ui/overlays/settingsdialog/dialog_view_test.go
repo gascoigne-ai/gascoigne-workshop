@@ -51,9 +51,7 @@ type frameCase struct {
 func openRawWithProblems(t *testing.T, dialog *SettingsDialog, host *windowHost) {
 	t.Helper()
 	text := "{\n  \"theme\": 3,\n  \"nonsense\": true\n}\n"
-	if err := os.WriteFile(host.path, []byte(text), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	host.files.write(host.path, text)
 	dialog.OpenRaw(host)
 }
 
