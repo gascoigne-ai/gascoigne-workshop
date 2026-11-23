@@ -218,7 +218,6 @@ func TestCheckLayersAllows(t *testing.T) {
 		name string
 		pkg  listedPackage
 	}{
-		{"exampleserver imports ws", synthetic("internal/exampleserver", "internal/feature/send/proto/ws")},
 		{"theme imports toolkit core and theming", synthetic("internal/feature/settings/theme", "uitoolkit/core", "uitoolkit/theming")},
 		{"app imports anything", synthetic("internal/app", "internal/feature/send", "uitoolkit/widget", "internal/feature/send/ui/respview")},
 		{"cmd is not checked", synthetic("cmd/workshop", "internal/app", "internal/feature/send")},
@@ -302,7 +301,6 @@ func TestZoneOf(t *testing.T) {
 		{"internal/feature/send", zoneFeatureRoot, "send"},
 		{"internal/feature/send/ui/respview", zoneFeatureUI, "send"},
 		{"internal/feature/send/adapter/preview", zoneAdapter, "send"},
-		{"internal/feature/send/proto/ws", zoneController, "send"},
 		{"internal/feature/request", zoneBase, ""},
 		{"internal/feature/request/sub", zoneBase, ""},
 		{"internal/storage", zoneBase, ""},
@@ -427,6 +425,24 @@ func TestFormatIsAUIPackageAndKernelIsGone(t *testing.T) {
 	}
 	if !listed["internal/ui/format"] {
 		t.Error("internal/ui/format is not in the tree")
+	}
+}
+
+// The protocol clients do network and process I/O and implement
+// request.Sender: an adapter of the send feature, not a controller.
+func TestProtocolClientsAreASendAdapter(t *testing.T) {
+	module := moduleName(t)
+	listed := map[string]bool{}
+	for _, pkg := range listPackages(t, "") {
+		listed[relativeTo(module, pkg.ImportPath)] = true
+	}
+	for _, want := range []string{"internal/feature/send/adapter/protocol", "internal/feature/send/adapter/protocol/ws"} {
+		if !listed[want] {
+			t.Errorf("%s is not in the tree", want)
+		}
+	}
+	if listed["internal/feature/send/proto"] {
+		t.Error("internal/feature/send/proto still exists: it moved to send/adapter/protocol")
 	}
 }
 

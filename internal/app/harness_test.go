@@ -23,7 +23,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/adapter/settingsfile"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/statefile"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/fonts"
@@ -396,10 +396,10 @@ func withAdapters(opts Options) Options {
 	opts.RetryDelay = cmp.Or(opts.RetryDelay, 10*time.Millisecond)
 	opts.History = func(dir string) history.History { return historyadapter.Dir(dir) }
 	opts.Fonts = fonts.System{}
-	opts.Protocols = proto.Configured
-	opts.GRPCMethods = proto.ListGRPCMethods
-	opts.GRPCSchema = proto.GRPCInputSchema
-	opts.Curl = proto.Curl
+	opts.Protocols = protocol.Configured
+	opts.GRPCMethods = protocol.ListGRPCMethods
+	opts.GRPCSchema = protocol.GRPCInputSchema
+	opts.Curl = protocol.Curl
 	opts.Store = store.Files{}
 	opts.States = statefile.Files{}
 	opts.SettingsFiles = settingsfile.Files{}

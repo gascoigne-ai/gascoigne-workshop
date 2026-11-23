@@ -42,7 +42,7 @@ flowchart LR
   (`tabs.HistoryLimit` steps per table and tab) and runs the pane's `changed` hook (Params rewrite
   the URL). Menus, keys, drag and bulk edit all use it.
 - **Sending**: `App.dispatch` expands `{{vars}}` (`Request.Expanded`, the stored request stays as
-  typed) and runs `proto.Registry.Send` as a `Cmd`. Each tab numbers its sends; a result whose
+  typed) and runs `protocol.Registry.Send` as a `Cmd`. Each tab numbers its sends; a result whose
   number is no longer current (cancelled or replaced) is dropped. Timeout: the request's, else
   `settings.TimeoutSec`, else a minute.
 
@@ -56,7 +56,7 @@ The window is VML views (`window.go`, `tree_sidebar.go`, `requesttabs.go`, `requ
 - `protocolViews` has one row per row of `request.Protocols`, in the same order (a test checks it):
   the UI half of a protocol (its panes, its composer, whether settings offer it). The protocol chip
   cycles the offered rows; SSE and gRPC are offered once their `experimental` setting is on.
-- Auth: `authTypes` drives the pane, the stored `request.Auth` and masking. `proto.REST` applies
+- Auth: `authTypes` drives the pane, the stored `request.Auth` and masking. `protocol.REST` applies
   credentials after the headers, so they win over a typed `Authorization` header; they never show
   in the Headers table. Secret fields refuse copy and cut.
 - Body: the text and the form rows are kept apart, so switching body type loses nothing.

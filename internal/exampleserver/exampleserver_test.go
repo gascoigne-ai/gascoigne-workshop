@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 )
 
 // start serves every protocol on random ports and returns the endpoint
@@ -44,7 +44,7 @@ func within(t *testing.T) context.Context {
 
 func send(t *testing.T, call request.Request) request.Response {
 	t.Helper()
-	response, err := proto.REST{}.Send(within(t), call)
+	response, err := protocol.REST{}.Send(within(t), call)
 	if err != nil {
 		t.Fatalf("send %s: %v", call.URL, err)
 	}
@@ -137,7 +137,7 @@ func waitFor(t *testing.T, session interface{ Events() <-chan request.Event }, w
 
 func TestWebSocketEchoesEachMessage(t *testing.T) {
 	urls := start(t)
-	session, err := proto.WebSocket{}.Connect(within(t), request.Request{Protocol: "websocket", URL: urls["websocket"]})
+	session, err := protocol.WebSocket{}.Connect(within(t), request.Request{Protocol: "websocket", URL: urls["websocket"]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestWebSocketEchoesEachMessage(t *testing.T) {
 
 func TestSSEStreamsTheRequestedNumberOfEvents(t *testing.T) {
 	urls := start(t)
-	session, err := proto.SSE{}.Connect(within(t), request.Request{Protocol: "sse", URL: urls["sse"] + "?count=3&interval=1ms"})
+	session, err := protocol.SSE{}.Connect(within(t), request.Request{Protocol: "sse", URL: urls["sse"] + "?count=3&interval=1ms"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +165,7 @@ func TestSSEStreamsTheRequestedNumberOfEvents(t *testing.T) {
 
 func TestMCPListsAndCallsTools(t *testing.T) {
 	urls := start(t)
-	session, err := proto.MCP{}.Connect(within(t), request.Request{Protocol: "mcp", URL: urls["mcp"]})
+	session, err := protocol.MCP{}.Connect(within(t), request.Request{Protocol: "mcp", URL: urls["mcp"]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,25 +187,25 @@ func TestMCPListsAndCallsTools(t *testing.T) {
 func TestGRPCServesHealthAndReflection(t *testing.T) {
 	urls := start(t)
 	call := request.Request{Protocol: "grpc", URL: urls["grpc"], Method: "grpc.health.v1.Health/Check", Body: `{"service": ""}`}
-	methods, err := proto.ListGRPCMethods(within(t), call)
+	methods, err := protocol.ListGRPCMethods(within(t), call)
 	if err != nil {
 		t.Fatalf("reflection: %v", err)
 	}
 	if !strings.Contains(strings.Join(methods, " "), "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %v, want the health check listed", methods)
 	}
-	response, err := proto.GRPC{}.Send(within(t), call)
+	response, err := protocol.GRPC{}.Send(within(t), call)
 	if err != nil || response.Status != 200 || !strings.Contains(string(response.Body), "SERVING") {
 		t.Fatalf("check = %d %q, %v; want SERVING", response.Status, response.Body, err)
 	}
 }
 
 // The second gRPC port has no reflection, so a client must bring the
-// service's .proto file: the example server's own copy of health.proto.
+// service's .proto file: the example server's own copy of health.protocol.
 func TestGRPCWithoutReflectionAnswersACallFromTheProtoFile(t *testing.T) {
 	urls := start(t)
 	call := request.Request{Protocol: "grpc", URL: urls["grpc-no-reflection"], Method: "grpc.health.v1.Health/Check", Body: `{"service": "example"}`}
-	if _, err := proto.ListGRPCMethods(within(t), call); err == nil {
+	if _, err := protocol.ListGRPCMethods(within(t), call); err == nil {
 		t.Fatal("the methods were listed without a proto file: the port offers reflection")
 	}
 	healthProto, err := filepath.Abs(filepath.Join("protos", "grpc", "health", "v1", "health.proto"))
@@ -213,7 +213,7 @@ func TestGRPCWithoutReflectionAnswersACallFromTheProtoFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	call.Proto = request.ProtoSource{Files: []string{healthProto}}
-	response, err := proto.GRPC{}.Send(within(t), call)
+	response, err := protocol.GRPC{}.Send(within(t), call)
 	if err != nil || response.Status != 200 || !strings.Contains(string(response.Body), "SERVING") {
 		t.Fatalf("check = %d %q %q, %v; want SERVING", response.Status, response.Body, response.Err, err)
 	}

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"net/http"
 	"net/url"
@@ -18,12 +18,12 @@ func TestRequestsShareACookieJarThatClearCookiesEmpties(t *testing.T) {
 	if first == nil {
 		t.Fatal("no cookie jar")
 	}
-	rest, ok := a.reg["rest"].(proto.REST)
+	rest, ok := a.reg["rest"].(protocol.REST)
 	if !ok || rest.Jar != first {
 		t.Fatalf("the REST protocol must use the app's jar: %+v", a.reg["rest"])
 	}
 	a.clearCookies()
-	rest, _ = a.reg["rest"].(proto.REST)
+	rest, _ = a.reg["rest"].(protocol.REST)
 	if a.jar == first || rest.Jar != a.jar {
 		t.Fatal("clearing cookies must install a new jar everywhere")
 	}
@@ -85,7 +85,7 @@ func TestChangingTheProxyInTheSettingsReachesTheProtocols(t *testing.T) {
 
 	a.changeSettings(func(prefs *settings.Settings) { prefs.Proxy = "http://127.0.0.1:3128" })
 
-	rest, ok := a.reg["rest"].(proto.REST)
+	rest, ok := a.reg["rest"].(protocol.REST)
 	if !ok || rest.Proxy != "http://127.0.0.1:3128" {
 		t.Fatalf("REST protocol did not get the proxy: %+v", a.reg["rest"])
 	}

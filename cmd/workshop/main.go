@@ -11,7 +11,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	historyadapter "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history/adapter"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/preview"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/adapter/folders"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/displayscale"
@@ -98,10 +98,10 @@ func defineFlags(set *flag.FlagSet) *launch {
 // adapters gives opts the real implementation of every response.
 func adapters(opts *app.Options) {
 	opts.ScanFonts = true
-	opts.Protocols = proto.Configured
-	opts.GRPCMethods = proto.ListGRPCMethods
-	opts.GRPCSchema = proto.GRPCInputSchema
-	opts.Curl = proto.Curl
+	opts.Protocols = protocol.Configured
+	opts.GRPCMethods = protocol.ListGRPCMethods
+	opts.GRPCSchema = protocol.GRPCInputSchema
+	opts.Curl = protocol.Curl
 	opts.Store = store.Files{}
 	opts.Sample = collection.Sample // which sample is a build decision, see clients_*.go
 	opts.Clients = clientConfigs()

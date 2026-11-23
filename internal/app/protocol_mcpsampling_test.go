@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 )
 
@@ -33,7 +33,7 @@ func ask(app *App, ctx context.Context) chan sampled {
 
 func TestTheAppOffersSamplingToMCPServers(t *testing.T) {
 	a := testApp(t)
-	mcp, ok := a.reg["mcp"].(proto.MCP)
+	mcp, ok := a.reg["mcp"].(protocol.MCP)
 	if !ok || mcp.Sampler == nil {
 		t.Fatalf("the mcp protocol is %#v, it must have a Sampler", a.reg["mcp"])
 	}

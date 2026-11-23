@@ -4,11 +4,11 @@ Sending a request and reading the answer: the protocol clients, the request edit
 
 ## Layout
 - `internal/feature/send`: package `send`: `ParseCurl` and `ShellSplit` (`curlparse.go`), `ParseServerInfo` (`mcpserver.go`), `ParseSchema` (`graphqlschema.go`), `BinaryMessage` (`binarymessage.go`, the composer's `hex:` syntax), `ImportedName` and the `BodyPreview` port (`model.go`).
-- `proto`: one client per protocol, keyed by name in `proto.Registry` (REST, WebSocket, SSE, MCP, gRPC, GraphQL as a body type); `proto/ws` is the WebSocket framing. `proto/testdata` holds the proto files and captures its tests read.
+- `adapter/protocol`: one client per protocol, keyed by name in `protocol.Registry` (REST, WebSocket, SSE, MCP, gRPC, GraphQL as a body type); `adapter/protocol/ws` is the WebSocket framing. `adapter/protocol/testdata` holds the proto files and captures its tests read.
 - `assert`: the assertion language of `Request.Tests`. `editor`: the request edits of a tab. `mcpexplorer`: the UI-free state of the MCP explorer. `viewer`: the response viewer's model (mode, find state). `outbox`: the order of a connection's sends and pings, one in flight at a time.
 - `adapter/preview`: serves a body on a loopback address for "Open in browser".
 - `ui/respview` (response views), `ui/calltrace` (the call trace), `ui/mcpform` (the form for an MCP tool's arguments); each behind a `Host` interface the `App` implements.
-- Imports: the base feature (`feature/request`, `feature/request/severity`) plus the toolkit and `ui/format` (display text) for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `proto/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
+- Imports: the base feature (`feature/request`, `feature/request/severity`) plus the toolkit and `ui/format` (display text) for the views. `go list` (tests included) shows no other feature. `internal/exampleserver` imports `adapter/protocol/ws`: the one written exception (`internal/CLAUDE.md`); `workspace/tabs` imports this package's root for `MCPServer` parsing.
 
 ## Model and protocols
 
@@ -20,11 +20,11 @@ Sending a request and reading the answer: the protocol clients, the request edit
   sent-log line.
 - The URL bar and the Params table stay in sync through `request.WithParams`, `ParamsFromURL` and
   `MergeParams`; the caller expands `{{variables}}` and folds the params in before sending.
-- `proto.Registry` maps each row of `request.Protocols` to a `request.Sender` (why the table is split: the `request.Protocols` doc); a test
+- `protocol.Registry` maps each row of `request.Protocols` to a `request.Sender` (why the table is split: the `request.Protocols` doc); a test
   checks both directions and that a connected row is a `Streamer`. `Send` errors only on misuse;
   transport failures arrive in `Response.Err`, so the UI always has a value to render.
 - `rest`, `sse`, the HTTP transport of `mcp` and the `websocket` handshake share one request
-  builder and client factory (`proto/httpclient.go`). The Auth pane is applied last, so it wins over
+  builder and client factory (`adapter/protocol/httpclient.go`). The Auth pane is applied last, so it wins over
   a header typed by hand; a user `Content-Type` replaces the automatic one.
 - `Configured` gives the cookie jar, proxy, CA file and client certificate to `rest`, `sse` and
   `mcp`, and only the TLS settings to `websocket` (Limits).
@@ -45,7 +45,7 @@ Sending a request and reading the answer: the protocol clients, the request edit
   active environment, else the collection variables. The value is `Literal` (saved as `literal`):
   `{{...}}` inside it is never expanded, so a server reply cannot pull another variable, such as a
   secret, into the next request.
-- **cURL import** (`send.ParseCurl`, the reverse of `proto.Curl`): POSIX-shell splitting, the
+- **cURL import** (`send.ParseCurl`, the reverse of `protocol.Curl`): POSIX-shell splitting, the
   common flags mapped to a REST request, others skipped. Redirects are followed only with `-L`, as
   in curl.
 - **Trust**: before a send or connect, `App.allowed` lists what the request does on
@@ -56,7 +56,7 @@ Sending a request and reading the answer: the protocol clients, the request edit
 
 ## Protocols
 
-Each protocol is a client of its own in `send/proto` (its package doc says which are hand-written and why). A protocol that keeps a
+Each protocol is a client of its own in `send/adapter/protocol` (its package doc says which are hand-written and why). A protocol that keeps a
 connection implements `request.Streamer`; `Registry.Connect` opens a `request.Session`, and its one-shot
 `Send` connects, sends and returns the first reply.
 
@@ -97,7 +97,7 @@ stateDiagram-v2
 
 ### Per protocol
 
-- **REST** (`proto.REST`): the cookie jar lives as long as the app; changing the proxy or a
+- **REST** (`protocol.REST`): the cookie jar lives as long as the app; changing the proxy or a
   certificate in the settings rebuilds the registry. A body over `MaxBody` is cut and flagged
   `Response.Truncated`. Every send is traced (`net/http/httptrace`) into `Response.Timing`.
 - **WebSocket**: headers, Auth credentials and a `Sec-WebSocket-Protocol` header (split into
@@ -181,5 +181,5 @@ stateDiagram-v2
 Invalid JSON and other text come back as plain lines, so the response pane renders any body.
 
 ## Known gaps
-- `proto` is one package for every protocol and the registry; only `proto/ws` is split out, so the protocols share the request builder, the event stream and the session helpers.
+- `adapter/protocol` is one package for every protocol and the registry; only `adapter/protocol/ws` is split out, so the protocols share the request builder, the event stream and the session helpers.
 - `ui/*` import the toolkit (`uitoolkit/...`), as every `ui` does.

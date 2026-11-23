@@ -25,8 +25,8 @@ FUZZ_TARGETS = \
 	./internal/feature/request:FuzzURLParams \
 	./internal/feature/send/assert:FuzzRun \
 	./internal/ui/format:FuzzCompact \
-	./internal/feature/send/proto/ws:FuzzReadFrame \
-	./internal/feature/send/proto:FuzzMCPDeliver \
+	./internal/feature/send/adapter/protocol/ws:FuzzReadFrame \
+	./internal/feature/send/adapter/protocol:FuzzMCPDeliver \
 	./uitoolkit/markup:FuzzParse \
 	./uitoolkit/widget:FuzzEdit \
 	./uitoolkit/widget:FuzzFind \
@@ -46,13 +46,13 @@ FUZZ_TARGETS = \
 	./internal/feature/history/adapter:FuzzLoadSent \
 	./internal/feature/send/ui/respview:FuzzDecode \
 	./uitoolkit/theming:FuzzParseTheme \
-	./internal/feature/send/proto:FuzzReadEvents \
+	./internal/feature/send/adapter/protocol:FuzzReadEvents \
 	./internal/feature/settings:FuzzParse \
 	./internal/feature/request:FuzzParseBulk \
 	./internal/feature/settings/ui/shortcutpage:FuzzParseBinding \
-	./internal/feature/send/proto:FuzzDeliverJSON \
-	./internal/feature/send/proto:FuzzAnswerServer \
-	./internal/feature/send/proto:FuzzSample \
+	./internal/feature/send/adapter/protocol:FuzzDeliverJSON \
+	./internal/feature/send/adapter/protocol:FuzzAnswerServer \
+	./internal/feature/send/adapter/protocol:FuzzSample \
 	./internal/feature/request:FuzzToolFields \
 	./internal/feature/request:FuzzArguments \
 	./internal/ui/format:FuzzLines \

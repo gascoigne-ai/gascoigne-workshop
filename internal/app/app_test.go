@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/proto"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/adapter/protocol"
 )
 
 func TestNext(t *testing.T) {
@@ -135,7 +135,7 @@ var (
 
 func TestSampleCollectionIsConsistent(t *testing.T) {
 	col := collection.GitHubSample()
-	reg := proto.NewRegistry()
+	reg := protocol.NewRegistry()
 	var check func(folder *request.Folder, path string)
 	check = func(folder *request.Folder, path string) {
 		seen := map[string]bool{}
