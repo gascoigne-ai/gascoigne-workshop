@@ -4,7 +4,7 @@ Loaded when you work under `internal/`. Adds to `.harness/rules.md`. This file i
 
 ## Layout
 
-Four parts: `feature`, `storage`, `ui`, `app`. The target tree and the move order are in `.harness/reorg.md`.
+Four parts: `feature`, `storage`, `ui`, `app`. The composition, the layer table and the reasons are in `.harness/architecture.md`.
 
 - `internal/storage` (zone `base`): user-file location and versioning; persistence plumbing for the adapters of four features.
 - `internal/feature/request`: the base feature every other may import (zone `base`): the request model and its ports (`Request`, `Folder`, `Protocols`, `Sender`, the MCP and JSON schema types including `MCPServer` and `ParseServerInfo`, `ProtoSource`, `MessageSchema`), the `severity` leaf (`feature/request/severity`) and the `OpenCollection` record the settings schema persists and the collection set builds.
@@ -18,7 +18,7 @@ Four parts: `feature`, `storage`, `ui`, `app`. The target tree and the move orde
 
 ### Component anatomy
 
-`ui/<area>/<name>` is one view package (details and why in `.harness/reorg.md`): `<name>.go` (the component, `New(Deps)`), `deps.go` (narrow interfaces it declares itself), `view.go` (the VML template and click closures), `keys.go`, `commands.go`, `tick.go`, and an optional nested `logic/` package (toolkit-free state and decisions). Packages moved from the old layout keep their present files until their own task reshapes them.
+`ui/<area>/<name>` is one view package (anatomy and why in `.harness/architecture.md`): `<name>.go` (the component, `New(Deps)`), `deps.go` (narrow interfaces it declares itself), `view.go` (the VML template and click closures), `keys.go`, `commands.go`, `tick.go`, and an optional nested `logic/` package (toolkit-free state and decisions).
 
 ## Imports
 
@@ -32,7 +32,7 @@ Four parts: `feature`, `storage`, `ui`, `app`. The target tree and the move orde
 
 `make check` enforces rules: `e2e/layers_test.go` reads compiler's direct imports (`go list`, tag sets, test included) and checks against default-deny rule table in `e2e/layers_rules_test.go`. Every written exception row has a reason. Test-only rows let a test file import a real adapter or package as fixture (`exampleserver` tests, `ui/sidebar/sentlog`, `ui/overlays/settingsdialog` and its `formpage`, `ui/overlays/filebrowser`, which lists a real temp folder); a production import never matches them. `ui/window` has nine such rows (`collectionstore`, `historyfile`, `protocol`, `protocol/ws`, `settingsfile`, `statefile`, `folders`, `preview` and `exampleserver`). A new exception is a new row, with approval.
 
-During the reorganization (`.harness/reorg.md`) the table holds `currentLayoutRules` (the remaining old rows) beside `targetLayoutRules` (`base`, `uilogic`, `ui`, the `Below` flag for a parent importing its children). A target row may match no import until packages move; a later task folds the two lists into one.
+The table holds `currentLayoutRules` (the written exceptions and test-only rows) beside `targetLayoutRules` (`base`, `uilogic`, `ui`, the `Below` flag for a parent importing its children, the `ui/window` row); a later task folds the two lists into one.
 
 ## Tests
 
@@ -41,4 +41,4 @@ During the reorganization (`.harness/reorg.md`) the table holds `currentLayoutRu
 
 ## Names
 
-- Import a domain root without an alias (`send.ParseCurl`) and the base request model as `request` (`request.Request`); an older file may still alias it `kernelrequest`. A local that would shadow the package is renamed, never the import: a request value is `call`.
+- Import a domain root without an alias (`send.ParseCurl`) and the base request model as `request` (`request.Request`) and never under another alias. A local that would shadow the package is renamed, never the import: a request value is `call`.

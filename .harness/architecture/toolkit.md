@@ -42,7 +42,7 @@ state: no diffing and no reactive system. Elements and options are indexed in th
 
 ### The frame builds once
 
-- `App.endFrame` builds the tree, lays it out, runs `view.Update` and keeps it (`drawTree`).
+- `Component.endFrame` builds the tree, lays it out, runs `view.Update` and keeps it (`drawTree`).
   `Draw` lays it out again (drags and scrolls move) and paints it. It builds again only when
   `treeStale` is set; `setSize` drops `drawTree`.
 - `treeStale` comes from explicit signals, not a revision counter, because one missed bump would
@@ -71,25 +71,25 @@ state: no diffing and no reactive system. Elements and options are indexed in th
   first, then `Shrink` children give up the rest, first to last, down to their minimum; a row that
   fits lays out as if none had it (why explicit: the `Shrink` doc).
 - **Cursor.** Widgets ask for a shape in `Ctx.Cursor`, reset every frame and applied by the app.
-  `App.showGrab` asks for `core.CursorMove` while a row, tab or tree row is dragged, unless a
+  `Component.showGrab` asks for `core.CursorMove` while a row, tab or tree row is dragged, unless a
   resize shape was asked for.
 - **Focus.** Tab cycles inside the topmost `FocusScope`; `revealFocused` scrolls every `Scroll`
   holding the newly focused field so the field is in view.
 
-### App work off the frame
+### Window work off the frame
 
-App facts kept here for now; they belong with the app.
+The window's background work; the reasons are in the doc comments of the packages named.
 
 - **Background writes** (`feature/workspace/serial`, `serial.Writer`): autosave clones what
   it writes on the UI goroutine and runs the write as a Cmd. `serial.Writer` (its `Queue` is the rule) runs one write per file
   and keeps only the newest waiting one, so an older write never lands after a newer one; the
   outcome returns on the bus. Files the user names (saved body, Postman export, screenshot) go the
   same way through `workspace.Folders.Write`. `FlushWorkspace`, `SaveState` and `openWorkspaceAt` call
-  `Writer.Wait`, then write synchronously. The App does no file I/O of its own
+  `Writer.Wait`, then write synchronously. The window does no file I/O of its own
   (`TestTheAppDoesNoFileAccessOfItsOwn`; why one port: the `workspace.Folders` doc).
-- **Socket sends** (`request_send.go`): messages and pings go through `App.sendInOrder`, a per-tab `outbox.Outbox`
+- **Socket sends** (`ui/window/send.go`): messages and pings go through `Component.sendInOrder`, a per-tab `outbox.Outbox`
   (`internal/feature/send/outbox`: the queue and the in-flight flag, `Enqueue` and `Done`) run by a Cmd, so a slow network never stops a frame and messages keep their order.
-- **Change keys** (`workspace/autosave.Keys`, held by `App.keys`): autosave and the window title compare JSON forms.
+- **Change keys** (`workspace/autosave.Keys`, held by `Component.keys`): autosave and the window title compare JSON forms.
   `Keys` caches them and marks them stale only on input, a bus message, a toast change or a geometry
   change. Save, load and flush use `CollectionNow`; a test that edits the model directly calls
   `keys.MarkStale`.
@@ -144,7 +144,7 @@ Each is also said in the doc comment of what breaks the rule; a new exception ad
 - **Sideways strips.** `widget.HScroll` shows a row at natural width in a clipped box, with an
   arrow only at an end that can still scroll, the wheel, a touchpad swipe (`Input.WheelX`) and
   `KeepInView()` for one child. A press dragged a few pixels pans it, following `Ctx.PointerX`
-  outside the strip. So the request strip (`requesttabs.go`, `App.tabsScroll`) reorders by left
+  outside the strip. So the request strip (`ui/tabstrip`) reorders by left
   drag only while it fits (`ScrollState.Overflowing`); the middle button always reorders. The pane
   tab strips (`ScrollTabs`) use it too.
 - **Tooltips.** `view.Tooltip(text)` on any element; `view.Draw` records the innermost hovered tip

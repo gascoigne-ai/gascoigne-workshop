@@ -7,7 +7,7 @@
 // free of the toolkit.
 //
 // It lives under ui and not in a shared core because only views and the app
-// use it; it began as two kernel leaves (textfmt, jsonview) merged here so
+// use it; it began as two small leaf packages (textfmt, jsonview) merged here so
 // that nothing outside the ui layer owns display code. Revisit if a feature
 // needs these helpers: then they move to the base layer.
 package format

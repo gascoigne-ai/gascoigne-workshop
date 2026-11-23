@@ -8,7 +8,7 @@ These are hard rules (`rules.md` makes them part of the repo's rules).
 
 - **Tokens, never literals.** Colors, spacing, sizes and font sizes in a view or widget come from the color tokens and size constants of `uitoolkit/core/theme.go`; the app adds its own tokens (`method.*`, `json.*`, `collection.*`) in `internal/ui/theme/themes/*.json`. Markup has no constants, so a template reads them from its scope (`{{rowH}}`, `{{gutter}}`).
 - **Corners through the theme.** A component takes its radius from `view.Control(name)` or `Ctx.Radius(name)`, so the Corners setting reaches it. A square fill in a rounded panel is a bug. Tabs are square by choice (section 4); toasts do not follow this yet (Not done).
-- **Icon-only controls have a tooltip**, and buttons and tabs name their shortcut in it (`App.hint`; `window_focusorder_test.go` holds it).
+- **Icon-only controls have a tooltip**, and buttons and tabs name their shortcut in it (`Component.hint`; `window_focusorder_test.go` holds it).
 - **Contrast is tested.** The palettes hold their ratios in `theming/palette_test.go`; `TestNonTextElementsAreVisible` holds the floors for borders, rules, icons and row states. A color change that breaks them is a change of these rules, not of a test.
 - **The look changes here first.** A change to the look updates this file in the same commit.
 - **Verify by looking.** A UI change is checked with `make shot` and the PNG looked at (section 5); layout and widget logic still get unit tests. Golden files change only where the task changes the look.
@@ -80,7 +80,7 @@ Window chrome (`internal/ui/window/window.go`, fixed numbers with a role each): 
 | Selected | `Selected` fill (list, tree and menu rows); the open tab as in Tabs below; a segment chip as a primary button. |
 | Focus | A focused field draws its outline again in `AccentLine` over the resting one (`fieldB.DrawOver`), at line width. |
 | Disabled | Text in `Muted` and no hover: menu items (`MenuItem.Disabled`), muted table rows (the editable table's placeholder row), rows a picker refuses. A disabled button is built by the view as an unlit, muted button that does nothing (the destination picker); the toolkit has no disabled option. |
-| Drag | `CursorMove` only from press to release (`App.showGrab`); a drop target row is outlined in `AccentLine`, in `OK` while Alt makes the drop a copy. |
+| Drag | `CursorMove` only from press to release (`Component.showGrab`); a drop target row is outlined in `AccentLine`, in `OK` while Alt makes the drop a copy. |
 
 High contrast changes colors, not states: see the pipeline (section 3).
 

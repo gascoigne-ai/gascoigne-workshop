@@ -1,3 +1,7 @@
+> **Superseded** by `architecture.md` (composition, layer table, component anatomy and the reasons),
+> `architecture/app.md` and `internal/CLAUDE.md`. It is kept only because tasks 047 and 048 still read it;
+> delete it after task 048. Where it disagrees with those files, they win.
+
 # Reorganization of the app code (tasks 015-048)
 
 Working note for the queued tasks `015`-`048`. Every task reads it. Task 046 folds what stays true into

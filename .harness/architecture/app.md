@@ -17,9 +17,9 @@ and wires the screen areas: `side`, `strip`, `bar`, `over`, `resp`, `header` and
 answering to the window through its host type (`hosts.go`). `Stores` is the stores plus `Ports` (the
 adapters; `New` replaces a missing one by a null one from `nulls.go`, so no handler checks a port for
 nil) plus `Start` (paths and switches). The rest of this file says `Component.x` for a window field
-or handler; the files are `window.go` (the struct, `New`, the template), `step.go` (the frame),
+or handler; the files are `window.go` (the struct, `New`, the template), `stores.go` (`Stores`, `Ports`, `Start`), `nulls.go`, `step.go` (the frame),
 `keys.go`, `commands.go`, `redraw.go`, `hosts.go`, `workspace.go`, `treeops.go`, `tree_ctxmenus.go`,
-`send.go`, `tabs.go`, `env.go`, `varstarget.go`, `panes.go` (the response panes), `title.go`, `grab.go`
+`send.go`, `tabs.go`, `env.go`, `varstarget.go`, `panes.go` (the response side's pane table), `title.go`, `grab.go`
 and `driver.go`.
 
 ### State changes
@@ -35,11 +35,11 @@ goroutine. Rejected: signals, React-style diffing, more controllers behind closu
 ```mermaid
 flowchart LR
   input["input, handlers"] --> update["controller Update (pure)"]
-  update --> appstate["window state"]
+  update --> winstate["window state"]
   goroutines["goroutines: sends, sockets, file dialogs"] -- "bus.Dispatch" --> busq["bus"]
   busq -- "Drain, once per frame" --> handle["Component.handle"]
   handle --> update
-  appstate --> tree["view tree, rebuilt every frame"]
+  winstate --> tree["view tree, rebuilt every frame"]
 ```
 
 - **Bus** (`feature/workspace/bus`): the only path from a goroutine to the UI. Goroutines read
@@ -75,7 +75,7 @@ flowchart LR
 
 ### Window
 
-The window is VML views (`window.go`, `tree_sidebar.go`; the banner moved to `ui/header`);
+The window is VML views (`window.go`; the banner is `ui/header`);
 the settings dialog is the component `ui/overlays/settingsdialog` (`Component.over.Settings`: the `ui/overlays` composite builds it in `window.New` from the `settingsdialog.Deps` the window hands it): it owns whether the dialog is open, whether settings were changed but not written (auto-save off), the file question it asked, the shell and the Form, Colors and Shortcuts pages. It asks `settingsHost` (`hosts.go`) for the settings in effect and their effects (`Edit` and `Apply` rebuild the theme, the response mode of the open tabs and the protocols; `SetScale`), the window (size, pointer, toasts, status, menus, redraw), the file chooser, the one dialog, the bus, the looks and the keymap; the file, its store and whether it may be written (`settings.ReadOnly` after a newer build wrote it) are values it is built with. `Component.changeSettings` and `Component.saveSettings` forward to it. `over.Settings.Poll` is called every `PollTicks` frames from `endFrame`;
 the request pane's components are one composite, `ui/editor` (`Component.editor`, built in `window.New`): it builds the nine children (`URLBar`, `Body`, `Auth`, `Assertions`, `WS`, `GraphQL`, `GRPC`, `MCP`, `Tables`, exported fields: the window reaches a pane's own methods through them) from their `Deps`, which the host glue (`urlbarHost`, `bodyHost` and the others in `hosts.go`, still on the `*Component`) answers, and wires the GraphQL editor to the body's query area. It forwards only what is the same for every child: `Keys` (the URL bar, then the body), `TableKeys` (the tables, for the keys nobody above took), `Typing` (the fields above), `Tick` (all nine, none skipped when an earlier one reports a change, so a closed tab is dropped everywhere in one frame) and `Commands` (the tables'). It also owns the request pane's table (`panes.go`): `requestPanes`, `connectionRequestPanes`, `grpcRequestPanes` and `protocolViews`, the builders by pane kind and the state each tab keeps of the pane (the pane shown, its scroll and its strip's scroll: a `map[*tabs.Tab]*paneState` made on first use and pruned in `Tick`, so none of it is on `reqTab`). It answers what the pane table decides: `RequestPane` (the strip over the pane shown) and `PaneBody`, `PaneTabs` (labels and badges), `ShowPane`, `ShowPaneLabeled`, `PaneOf` and `PaneLabel` (what the state file saves and restores), `Socket` (does the tab's protocol keep a connection open), `StreamPanes` and `StreamView` (the response side of a socket, drawn by the ws and mcp components), `Explores`, `Loading` (a capture waits for the Proto and Schema panes), `Offered` and `Choose` (the protocol chip: it disconnects, edits the request, starts the request pane over and calls `Connections.ProtocolChosen`, where the window starts the response side over), and for the tables `TableRows`, `TableCaption`, `VisibleTable` and `TableView`. Four children's deps are answered here, not by the host: the body's `Slots` (the form table, the GraphQL editor, a status line), the tables' `Tables` and `Tabs`, the URL bar's `Protocols` and the ws pane's `Composers`; the host gives the composite the tab shown, the connection of a tab, the settings and the Vars pane's table (`editorHost`);
 the bar above the request pane is the component `ui/editor/urlbar` (`Component.editor.URLBar`, built in `window.New`): it owns the URL field of every open tab (a map pruned in `Tick`), the protocol, method and Stream chips and the Send, Connect and Cancel button, and asks `urlbarHost` (`hosts.go`) for the current tab, the sends, the connection, the gRPC method and stream, the variable colors and tooltip, and the hints. The Params table rewrites the URL through `urlbar.Reload` (the pane's `changed` hook takes the editor); `Field` serves the variable completion and `Type` the driver;
@@ -95,9 +95,8 @@ the status bar is the component `ui/statusbar` (`Component.bar`, built in `windo
 
 - `requestPanes`, `connectionRequestPanes` and `grpcRequestPanes` (in `ui/editor`) list the tabs of
   the request side; `builders`, an array indexed by pane kind, maps a pane kind to its view. A new
-  pane is a row. The response side stays in `internal/app` (`responsePanes`, `paneBuilders`): its
-  rows are drawn by `ui/response`, which a sibling may not import, so the window composes both
-  until `ui/window` takes the response side (the last commit of task 045); the stream rows of a socket (Messages,
+  pane is a row. The response side is a table in `ui/window/panes.go`: its rows are drawn by `ui/response`, which
+  a sibling may not import, so the window composes both; the stream rows of a socket (Messages,
   Explorer) are the editor's, which the window shows through `StreamPanes` and `StreamView`. The
   editor's test of the Form body pane (`ui/editor/testdata/bodypane-form-*.dump`) is a byte-identical
   copy of the one the whole-window test pins.
@@ -239,5 +238,4 @@ copy beside them.
   goldens; look at the PNG before committing.
 
 `TestAppPackageDoesNotGrow` (`e2e/appsize_test.go`) caps the number of non-test `.go` files directly in
-`internal/app` (`maxAppFiles`) while the package is dissolved (`.harness/reorg.md`). Each extraction task
-lowers the cap to the new count; it never goes up.
+`internal/app` (`maxAppFiles`) so the composition root cannot grow handlers again: the cap is the final count (five: `options`, `ports`, `app`, `game`, `frame`) and a change that adds a file must say why in the same commit.
