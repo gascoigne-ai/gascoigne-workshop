@@ -161,6 +161,10 @@ Each is also said in the doc comment of what breaks the rule; a new exception ad
 - **Caret blink** follows the clock (`Ctx.CaretVisible`), not ticks, so its rate holds when the idle
   app drops from 60 to 30 updates. `engine.MinFPS` (10) draws at least every 100 ms, so a phase
   change shows.
+- **Width cache.** `Ctx.Width` remembers a measured string by font source, size and text (up to
+  4096 entries, then the map is dropped); `SetScale`, `SetTheme` and `SetFonts` clear it. An
+  element's own font makes a new face value each call, so the key is what the face is made of,
+  not its address. `DrawStats.Widths` counts real measurements only.
 - **CodeView layout cache.** The runes of every line and the wrap layout are kept between calls
   (`codeview_cache.go`), so an Update or Draw with nothing changed costs no allocation per line (a
   40k-line body went from 6-18 ms to under 0.1 ms per Update). The layout is rebuilt when the

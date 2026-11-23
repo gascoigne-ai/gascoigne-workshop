@@ -140,6 +140,9 @@ type Ctx struct {
 
 	// masks caches the corner masks of rounded fills; maskMaker builds one
 	// and is nil in the app (a test sets it to need no GPU).
+	// widths caches Width by face and text; see widthKey.
+	widths map[widthKey]int
+
 	masks     *cornerMasks
 	maskMaker func(radius int) *ebiten.Image
 	ringMaker func(radius, width int) *ebiten.Image
@@ -225,6 +228,7 @@ func (c *Ctx) SetScale(scale float64) error {
 		return err
 	}
 	c.F, c.Scale = fonts, scale
+	c.widths = nil
 	c.resetMasks()
 	return nil
 }
@@ -236,6 +240,7 @@ func (c *Ctx) SetTheme(th Theme) error {
 		return err
 	}
 	c.Th, c.F, c.Sizes = th, fonts, sizes
+	c.widths = nil
 	c.resetMasks()
 	return nil
 }
@@ -249,6 +254,7 @@ func (c *Ctx) SetFonts(ui, code FontData) error {
 		return err
 	}
 	c.Chosen, c.F, c.Sizes = chosen, fonts, sizes
+	c.widths = nil
 	return nil
 }
 
@@ -313,11 +319,40 @@ func (c *Ctx) Clip(dst *ebiten.Image, rect Rect) *ebiten.Image {
 // Width is the logical width of s in face, a tab as a gap of TabStop
 // spaces (as Text draws it).
 func (c *Ctx) Width(face *text.GoTextFace, content string) int {
+	key := widthKey{source: face.Source, size: face.Size, content: content}
+	if width, ok := c.widths[key]; ok {
+		return width
+	}
 	if c.Stats != nil {
 		c.Stats.Widths++
 	}
 	w, _ := text.Measure(tabsAsGaps(content), face, 0)
-	return int(w/c.Scale + 0.5)
+	width := int(w/c.Scale + 0.5)
+	if len(c.widths) >= widthCacheLimit {
+		clear(c.widths)
+	}
+	if c.widths == nil {
+		c.widths = map[widthKey]int{}
+	}
+	c.widths[key] = width
+	return width
+}
+
+// widthCacheLimit bounds Ctx.widths. A frame asks for the same few hundred
+// labels again and again, so a bound only guards against a stream of new
+// strings (a typed filter, a scrolled log); when it is reached the whole
+// map is dropped, since an LRU would cost more than the refill. Revisit
+// when a frame's hit rate falls under 80%.
+const widthCacheLimit = 4096
+
+// widthKey is what a width depends on. Every face the toolkit makes sets
+// only its font source and size, so these two stand for the face, and an
+// element's own font (a new face value each call) still hits. The scale
+// is not in the key: SetScale drops the cache.
+type widthKey struct {
+	source  *text.GoTextFaceSource
+	size    float64
+	content string
 }
 
 // Advance is the exact logical width of one character of a monospace face,
