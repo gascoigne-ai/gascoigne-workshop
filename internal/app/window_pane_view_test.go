@@ -20,7 +20,7 @@ func TestThePaneClampsItsActiveTabToItsPanes(t *testing.T) {
 	if want := len(requestPanesFor(tab)) - 1; tab.paneTab != want {
 		t.Errorf("paneTab %d, want %d", tab.paneTab, want)
 	}
-	if want := len(responsePanesFor(tab)) - 1; tab.respTab != want {
+	if want := len(a.responsePanesFor(tab)) - 1; tab.respTab != want {
 		t.Errorf("respTab %d, want %d", tab.respTab, want)
 	}
 }
@@ -42,11 +42,11 @@ func TestClickingAPaneTabShowsThatPane(t *testing.T) {
 	cases := []struct {
 		name   string
 		nth    int // "Headers" is a request pane first, then a response pane
-		panes  func(tab *reqTab) []pane
+		panes  func(a *App, tab *reqTab) []pane
 		active func(tab *reqTab) int
 	}{
-		{"request", 0, requestPanesFor, func(tab *reqTab) int { return tab.paneTab }},
-		{"response", 1, responsePanesFor, func(tab *reqTab) int { return tab.respTab }},
+		{"request", 0, func(_ *App, tab *reqTab) []pane { return requestPanesFor(tab) }, func(tab *reqTab) int { return tab.paneTab }},
+		{"response", 1, (*App).responsePanesFor, func(tab *reqTab) int { return tab.respTab }},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestClickingAPaneTabShowsThatPane(t *testing.T) {
 			tab := a.cur()
 			respondWith(200, "OK")(a)
 			clickText(t, a, "Headers", test.nth)
-			if want := paneIndex(t, test.panes(tab), "Headers"); test.active(tab) != want {
+			if want := paneIndex(t, test.panes(a, tab), "Headers"); test.active(tab) != want {
 				t.Errorf("active pane %d, want %d", test.active(tab), want)
 			}
 		})

@@ -444,19 +444,19 @@ func (host urlbarHost) Cancel(tab *tabs.Tab) { host.cancelSend(host.widgets[tab]
 func (host urlbarHost) Sending(tab *tabs.Tab) bool { return host.sends.Sending(tab.Req) }
 
 // Socket reports whether tab keeps a connection open.
-func (host urlbarHost) Socket(tab *tabs.Tab) bool { return isSocket(host.widgets[tab]) }
+func (host urlbarHost) Socket(tab *tabs.Tab) bool { return host.isSocket(host.widgets[tab]) }
 
 // ToggleConnection connects a disconnected socket tab and closes a connected one.
 func (host urlbarHost) ToggleConnection(tab *tabs.Tab) { host.toggleConnection(host.widgets[tab]) }
 
 // PickMethod lists the methods of the server of tab in a menu.
-func (host urlbarHost) PickMethod(tab *tabs.Tab) { host.pickGRPCMethod(host.widgets[tab]) }
+func (host urlbarHost) PickMethod(tab *tabs.Tab) { host.grpc.PickMethod(host.ctx, tab) }
 
 // Streaming reports whether tab streams instead of making single calls.
-func (host urlbarHost) Streaming(tab *tabs.Tab) bool { return host.widgets[tab].grpcStream }
+func (host urlbarHost) Streaming(tab *tabs.Tab) bool { return host.grpc.Streaming(tab) }
 
 // ToggleStream switches tab between single calls and a stream.
-func (host urlbarHost) ToggleStream(tab *tabs.Tab) { host.toggleStream(host.widgets[tab]) }
+func (host urlbarHost) ToggleStream(tab *tabs.Tab) { host.grpc.ToggleStream(tab) }
 
 // Offered are the protocols the chip cycles through for a request on current.
 func (host urlbarHost) Offered(current request.Protocol) []request.Protocol {
@@ -567,6 +567,59 @@ func (host bodyHost) ShowBody(tab *tabs.Tab) {
 
 // SetStatus replaces the status line.
 func (host bodyHost) SetStatus(text string) { host.notices.SetStatus(text) }
+
+// grpcHost is what the gRPC component asks of the App (grpc.Deps).
+type grpcHost struct{ *App }
+
+// IsOpen reports whether tab is one of the open tabs.
+func (host grpcHost) IsOpen(tab *tabs.Tab) bool { return slices.Contains(host.tabs.Tabs(), tab) }
+
+// List asks the gRPC client for the methods of req in the background.
+func (host grpcHost) List(req request.Request, answer func(methods []string, err error)) {
+	timeout := host.timeoutFor(req) // read here: the goroutine must not touch App fields
+	host.bus.Run(context.Background(), func(ctx context.Context) bus.Msg {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		methods, err := host.listGRPCMethods(ctx, req)
+		return func() { answer(methods, err) } // on the UI goroutine
+	})
+}
+
+func (a *App) listGRPCMethods(ctx context.Context, req request.Request) ([]string, error) {
+	if a.grpcMethods == nil {
+		return nil, errors.New("no gRPC client")
+	}
+	return a.grpcMethods(ctx, req)
+}
+
+// VarsFor are the variables req is resolved with.
+func (host grpcHost) VarsFor(req *request.Request) []request.KV { return host.varsFor(req) }
+
+// Folder is the directory of the collection that owns req, "" for none.
+func (host grpcHost) Folder(req *request.Request) string {
+	entry, ok := host.entryFor(req)
+	if !ok {
+		return ""
+	}
+	return entry.Dir
+}
+
+// Pick opens the file chooser.
+func (host grpcHost) Pick(title string, answer func(path string)) {
+	host.pickFile(title, filedialog.OpenFile, "", answer)
+}
+
+// Disconnect closes the open stream of tab or abandons the connect in progress.
+func (host grpcHost) Disconnect(tab *tabs.Tab) { host.disconnect(host.widgets[tab]) }
+
+// Open shows a menu of items at the position.
+func (host grpcHost) Open(posX, posY int, items []widget.MenuItem) { host.openMenu(posX, posY, items) }
+
+// Toast shows text for a moment.
+func (host grpcHost) Toast(text string, level severity.Level) { host.toast(text, level) }
+
+// SetStatus replaces the status line.
+func (host grpcHost) SetStatus(text string) { host.notices.SetStatus(text) }
 
 // authHost is what the auth pane asks of the App (auth.Deps).
 type authHost struct{ *App }

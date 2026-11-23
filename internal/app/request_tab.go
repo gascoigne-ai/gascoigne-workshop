@@ -18,7 +18,6 @@ import (
 type reqTab struct {
 	*tabs.Tab
 	socketBlock
-	grpcBlock
 	mcpBlock
 	responseBlock
 	paneTab   int
@@ -35,12 +34,6 @@ type reqTab struct {
 type socketBlock struct {
 	wsCancel context.CancelFunc // ends the timeout of the connect in progress
 	outbox   outbox.Outbox      // the sends and pings in order, and whether one is in flight
-}
-
-// grpcBlock holds the state of a gRPC tab: streaming and the Proto and Schema panes.
-type grpcBlock struct {
-	grpcStream bool       // a gRPC tab streams instead of making single calls
-	proto      protoState // the Proto pane of a gRPC tab
 }
 
 // mcpBlock holds the state of an MCP tab: the explorer, the form of the open entry and its answer.

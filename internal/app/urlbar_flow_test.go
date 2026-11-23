@@ -69,7 +69,7 @@ var urlBarStates = []urlBarState{
 	{"grpc-stream", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "grpc", grpcMethod
 		app.pointTabAt(tab, "grpc://127.0.0.1:1")
-		app.toggleStream(tab)
+		app.grpc.ToggleStream(tab.Tab)
 	}},
 	{"sending", func(t *testing.T, app *App, tab *reqTab) {
 		tab.Req.Protocol, tab.Req.Method = "rest", "GET"
@@ -153,11 +153,11 @@ func TestClickingTheURLBarsChipsChangesTheRequest(t *testing.T) {
 		name  string
 		state string
 		x     int
-		check func(tab *reqTab) bool
+		check func(a *App, tab *reqTab) bool
 	}{
-		{"protocol", "rest-get", protocolChipX, func(tab *reqTab) bool { return tab.Req.Protocol != "rest" }},
-		{"method", "rest-get", methodChipX, func(tab *reqTab) bool { return tab.Req.Method != "GET" }},
-		{"stream", "grpc-method", streamChipX, func(tab *reqTab) bool { return tab.grpcStream }},
+		{"protocol", "rest-get", protocolChipX, func(a *App, tab *reqTab) bool { return tab.Req.Protocol != "rest" }},
+		{"method", "rest-get", methodChipX, func(a *App, tab *reqTab) bool { return tab.Req.Method != "GET" }},
+		{"stream", "grpc-method", streamChipX, func(a *App, tab *reqTab) bool { return a.grpc.Streaming(tab.Tab) }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -166,8 +166,8 @@ func TestClickingTheURLBarsChipsChangesTheRequest(t *testing.T) {
 			tab := a.cur()
 			stateNamed(t, tc.state).setUp(t, a, tab)
 			click(a, tc.x, urlBarY)
-			if !tc.check(tab) {
-				t.Fatalf("after the click: protocol %q, method %q, stream %v", tab.Req.Protocol, tab.Req.Method, tab.grpcStream)
+			if !tc.check(a, tab) {
+				t.Fatalf("after the click: protocol %q, method %q, stream %v", tab.Req.Protocol, tab.Req.Method, a.grpc.Streaming(tab.Tab))
 			}
 		})
 	}

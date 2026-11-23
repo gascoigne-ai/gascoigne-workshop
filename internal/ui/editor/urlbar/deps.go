@@ -42,7 +42,7 @@ type Connections interface {
 }
 
 // GRPC is what the method and Stream chips of a gRPC tab do. Whether the tab
-// streams is state of the window, beside its other gRPC state.
+// streams is state of the gRPC component (ui/editor/grpc).
 type GRPC interface {
 	PickMethod(tab *tabs.Tab)
 	Streaming(tab *tabs.Tab) bool

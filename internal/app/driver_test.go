@@ -140,7 +140,7 @@ func TestDriverActionsApply(t *testing.T) {
 		}, requestPaneIsSettings},
 		{"show the named response pane", Options{}, func(driver *Driver) error { return driver.ShowResponsePane("Tests") }, func(t *testing.T, a *App) {
 			tab := a.cur()
-			if got := responsePanesFor(tab)[tab.respTab].label; got != "Tests" {
+			if got := a.responsePanesFor(tab)[tab.respTab].label; got != "Tests" {
 				t.Errorf("response pane %q, want Tests", got)
 			}
 		}},
@@ -554,16 +554,19 @@ func TestDriverIsNotSettledWhileTheProtoFilesAreRead(t *testing.T) {
 	tab.Req.Protocol = "grpc"
 	tab.Req.Proto = request.ProtoSource{Files: []string{filepath.Join(t.TempDir(), "gone.proto")}}
 	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Proto")
-	tab.proto.check = protoCheck{running: true}
+	a.view() // draws the pane, which starts reading the files
 	if a.Driver().Settled() {
 		t.Fatal("settled while the files are being read")
 	}
-	tab.proto.check = protoCheck{source: tab.Req.Proto, problems: []string{"gone.proto: not found"}}
-	if !a.Driver().Settled() {
-		t.Fatal("the files are read, the window should be settled")
+	until(t, a, "the files are read", func() bool { return a.Driver().Settled() })
+	if !strings.Contains(layoutDump(a), "fg=error") {
+		t.Fatal("the files are read and what was found should show as a problem")
+	}
+	tab.Req.Proto.Files = append(tab.Req.Proto.Files, filepath.Join(t.TempDir(), "other.proto"))
+	if a.Driver().Settled() {
+		t.Fatal("settled with a source nobody has read")
 	}
 	tab.paneTab = paneIndex(t, requestPanesFor(tab), "Body")
-	tab.proto.check = protoCheck{running: true}
 	if !a.Driver().Settled() {
 		t.Fatal("another pane is shown: nothing to wait for")
 	}

@@ -77,7 +77,14 @@ var (
 		rows:    func(app *App, _ *reqTab) *[]request.KV { return app.varsRows() }}
 	testsPane    = pane{label: "Tests", kind: paneAssertions}
 	settingsPane = pane{label: "Settings", kind: paneSettings}
+	// protoPane is the Proto tab of a gRPC request: where its methods come
+	// from, the server's reflection or .proto files, drawn by the gRPC component.
+	protoPane = pane{label: "Proto", kind: paneProto}
 )
+
+// grpcRequestPanes are the request side of gRPC: the HTTP-like panes with
+// Proto after the Body, which holds the message the files describe.
+var grpcRequestPanes = []pane{paramsPane, bodyPane, protoPane, schemaPane, headersPane, authPane, varsPane, testsPane, settingsPane}
 
 // requestPanes are the request side of REST and of every protocol with no
 // panes of its own.
@@ -218,7 +225,7 @@ var paneBuilders = map[paneKind]func(app *App, panel pane, t *reqTab, scroll *Sc
 	paneExplorer:   (*App).explorerPane,
 	paneAssertions: (*App).assertionsPaneView,
 	paneTable:      (*App).tablePane,
-	paneProto:      (*App).protoPane,
+	paneProto:      (*App).protoPaneView,
 	paneSchema:     (*App).schemaPaneView,
 }
 
@@ -230,8 +237,8 @@ var wsPanes = []pane{{label: "Messages", kind: paneMessages}}
 var mcpPanes = []pane{{label: "Explorer", kind: paneExplorer}, {label: "JSON-RPC", kind: paneMessages}}
 
 // responsePanesFor are the panes of the response side of tab.
-func responsePanesFor(tab *reqTab) []pane {
-	if isSocket(tab) {
+func (a *App) responsePanesFor(tab *reqTab) []pane {
+	if a.isSocket(tab) {
 		return viewOf(tab.Req.Protocol).streamPanes
 	}
 	return responsePanes
@@ -284,6 +291,21 @@ func (a *App) schemaLoading(tab *reqTab) bool {
 		return false
 	}
 	return a.body.SchemaPending(tab.Tab)
+}
+
+// protoPaneView is the Proto pane of a gRPC tab, drawn by the gRPC component.
+func (a *App) protoPaneView(panel pane, tab *reqTab, scroll *ScrollState) Node {
+	return a.grpc.View(a.ctx, tab.Tab, scroll)
+}
+
+// protoReading reports whether tab shows its Proto pane while the files are
+// still being read, so a capture waits for what the read finds.
+func (a *App) protoReading(tab *reqTab) bool {
+	panes := requestPanesFor(tab)
+	if tab.paneTab < 0 || tab.paneTab >= len(panes) || panes[tab.paneTab].kind != paneProto {
+		return false
+	}
+	return a.grpc.ProtoPending(tab.Tab)
 }
 
 // paneBody is what fills the area under a pane's tab strip.

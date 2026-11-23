@@ -1,0 +1,8 @@
+scrollB padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 clip=true rect=0,0,1020,300
+  flow h=28 gap=6 rect=12,12,996,28
+    flow padL=10 padR=10 minW=92 bg=accent control=primary shrink=true lighten=true onClick=true rect=12,12,92,28
+      textB text="Reflection" grow=1 fg=accent-text ellipsis=true center=true rect=22,12,72,28
+    flow padL=10 padR=10 minW=96 bg=sunken control=button shrink=true lighten=true onClick=true rect=110,12,96,28
+      textB text="Proto files" grow=1 fg=chip-text ellipsis=true center=true rect=120,12,76,28
+  flow rect=12,48,996,22
+    textB text="Methods come from the server's reflection" h=22 fg=muted rect=12,48,996,22

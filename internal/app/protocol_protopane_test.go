@@ -5,7 +5,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/desktop/filedialog"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
-	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
@@ -64,110 +62,6 @@ func TestOnlyAGRPCRequestHasAProtoPane(t *testing.T) {
 		if got != want {
 			t.Errorf("%s has a Proto pane: %v, want %v", protocol, got, want)
 		}
-	}
-}
-
-func TestTheProtoPaneStartsOnTheServersReflection(t *testing.T) {
-	a, _, _ := grpcTabOnProtoPane(t)
-	dump := layoutDump(a)
-	for _, want := range []string{`text="Reflection"`, `text="Proto files"`, `text="Methods come from the server's reflection"`} {
-		if !strings.Contains(dump, want) {
-			t.Errorf("the pane lacks %s", want)
-		}
-	}
-	if strings.Contains(dump, `text="Add file..."`) {
-		t.Error("the file lists show while the source is reflection")
-	}
-}
-
-// Choosing Proto files shows the lists; with no file in them the request
-// still uses reflection, so it is not edited.
-func TestChoosingProtoFilesShowsTheListsAndLeavesTheRequestAsItWas(t *testing.T) {
-	a, tab, _ := grpcTabOnProtoPane(t)
-	clickText(t, a, "Proto files", 0)
-	dump := layoutDump(a)
-	// captions are drawn in capitals, as the Query caption of Params
-	for _, want := range []string{`text="FILES"`, `text="IMPORT PATHS"`, `text="Add file..."`, `text="Add path"`} {
-		if !strings.Contains(dump, want) {
-			t.Errorf("the pane lacks %s", want)
-		}
-	}
-	if strings.Contains(dump, "Methods come from the server's reflection") {
-		t.Error("the reflection note still shows")
-	}
-	if tab.Dirty() {
-		t.Errorf("choosing the source alone edited the request: %+v", tab.Req.Proto)
-	}
-}
-
-// Add file... asks for a file; the chosen one is stored absolute and shown
-// relative to the collection, as it is saved.
-func TestAddFileListsTheChosenFileRelativeToTheCollection(t *testing.T) {
-	a, tab, dir := grpcTabOnProtoPane(t)
-	health := protoFileIn(t, dir, "health.proto", nil)
-	asked := ""
-	a.files = fakeDialog{choose: func(_ context.Context, title string, _ filedialog.Mode, _ string) (string, error) {
-		asked = title
-		return health, nil
-	}}
-	clickText(t, a, "Proto files", 0)
-	clickText(t, a, "Add file...", 0)
-	until(t, a, "the chosen file", func() bool { return len(tab.Req.Proto.Files) > 0 })
-	if asked == "" {
-		t.Error("no file dialog was asked")
-	}
-	if !reflect.DeepEqual(tab.Req.Proto.Files, []string{health}) || !tab.Dirty() {
-		t.Fatalf("files %v dirty %v, want [%s] and an edited tab", tab.Req.Proto.Files, tab.Dirty(), health)
-	}
-	if input := tab.protoInput(requestedit.ProtoFiles, 0); input.Text != "protos/health.proto" {
-		t.Errorf("the row shows %q, want the path relative to the collection", input.Text)
-	}
-}
-
-// A path typed into a row is read from the collection's folder when it is
-// relative, so the request holds an absolute path.
-func TestTypingAPathSetsItFromTheCollectionFolder(t *testing.T) {
-	a, tab, dir := grpcTabOnProtoPane(t)
-	clickText(t, a, "Proto files", 0)
-	clickText(t, a, "Add path", 0)
-	if !reflect.DeepEqual(tab.Req.Proto.ImportPaths, []string{""}) {
-		t.Fatalf("import paths %q, want one empty row to type into", tab.Req.Proto.ImportPaths)
-	}
-	// the new row is the last field of the window, after the URL bar's
-	clickDumped(t, a, "fieldB", strings.Count(layoutDump(a), "fieldB")-1)
-	a.Step(core.Input{X: 5000, Y: 5000, Typed: []rune("protos")})
-	if want := []string{filepath.Join(dir, "protos")}; !reflect.DeepEqual(tab.Req.Proto.ImportPaths, want) {
-		t.Fatalf("import paths %q, want %q", tab.Req.Proto.ImportPaths, want)
-	}
-}
-
-func TestRemoveDropsThatRowOnly(t *testing.T) {
-	a, tab, dir := grpcTabOnProtoPane(t)
-	first, second := protoFileIn(t, dir, "a.proto", nil), protoFileIn(t, dir, "b.proto", nil)
-	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: first})
-	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: second})
-	clickDumped(t, a, "tip=Remove", 0)
-	if !reflect.DeepEqual(tab.Req.Proto.Files, []string{second}) {
-		t.Fatalf("files %q, want only %s", tab.Req.Proto.Files, second)
-	}
-	if input := tab.protoInput(requestedit.ProtoFiles, 0); input.Text != "protos/b.proto" {
-		t.Errorf("the remaining row shows %q", input.Text)
-	}
-}
-
-// Choosing Reflection drops the files and import paths: the request is
-// edited and saved without them.
-func TestChoosingReflectionDropsTheFilesAndImportPaths(t *testing.T) {
-	a, tab, dir := grpcTabOnProtoPane(t)
-	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
-	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ImportPaths, Path: filepath.Join(dir, "protos")})
-	tab.MarkSaved()
-	clickText(t, a, "Reflection", 0)
-	if !reflect.DeepEqual(tab.Req.Proto, request.ProtoSource{}) || !tab.Dirty() {
-		t.Fatalf("proto %+v dirty %v, want none and an edited tab", tab.Req.Proto, tab.Dirty())
-	}
-	if !strings.Contains(layoutDump(a), "Methods come from the server's reflection") {
-		t.Error("the reflection note does not show")
 	}
 }
 
@@ -271,7 +165,7 @@ func TestPickingAMethodFromProtoFilesNeedsNoServer(t *testing.T) {
 	a, tab, dir := grpcTabOnProtoPane(t)
 	tab.Req.URL = ""
 	editRequest(tab, requestedit.ProtoPathAdded{List: requestedit.ProtoFiles, Path: protoFileIn(t, dir, "health.proto", nil)})
-	a.pickGRPCMethod(tab)
+	a.grpc.PickMethod(a.ctx, tab.Tab)
 	until(t, a, "the menu of methods", func() bool { return widget.PopupMenu(a.ctx) != nil })
 	if got := strings.Join(menuLabels(a), " "); !strings.Contains(got, "grpc.health.v1.Health/Check") {
 		t.Fatalf("methods = %s", got)

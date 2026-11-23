@@ -53,7 +53,7 @@ func (a *App) view() Node {
 		"minPaneSize":    minPaneSize,
 		"stacked":        a.settings.Layout == "stacked",
 		"requestPane":    a.pane(t, requestPanesFor(t), &t.paneTab, &t.reqScroll, &t.reqTabsX, nil),
-		"responsePane":   a.pane(t, responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.resp.StatusView(a.ctx, t.Tab)),
+		"responsePane":   a.pane(t, a.responsePanesFor(t), &t.respTab, &t.respScroll, &t.respTabsX, a.resp.StatusView(a.ctx, t.Tab)),
 		"statusBar":      a.statusBar(),
 		"menu":           a.menuView(),
 		"picker":         a.pickerView(),

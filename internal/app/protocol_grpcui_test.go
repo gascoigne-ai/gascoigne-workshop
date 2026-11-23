@@ -57,7 +57,7 @@ func TestPickingAGRPCMethodListsTheServersMethodsAndSetsIt(t *testing.T) {
 	tab := a.cur()
 	tab.Req.Protocol, tab.Req.URL = "grpc", grpcServer(t)
 
-	a.pickGRPCMethod(tab)
+	a.grpc.PickMethod(a.ctx, tab.Tab)
 	for range 400 {
 		a.Step(core.Input{})
 		if widget.PopupMenu(a.ctx) != nil {
@@ -86,19 +86,5 @@ func TestSendingAGRPCTabShowsTheAnswerAsAResponse(t *testing.T) {
 	waitForResponse(t, a, tab)
 	if tab.Resp.Err != "" || tab.Resp.Status != 200 || !strings.Contains(string(tab.Resp.Body), "SERVING") {
 		t.Fatalf("%+v", tab.Resp)
-	}
-}
-
-func TestAGRPCPickerWithoutAServerSaysSo(t *testing.T) {
-	a := testApp(t)
-	tab := a.cur()
-	tab.Req.Protocol, tab.Req.URL = "grpc", ""
-	a.pickGRPCMethod(tab)
-	a.Step(core.Input{})
-	if widget.PopupMenu(a.ctx) != nil {
-		t.Fatal("a menu opened without a server")
-	}
-	if len(a.toasts) == 0 {
-		t.Fatal("no message tells the user a server is needed")
 	}
 }

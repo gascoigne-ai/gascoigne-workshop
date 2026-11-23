@@ -16,15 +16,15 @@ func grpcTab(app *App) *reqTab {
 func TestAGRPCTabIsASocketOnlyWhileStreamIsOn(t *testing.T) {
 	a := testApp(t)
 	tab := grpcTab(a)
-	if isSocket(tab) || len(responsePanesFor(tab)) == 1 {
+	if a.isSocket(tab) || len(a.responsePanesFor(tab)) == 1 {
 		t.Fatal("a gRPC tab shows the Messages pane before Stream is turned on")
 	}
-	a.toggleStream(tab)
-	if !isSocket(tab) || len(responsePanesFor(tab)) != 1 {
+	a.grpc.ToggleStream(tab.Tab)
+	if !a.isSocket(tab) || len(a.responsePanesFor(tab)) != 1 {
 		t.Fatal("Stream on should give the Messages pane and a Connect button")
 	}
-	a.toggleStream(tab)
-	if isSocket(tab) {
+	a.grpc.ToggleStream(tab.Tab)
+	if a.isSocket(tab) {
 		t.Fatal("Stream off should go back to single calls")
 	}
 }
@@ -35,7 +35,7 @@ func TestTheUnaryGRPCTabOffersAStreamChipThatTurnsConnectOn(t *testing.T) {
 	if dump := view.Dump(a.urlbar.View(a.ctx)); !strings.Contains(dump, "Stream") || !strings.Contains(dump, `"Send"`) {
 		t.Fatalf("url bar:\n%s", dump)
 	}
-	a.toggleStream(tab)
+	a.grpc.ToggleStream(tab.Tab)
 	if dump := view.Dump(a.urlbar.View(a.ctx)); !strings.Contains(dump, `"Connect"`) {
 		t.Fatalf("url bar with Stream on:\n%s", dump)
 	}
@@ -48,13 +48,15 @@ func TestOtherProtocolsHaveNoStreamChip(t *testing.T) {
 	}
 }
 
-func TestTurningStreamOffEndsTheOpenStream(t *testing.T) {
+// Stream is a choice of the tab, not of the protocol: a tab that goes to
+// another protocol and back still streams.
+func TestAStreamingTabKeepsStreamAcrossAProtocolChange(t *testing.T) {
 	a := testApp(t)
 	tab := grpcTab(a)
-	a.toggleStream(tab)
-	tab.Begin() // a connection that is being opened
-	a.toggleStream(tab)
-	if tab.Active() {
-		t.Fatal("the stream stayed open after Stream was turned off")
+	a.grpc.ToggleStream(tab.Tab)
+	urlbarHost{a}.Choose(tab.Tab, "rest")
+	urlbarHost{a}.Choose(tab.Tab, "grpc")
+	if !a.isSocket(tab) {
+		t.Fatal("the tab lost its stream across a protocol change")
 	}
 }

@@ -1,0 +1,32 @@
+scrollB padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 clip=true rect=0,0,420,300
+  flow h=28 gap=6 rect=12,12,388,28
+    flow padL=10 padR=10 minW=92 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,12,92,28
+      textB text="Reflection" grow=1 fg=chip-text ellipsis=true center=true rect=22,12,72,28
+    flow padL=10 padR=10 minW=96 bg=accent control=primary shrink=true lighten=true onClick=true rect=110,12,96,28
+      textB text="Proto files" grow=1 fg=accent-text ellipsis=true center=true rect=120,12,76,28
+  flow gap=8 rect=12,48,388,256
+    flow gap=6 rect=12,48,388,130
+      flow h=28 rect=12,48,388,28
+        textB text="FILES" fg=muted small=true rect=12,48,35,28
+      flow h=28 gap=6 alignItems=2 rect=12,82,388,28
+        fieldB h=28 grow=1 bg=sunken control=field onRightClick=true onChange=true rect=12,82,350,28
+        flow w=32 h=24 bg=sunken control=icon-button tip=Remove lighten=true onClick=true rect=368,84,32,24
+          iconB grow=1 icon=trash rect=368,84,32,24
+      flow h=28 gap=6 alignItems=2 rect=12,116,388,28
+        fieldB h=28 grow=1 bg=sunken control=field onRightClick=true onChange=true rect=12,116,350,28
+        flow w=32 h=24 bg=sunken control=icon-button tip=Remove lighten=true onClick=true rect=368,118,32,24
+          iconB grow=1 icon=trash rect=368,118,32,24
+      flow h=28 rect=12,150,388,28
+        flow padL=10 padR=10 minW=96 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,150,96,28
+          textB text="Add file..." grow=1 fg=chip-text ellipsis=true center=true rect=22,150,76,28
+    flow gap=6 rect=12,186,388,96
+      flow h=28 rect=12,186,388,28
+        textB text="IMPORT PATHS" fg=muted small=true rect=12,186,91,28
+      flow h=28 gap=6 alignItems=2 rect=12,220,388,28
+        fieldB h=28 grow=1 bg=sunken control=field onRightClick=true onChange=true rect=12,220,350,28
+        flow w=32 h=24 bg=sunken control=icon-button tip=Remove lighten=true onClick=true rect=368,222,32,24
+          iconB grow=1 icon=trash rect=368,222,32,24
+      flow h=28 rect=12,254,388,28
+        flow padL=10 padR=10 minW=84 bg=sunken control=button shrink=true lighten=true onClick=true rect=12,254,84,28
+          textB text="Add path" grow=1 fg=chip-text ellipsis=true center=true rect=22,254,64,28
+    textB text="protos/b.proto:4:9: unexpected token" fg=error small=true rect=12,290,388,14

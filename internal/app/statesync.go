@@ -216,7 +216,7 @@ func (a *App) restore(stateValue state.State) {
 			a.updateTabs(tabs.Open{Req: requests[i]})
 			t := a.cur()
 			t.paneTab = rememberedPane(t, rt)
-			if rt.Resp >= 0 && rt.Resp < len(responsePanesFor(t)) {
+			if rt.Resp >= 0 && rt.Resp < len(a.responsePanesFor(t)) {
 				t.respTab = rt.Resp
 			}
 		}

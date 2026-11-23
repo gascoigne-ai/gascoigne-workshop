@@ -54,7 +54,7 @@ var messagesPaneStates = []struct {
 	}},
 	{"grpc-stream", "Message", func(app *App, tab *reqTab) {
 		tab.Req.Protocol = "grpc"
-		tab.grpcStream = true
+		app.grpc.ToggleStream(tab.Tab)
 		openSession(tab, &fakeSession{})
 	}},
 }

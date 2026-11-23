@@ -71,7 +71,7 @@ func (d *Driver) ShowRequestPane(label string) error {
 // ShowResponsePane shows the open request's response pane with this label.
 func (d *Driver) ShowResponsePane(label string) error {
 	tab := d.app.cur()
-	for i, candidate := range responsePanesFor(tab) {
+	for i, candidate := range d.app.responsePanesFor(tab) {
 		if candidate.label == label {
 			tab.respTab = i
 			return nil
@@ -292,7 +292,7 @@ func (d *Driver) AllAnswered() bool {
 // message schema.
 func (d *Driver) Settled() bool {
 	tab := d.app.cur()
-	return !protoReading(tab) && !d.app.schemaLoading(tab)
+	return !d.app.protoReading(tab) && !d.app.schemaLoading(tab)
 }
 
 // SendWithoutWaiting sends the open request and does not wait for its
@@ -303,7 +303,7 @@ func (d *Driver) SendWithoutWaiting() { d.app.send(d.app.cur()) }
 // response, or for a socket an open connection (an MCP server also has
 // said who it is) or a failed one.
 func (a *App) answered(tab *reqTab) bool {
-	if !isSocket(tab) {
+	if !a.isSocket(tab) {
 		return tab.Resp != nil && !a.sends.Sending(tab.Req) // a tab sent again still holds its earlier response
 	}
 	if tab.State() == tabs.ConnConnecting {

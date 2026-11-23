@@ -140,6 +140,7 @@ func (a *App) endFrame(moved bool) {
 	a.treeStale = a.auth.Tick() || a.treeStale
 	a.treeStale = a.assertions.Tick() || a.treeStale
 	a.treeStale = a.ws.Tick() || a.treeStale
+	a.treeStale = a.grpc.Tick() || a.treeStale
 	a.treeStale = a.resp.Tick() || a.treeStale
 	a.treeStale = a.kv.Tick() || a.treeStale // a click elsewhere ends a cell edit, leaving the table applies its text
 	if a.ctx.Tick%settingsdialog.PollTicks == 0 {
