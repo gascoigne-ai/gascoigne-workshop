@@ -3,7 +3,9 @@
 // content has stayed the same for a pause. Keys caches the comparable
 // forms the pause is measured on, so a frame without a change builds none.
 // Collections keeps one pause per open collection and writes it through a
-// Saver, in the background on a serial.Writer or at once.
+// Saver, in the background on a serial.Writer or at once. StateFile is the
+// remembered state (window, trusted accesses, welcomed version) on the same
+// footing: loaded once, written after the pause, saved at exit.
 package autosave
 
 import "time"

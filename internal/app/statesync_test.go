@@ -20,7 +20,7 @@ func TestStateSnapshotCapturesTabsFoldersAndSizes(t *testing.T) {
 	a.sidebarSplit.Size = 310
 	a.paneSplit.Size = 0.4
 	a.kv.Widths(kvlogic.Params).Weights = []float64{1, 2, 3}
-	s := a.snapshot()
+	s := a.stateFile.Snapshot()
 	if len(s.Tabs) != 2 || s.Active != 1 {
 		t.Fatalf("tabs %+v active %d", s.Tabs, s.Active)
 	}
@@ -157,8 +157,8 @@ func TestAnAppWithoutAStateFileKeepsNoHistoryOnDisk(t *testing.T) {
 	a.pointTabAt(tab, jsonServer(t).URL)
 	a.send(tab)
 	waitForResponse(t, a, tab)
-	if a.historyDir() != "" {
-		t.Fatalf("historyDir = %q, want none without a state path", a.historyDir())
+	if a.stateFile.HistoryDir() != "" {
+		t.Fatalf("historyDir = %q, want none without a state path", a.stateFile.HistoryDir())
 	}
 }
 
@@ -203,7 +203,7 @@ func TestStateSnapshotNamesTheRequestPaneOfEachTab(t *testing.T) {
 	a := testApp(t, memorySettings(), withOptions(Options{StatePath: ""}))
 	a.openRequest(a.col().Folders[0].Requests[0])
 	a.cur().paneTab = 1
-	s := a.snapshot()
+	s := a.stateFile.Snapshot()
 	if got, want := s.Tabs[1].PaneLabel, requestPanesFor(a.cur())[1].label; got != want {
 		t.Errorf("PaneLabel = %q, want %q", got, want)
 	}
@@ -228,7 +228,7 @@ func TestStateRestoreFindsTheRequestPaneByItsLabel(t *testing.T) {
 			call := a.col().Folders[0].Requests[0]
 			call.Protocol = "grpc"
 			test.tab.Path = "User/" + call.Name
-			a.restore(state.State{Tabs: []state.Tab{test.tab}})
+			stateHost{a}.Restore(state.State{Tabs: []state.Tab{test.tab}})
 			if got := requestPanesFor(a.cur())[a.cur().paneTab].label; got != test.want {
 				t.Errorf("restored pane = %q, want %q", got, test.want)
 			}

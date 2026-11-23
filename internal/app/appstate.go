@@ -10,8 +10,6 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/autosave"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/overlays/settingsdialog/formpage"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/core"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/engine"
@@ -27,8 +25,7 @@ type ports struct {
 	grpcSchema   request.GRPCSchema
 	curl         func(request.Request) string
 	store        collection.Store
-	clients      clientconfig.Source // the build's client config; nil has none
-	states       workspace.StateStore
+	clients      clientconfig.Source              // the build's client config; nil has none
 	files        FileDialog                       // the desktop file chooser, replaced in tests
 	folders      workspace.Folders                // what the in-app file browser lists
 	now          func() time.Time                 // the clock, replaced in tests
@@ -62,18 +59,13 @@ type frameState struct {
 	paneSplit      widget.SplitState // request pane share of the request/response area
 }
 
-// persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the trust list.
+// persistState holds what is remembered between runs and written in the background: the state file, the collections' autosave and the writes themselves.
 type persistState struct {
-	statePath        string                // where the UI state is remembered
-	stateAccess      storage.Access        // read-only when a newer build wrote the file
+	stateFile        *autosave.StateFile   // the remembered state: window, trusted accesses, welcomed version
 	saves            *autosave.Collections // when each open collection was last written, and its writing
 	writes           *serial.Writer        // the background writes, one per file at a time
 	keys             *autosave.Keys        // the comparable forms of the collection and the state, recomputed only on frames where something could have changed
-	stateSave        autosave.Debounce     // when the remembered state was last written
-	welcomed         string                // the version whose welcome dialog was shown
-	initial          state.Window          // window geometry of the last run
 	defaultWorkspace string                // beside it is the collections folder, where a first save goes
-	trusted          request.AccessSet     // what the user allowed; remembered in the state file
 }
 
 // settingsState holds the settings in effect; the dialog that edits them (over.Settings) owns the file, its path and what is unsaved.

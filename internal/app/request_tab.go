@@ -2,13 +2,17 @@ package app
 
 import (
 	"context"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	request "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/outbox"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/requestedit"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/serial"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/tabs"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/ui/tabstrip"
 	"github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 	"slices"
+	"time"
 )
 
 // reqTab is one open request with its editor and response state.
@@ -127,3 +131,73 @@ const dirtyMark = tabstrip.DirtyMark
 
 // dirty reports whether the request differs from its state when opened.
 func dirty(tab *reqTab) bool { return tab.Dirty() }
+
+// requestPath is the remembered path of req in its collection, "" when it
+// is in no open collection.
+func (a *App) requestPath(req *request.Request) string {
+	_, path, _ := a.cols.Set().PathOf(req)
+	return path
+}
+
+// historyStore is the history folder next to the state file, nil when
+// nothing is saved or no history adapter was given.
+func (a *App) historyStore() history.History {
+	dir := a.stateFile.HistoryDir()
+	if dir == "" || a.histories == nil {
+		return nil
+	}
+	return a.histories(dir)
+}
+
+// saveHistory writes the successful responses of the tab's request, the
+// shown one first, so they are there after a restart. A failed write is
+// shown in the status line and nothing else changes.
+func (a *App) saveHistory(tab *reqTab) {
+	store, key := a.historyStore(), a.cols.Set().HistoryKey(tab.Req)
+	if store == nil || key == "" {
+		return
+	}
+	var entries []history.Entry
+	if tab.Resp != nil && tab.Resp.Err == "" {
+		entries = append(entries, historyEntry(tab.Resp, a.now()))
+	}
+	for _, earlier := range tab.Earlier {
+		entries = append(entries, historyEntry(earlier.Resp, earlier.At))
+	}
+	a.writes.Write("history:"+key, serial.Job{ // the entries are values; the bodies are never changed
+		Run: func() error { return store.Save(key, entries) },
+		Done: func(err error) {
+			if err != nil {
+				a.toast("History is not being saved: "+err.Error(), severity.Error)
+			}
+		},
+	})
+}
+
+// loadHistory is the saved responses of req, newest first.
+func (a *App) loadHistory(req *request.Request) []tabs.PastResponse {
+	store, key := a.historyStore(), a.cols.Set().HistoryKey(req)
+	if store == nil || key == "" {
+		return nil
+	}
+	saved, err := store.Load(key)
+	if legacy := a.cols.Set().LegacyHistoryKey(req); err == nil && len(saved) == 0 && legacy != "" {
+		saved, err = store.Load(legacy)
+	}
+	if err != nil {
+		a.toast("History could not be read: "+err.Error(), severity.Error)
+		return nil
+	}
+	entries := make([]tabs.PastResponse, 0, len(saved))
+	for _, entry := range saved {
+		entries = append(entries, tabs.PastResponse{Resp: &request.Response{
+			Status: entry.Status, StatusText: entry.StatusText, Duration: entry.Duration,
+			Size: len(entry.Body), Headers: entry.Headers, Body: entry.Body,
+		}, At: entry.At})
+	}
+	return entries
+}
+
+func historyEntry(resp *request.Response, at time.Time) history.Entry {
+	return history.Entry{At: at, Status: resp.Status, StatusText: resp.StatusText, Duration: resp.Duration, Headers: resp.Headers, Body: resp.Body}
+}

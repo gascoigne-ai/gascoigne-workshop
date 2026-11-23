@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/storage"
 	"image/color"
 	"net/http"
 	"net/http/cookiejar"
@@ -682,10 +684,10 @@ func (host authHost) Folder(req *request.Request) string {
 }
 
 // Has reports whether the user allowed access.
-func (host authHost) Has(access request.Access) bool { return host.trusted.Has(access) }
+func (host authHost) Has(access request.Access) bool { return host.stateFile.Trusts(access) }
 
 // Add remembers that the user allowed access.
-func (host authHost) Add(access request.Access) { host.trusted.Add(access) }
+func (host authHost) Add(access request.Access) { host.stateFile.Trust(access) }
 
 // Cookies are the cookies the jar holds for u. The jar is read on every
 // call because Clear replaces it.
@@ -1024,7 +1026,7 @@ func (a *App) pickFile(title string, mode filedialog.Mode, name string, done fun
 // OpenWelcome shows the release notes and remembers that this version was
 // welcomed, so the dialog opens by itself only once per version.
 func (a *App) OpenWelcome() {
-	a.welcomed = version
+	a.stateFile.Welcome(version)
 	a.over.Welcome.Open()
 }
 
@@ -1117,7 +1119,147 @@ func (host keysHost) Collections() []*request.Collection {
 func (host keysHost) CollectionKey(col request.Collection) string { return tree.Key(col) }
 
 // StateKey is the comparable form of the state to save.
-func (host keysHost) StateKey() string { return stateKey(host.snapshot()) }
+func (host keysHost) StateKey() string { return host.stateFile.Key() }
 
 // Dirty reports whether tab's request differs from its saved copy.
 func (host keysHost) Dirty(tab *tabs.Tab) bool { return tab.Dirty() }
+
+// stateHost answers autosave.Window and autosave.Reports: it reads the
+// window's part of the remembered state off the UI and applies a remembered
+// one to a freshly built app. Why it stays here and not in a component:
+// what it reads (sizes, tabs, open folders, table widths) belongs to
+// several components and the App's own tab widgets; revisit when those
+// have one owner.
+type stateHost struct{ *App }
+
+// Snapshot is the window's part of the state to remember.
+func (host stateHost) Snapshot() state.State {
+	snapshot := state.State{
+		Window:    state.Window{W: host.windowPx(host.w), H: host.windowPx(host.h), X: host.winX, Y: host.winY},
+		SidebarW:  host.sidebarSplit.Size,
+		PaneSplit: host.paneSplit.Size,
+		SettingsW: host.over.Settings.Shell.Size.W,
+		SettingsH: host.over.Settings.Shell.Size.H,
+	}
+	expanded := host.side.Tree().Expanded()
+	for _, entry := range host.cols.Set().Entries {
+		snapshot.RememberExpanded(entry.Dir, host.cols.Set().ExpandedPaths(entry, func(folder *request.Folder) bool { return expanded[folder] }))
+	}
+	open := host.openTabs()
+	remembered := make([]state.Tab, len(open))
+	for i, tab := range open {
+		owner, path, _ := host.cols.Set().PathOf(tab.Req)
+		if path == "" {
+			continue // not in the tree: Remember drops it
+		}
+		remembered[i] = state.Tab{Collection: owner.Dir, Path: path, Pane: tab.paneTab, PaneLabel: requestPaneLabel(tab), Resp: tab.respTab}
+	}
+	snapshot.Tabs, snapshot.Active = state.Remember(remembered, host.tabs.Active())
+	for kind := kvlogic.Params; kind < kvlogic.KindCount; kind++ {
+		if weights := host.kv.Widths(kind).Weights; len(weights) > 0 {
+			if snapshot.Columns == nil {
+				snapshot.Columns = map[string][]float64{}
+			}
+			snapshot.Columns[kind.Key()] = append([]float64(nil), weights...)
+		}
+	}
+	return snapshot
+}
+
+// Restore applies a remembered state to a freshly built app. Anything that
+// no longer exists is skipped, and values are kept in range.
+func (host stateHost) Restore(saved state.State) {
+	sizes := saved.Sizes()
+	host.over.Settings.Shell.Size.W, host.over.Settings.Shell.Size.H = sizes.SettingsW, sizes.SettingsH
+	host.sidebarSplit.Size = sizes.SidebarW
+	if sizes.HasPaneSplit {
+		host.paneSplit.Size = sizes.PaneSplit
+	}
+	for dir, paths := range saved.ExpandedByCollection() {
+		host.expandPaths(host.remembered(dir), paths)
+	}
+	reopened, active := saved.Reopen(func(tab state.Tab) *request.Request {
+		return host.requestAt(host.remembered(tab.Collection), tab.Path)
+	})
+	if len(reopened) > 0 {
+		host.updateTabs(tabs.Reset{})
+		for _, again := range reopened {
+			host.updateTabs(tabs.Open{Req: again.Req})
+			tab := host.cur()
+			tab.paneTab = rememberedPane(tab, again.Tab)
+			if again.Tab.Resp >= 0 && again.Tab.Resp < len(host.responsePanesFor(tab)) {
+				tab.respTab = again.Tab.Resp
+			}
+		}
+		host.updateTabs(tabs.Activate{Index: active})
+		host.side.Tree().Select(request.Node{Req: host.cur().Req})
+	}
+	for name, weights := range saved.Columns {
+		if len(weights) == 0 {
+			continue
+		}
+		if kind, ok := kvlogic.KindOfKey(name); ok {
+			*host.kv.Widths(kind) = widget.TableState{Weights: append([]float64(nil), weights...)}
+		}
+	}
+}
+
+// Failed shows that the state could not be written.
+func (host stateHost) Failed(err error) { host.toast(err.Error(), severity.Error) }
+
+// ReadOnly shows that a file a newer build wrote is left as it is.
+func (host stateHost) ReadOnly(err error) { host.noteReadOnly(storage.ReadOnly, err) }
+
+// remembered is the open collection a state reference names, nil for none.
+func (a *App) remembered(ref string) *request.Collection {
+	at := state.CollectionAt(ref, a.cols.Set().Dirs())
+	if at < 0 {
+		return nil
+	}
+	return a.cols.Set().Entries[at].Collection
+}
+
+// expandPaths opens the folders of col at the remembered paths.
+func (a *App) expandPaths(col *request.Collection, paths []string) {
+	for _, folder := range a.cols.Set().FoldersAt(col, paths) {
+		a.side.Tree().Expand(folder)
+	}
+}
+
+// requestAt is the request of col at path, nil when there is none.
+func (a *App) requestAt(col *request.Collection, path string) *request.Request {
+	if col == nil {
+		return nil
+	}
+	return tree.At(&col.Folder, path)
+}
+
+// requestPaneLabel is the label of the request pane tab shows, "" when its
+// index points nowhere.
+func requestPaneLabel(tab *reqTab) string {
+	panes := requestPanesFor(tab)
+	if tab.paneTab < 0 || tab.paneTab >= len(panes) {
+		return ""
+	}
+	return panes[tab.paneTab].label
+}
+
+// rememberedPane is the index of the request pane a remembered tab was on.
+func rememberedPane(tab *reqTab, remembered state.Tab) int {
+	panes := requestPanesFor(tab)
+	labels := make([]string, len(panes))
+	for i, pane := range panes {
+		labels[i] = pane.label
+	}
+	return remembered.PaneIn(labels, tab.paneTab)
+}
+
+// windowPx converts a logical size to window pixels (device independent),
+// which is what the window system and the remembered geometry use.
+func (a *App) windowPx(logical int) int {
+	scale := a.windowScale
+	if scale == 0 {
+		scale = a.settings.UIScale() // before the first Layout
+	}
+	return int(float64(logical)*scale + 0.5)
+}

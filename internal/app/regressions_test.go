@@ -206,8 +206,8 @@ func TestAStdioCommandAsksOnceBeforeItRuns(t *testing.T) {
 	if a.over.Dialog() != nil {
 		t.Fatal("an allowed command asked again")
 	}
-	if !slices.Contains(a.snapshot().Trusted, "command:/bin/true --flag") {
-		t.Fatalf("trusted %v: the answer is not remembered in the state", a.snapshot().Trusted)
+	if !slices.Contains(a.stateFile.Snapshot().Trusted, "command:/bin/true --flag") {
+		t.Fatalf("trusted %v: the answer is not remembered in the state", a.stateFile.Snapshot().Trusted)
 	}
 	tab.Req.URL = "stdio:/bin/true --other"
 	a.connect(tab)

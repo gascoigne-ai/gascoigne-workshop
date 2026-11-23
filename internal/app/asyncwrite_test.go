@@ -77,9 +77,8 @@ func (h *gateHistory) Save(key string, _ []history.Entry) error {
 }
 
 func TestSavingTheResponseHistoryDoesNotBlockTheFrame(t *testing.T) {
-	a := testApp(t)
+	a := testApp(t, withOptions(Options{StatePath: filepath.Join(t.TempDir(), "state.json")}))
 	gate := &gateHistory{release: make(chan struct{}), saves: make(chan string, 4)}
-	a.statePath = filepath.Join(t.TempDir(), "state.json")
 	a.histories = func(string) history.History { return gate }
 	tab := a.cur()
 	tab.Resp = &request.Response{Status: 200, Body: []byte("{}")}

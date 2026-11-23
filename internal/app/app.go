@@ -8,6 +8,7 @@
 package app
 
 import (
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/workspace/state"
 	"slices"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -148,3 +149,10 @@ func (a *App) Err() error { return a.err }
 // must not lose data. It is exported for apptest, whose tests wait for saves
 // before they read files.
 func (a *App) WaitWrites() { a.writes.Wait() }
+
+// RestoredWindow is the window geometry of the last run, clamped to a
+// monitor of mw by mh; the zero Window when nothing was remembered.
+func (a *App) RestoredWindow(mw, mh int) state.Window { return a.stateFile.Restored(mw, mh) }
+
+// SaveState writes the state now; main calls it on exit.
+func (a *App) SaveState() error { return a.stateFile.Save() }

@@ -66,8 +66,8 @@ func TestNewerStateIsNotWrittenThisSession(t *testing.T) {
 	if toasts := errorToasts(a, "newer version"); len(toasts) != 1 || !strings.Contains(toasts[0], "state.json") {
 		t.Fatalf("toasts %q, want one naming state.json and the newer version", toasts)
 	}
-	if a.initial != (state.Window{}) {
-		t.Fatalf("window %+v, want the empty state for this session", a.initial)
+	if got := a.RestoredWindow(4000, 3000); got != (state.Window{}) {
+		t.Fatalf("window %+v, want the empty state for this session", got)
 	}
 
 	clock := time.Unix(1000, 0)

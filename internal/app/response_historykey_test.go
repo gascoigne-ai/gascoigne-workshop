@@ -22,7 +22,7 @@ func TestHistoryIsKeptPerCollectionAndOldHistoryStaysWithTheFirst(t *testing.T) 
 	alphaInner := entryNamed(t, a, "Alpha").Collection.Folders[0].Requests[0]
 	betaInner := entryNamed(t, a, "Beta").Collection.Folders[0].Requests[0]
 	old := []history.Entry{{At: time.Now(), Status: 201, Body: []byte("old")}}
-	if err := historyfile.Dir(a.historyDir()).Save("Nested/Inner", old); err != nil {
+	if err := historyfile.Dir(a.stateFile.HistoryDir()).Save("Nested/Inner", old); err != nil {
 		t.Fatal(err)
 	}
 	if got := a.loadHistory(alphaInner); len(got) != 1 || got[0].Resp.Status != 201 {

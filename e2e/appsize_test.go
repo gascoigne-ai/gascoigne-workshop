@@ -11,7 +11,7 @@ import (
 // maxAppFiles caps the non-test Go files directly in internal/app. The
 // package is being dissolved (.harness/reorg.md), so it must not grow while
 // the extraction tasks run. The cap only goes down.
-const maxAppFiles = 20
+const maxAppFiles = 19
 
 const appDir = "../internal/app"
 

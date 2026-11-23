@@ -8,6 +8,7 @@ import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/collections"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/history"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request"
+	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/request/severity"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/send/sends"
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
@@ -38,6 +39,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -139,17 +141,18 @@ func NewApp(opts Options) (*App, error) {
 		sends:      sends.New(),
 		ports: ports{
 			protocols: opts.Protocols, grpcMethods: opts.GRPCMethods, grpcSchema: opts.GRPCSchema, curl: opts.Curl,
-			store: opts.Store, clients: opts.Clients, states: opts.States, files: opts.Files, folders: opts.Folders,
+			store: opts.Store, clients: opts.Clients, files: opts.Files, folders: opts.Folders,
 			now: opts.now(), histories: opts.History, fonts: opts.Fonts, display: opts.Display, system: opts.System,
 			settingFiles: opts.SettingsFiles, previews: opts.Previews,
 		},
 		frameState:    frameState{dirty: true, drawEveryFrame: opts.DrawEveryFrame},
-		persistState:  persistState{defaultWorkspace: opts.DefaultWorkspace, statePath: opts.StatePath},
+		persistState:  persistState{defaultWorkspace: opts.DefaultWorkspace},
 		settingsState: settingsState{settings: st},
 	}
 	a.writes = serial.NewWriter(a.bus, a.drain)
 	a.keys = autosave.NewKeys(keysHost{a})
 	a.saves = autosave.NewCollections(opts.Store, a.writes)
+	a.stateFile = autosave.NewStateFile(opts.States, opts.StatePath, stateHost{a}, stateHost{a}, a.writes)
 	a.cols = collections.NewLibrary(a.store, collectionsDir(opts.DefaultWorkspace), collections.Deps{Settings: librarySettings{a}, Saves: librarySaves{a}})
 	a.driver.app = a
 	a.notices.SetStatus("Ready")
@@ -199,8 +202,8 @@ func NewApp(opts Options) (*App, error) {
 		a.over.Settings.ScanFonts()
 	}
 	a.openWorkspace(opts.WorkspaceDir)
-	stateErr := a.loadState(opts.StatePath)
-	if opts.Welcome && (opts.WelcomeEvery || a.welcomed != version) {
+	stateErr := a.stateFile.Load()
+	if opts.Welcome && (opts.WelcomeEvery || a.stateFile.Welcomed() != version) {
 		a.OpenWelcome()
 	}
 	a.side.Sent().Load(a)
@@ -208,7 +211,7 @@ func NewApp(opts Options) (*App, error) {
 	if len(themeProblems) > 0 {
 		a.notices.SetStatus(stateNote(a.notices.Status(), fmt.Errorf("%s", themeProblems[0])))
 	}
-	a.stateSave = autosave.New(stateDebounce, stateKey(a.snapshot()))
+	a.stateFile.Begin()
 	return a, nil
 }
 
@@ -223,16 +226,20 @@ func collectionsDir(defaultWorkspace string) string {
 	return filepath.Join(filepath.Dir(defaultWorkspace), "collections")
 }
 
-// loadState reads the remembered state at path and applies it; the error is
-// the reason it could not be read, if any.
-func (a *App) loadState(path string) error {
-	stored, err := a.states.Load(path)
-	a.stateAccess = storage.AccessAfter(err)
-	a.noteReadOnly(a.stateAccess, err)
-	a.initial = stored.Window
-	a.restore(stored)
-	a.welcomed = stored.Welcomed
-	return err
+// stateNote joins a state load problem into the status line.
+func stateNote(status string, err error) string {
+	if err == nil {
+		return status
+	}
+	return strings.TrimSpace(status + " " + err.Error())
+}
+
+// noteReadOnly tells once, at the start, that a file a newer build wrote is
+// left as it is for this session.
+func (a *App) noteReadOnly(access storage.Access, loadErr error) {
+	if access == storage.ReadOnly {
+		a.toast(loadErr.Error()+"; it is not changed this session", severity.Error)
+	}
 }
 
 // newJar is the cookie jar of a session; with no options it cannot fail.

@@ -167,7 +167,7 @@ func (a *App) endFrame(moved bool) {
 	}
 	a.dragHover()
 	a.showGrab()
-	a.stateTick()
+	a.stateFile.Tick(a.keys.State(), a.now())
 	a.workspaceTick()
 	busy := moved || a.tips.Waiting()
 	a.markFrame(busy)
