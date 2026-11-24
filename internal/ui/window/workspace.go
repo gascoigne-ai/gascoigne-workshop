@@ -20,7 +20,9 @@ import (
 // openWorkspace opens the collection in dir, or, when dir is empty, the
 // collections remembered in the settings (an older file's single workspace
 // is a set of one). With none of them, the build's client config, if it
-// has one, replaces the built-in sample. A folder that cannot be read is
+// has one, replaces the built-in sample; a build that starts with nothing
+// (collection.StartWithNothing) opens no collection and one blank tab, as
+// closing the last collection leaves. A folder that cannot be read is
 // left out and named in the status line, so a later save cannot
 // overwrite what is there.
 func (a *Component) openWorkspace(dir string) {
@@ -30,14 +32,18 @@ func (a *Component) openWorkspace(dir string) {
 		origin = collections.OriginStartFolder
 	}
 	var started, sample *request.Collection
-	failures := a.cols.Restore(wanted, origin, func(string) *request.Collection {
-		var isSample bool
-		if started, isSample = a.startCollection(); isSample {
-			sample = started
+	var start func(string) *request.Collection // nil: this build starts with no collection
+	if a.startWith != collection.StartWithNothing {
+		start = func(string) *request.Collection {
+			var isSample bool
+			if started, isSample = a.startCollection(); isSample {
+				sample = started
+			}
+			a.expandStart(started, isSample)
+			return started
 		}
-		a.expandStart(started, isSample)
-		return started
-	})
+	}
+	failures := a.cols.Restore(wanted, origin, start)
 	var failed []error
 	for _, failure := range failures {
 		failed = append(failed, failure.Err)
@@ -50,6 +56,10 @@ func (a *Component) openWorkspace(dir string) {
 		if entry.Collection != started { // the start collection has its own expansion
 			a.side.Tree().ExpandAll(&entry.Collection.Folder)
 		}
+	}
+	if len(a.cols.Set().Entries) == 0 { // not openRequest: it selects a tree node of a collection
+		a.updateTabs(tabs.Open{Req: tabs.Blank()})
+		return
 	}
 	first := a.cols.Set().Entries[0].Collection
 	if _, start, ok := collection.SampleStart(first); ok && first == sample { // the sample opens on its search call

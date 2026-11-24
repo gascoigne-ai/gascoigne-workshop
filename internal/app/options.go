@@ -50,6 +50,7 @@ type Options struct {
 	WorkspaceDir     string                                        // collection folder; "" uses the remembered one, else the client config, else the sample
 	Sample           func() request.Collection                     // the collection shown without a workspace or client config; nil uses collection.GitHubSample
 	Clients          clientconfig.Source                           // the client config a build offers without a workspace; nil has none
+	StartWith        collection.StartWith                          // what opens when no workspace folder is given and none is remembered; the zero value is the sample
 	DefaultWorkspace string                                        // where saving goes when there is no workspace yet
 }
 
@@ -71,7 +72,7 @@ func (opts Options) stores() window.Stores {
 		Start: window.Start{
 			SettingsPath: opts.SettingsPath, StatePath: opts.StatePath, ThemesDir: opts.ThemesDir, WorkspaceDir: opts.WorkspaceDir, DefaultWorkspace: opts.DefaultWorkspace, HostOS: opts.HostOS,
 			Welcome: opts.Welcome, WelcomeEvery: opts.WelcomeEvery, ScanFonts: opts.ScanFonts, DrawEveryFrame: opts.DrawEveryFrame,
-			RetryDelay: opts.RetryDelay, Sample: opts.Sample,
+			RetryDelay: opts.RetryDelay, Sample: opts.Sample, StartWith: opts.StartWith,
 		},
 	}
 }

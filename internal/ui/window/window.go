@@ -101,6 +101,7 @@ type Component struct {
 	reg        request.Registry
 	cols       *collections.Library      // the open collections, in tree order, each with its folder and environment, and what is done to whole ones
 	sample     func() request.Collection // the collection shown when nothing is saved or configured
+	startWith  collection.StartWith      // whether that collection is opened at all
 	sends      *sends.Sends              // the requests in flight, by the request of their tab
 	tabs       *tabs.Set                 // the open tabs, the current one and the drag
 	widgets    map[*tabs.Tab]*reqTab     // the widget state of each open tab
@@ -130,6 +131,7 @@ func New(stores Stores) (*Component, error) {
 		ctx:              ctx,
 		retryDelay:       start.RetryDelay,
 		sample:           start.Sample,
+		startWith:        start.StartWith,
 		widgets:          map[*tabs.Tab]*reqTab{},
 		bus:              stores.Bus,
 		jar:              newJar(),

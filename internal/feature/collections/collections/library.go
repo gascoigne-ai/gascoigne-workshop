@@ -181,7 +181,9 @@ func (lib *Library) include(col *request.Collection, dir, env string) {
 // a later write does not lose it. An entry without a folder stands for the
 // collection the program starts with: start makes it (once, and only when
 // none unsaved is open yet). When nothing is open at the end, start makes
-// the one for the environment remembered for "".
+// the one for the environment remembered for "". A nil start is a build that
+// starts with no collection: the entries without a folder are skipped and the
+// set may stay empty, as it is after the last collection is closed.
 func (lib *Library) Restore(wanted []request.OpenCollection, origin Origin, start func(env string) *request.Collection) []Failure {
 	lib.origin, lib.unreadable = origin, nil
 	var failures []Failure
@@ -217,6 +219,9 @@ func (lib *Library) restoreFolder(item request.OpenCollection) error {
 }
 
 func (lib *Library) includeStart(env string, start func(env string) *request.Collection) {
+	if start == nil {
+		return
+	}
 	if _, open := lib.set.At(""); open {
 		return
 	}

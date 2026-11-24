@@ -96,7 +96,7 @@ func defineFlags(set *flag.FlagSet) *launch {
 	set.StringVar(&opts.SettingsPath, "settings", settingsfile.DefaultPath(), "settings file; empty keeps settings in memory")
 	set.StringVar(&opts.StatePath, "state", statefile.DefaultPath(), "remembered window and tabs; empty keeps them in memory")
 	set.StringVar(&opts.ThemesDir, "themes", settingsfile.ThemesDir(), "folder of theme files (*.json) that extend the dark or light theme; empty for none")
-	set.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the last one, else the client config (release build) or the example server (default build)")
+	set.StringVar(&opts.WorkspaceDir, "workspace", "", "folder to load and save the collection; empty uses the remembered collections, else the example server (default build) or none (release build)")
 	run.cpuProf = set.String("cpuprofile", "", "write a CPU profile of the run to this file, for `go tool pprof`")
 	run.iconPNG = set.String("icon-png", "", "write the program icon (256x256 PNG) to this path and exit, for packaging")
 	return run
@@ -110,8 +110,8 @@ func adapters(opts *app.Options) {
 	opts.GRPCSchema = protocol.GRPCInputSchema
 	opts.Curl = protocol.Curl
 	opts.Store = collectionstore.Files{}
-	opts.Sample = collection.Sample // which sample is a build decision, see clients_*.go
-	opts.Clients = clientConfigs()
+	opts.Sample = collection.Sample // which start is a build decision, see clients_*.go
+	opts.StartWith = startWith
 	opts.States = statefile.Files{}
 	opts.Files = filedialog.System{}
 	opts.Folders = folders.Disk{}

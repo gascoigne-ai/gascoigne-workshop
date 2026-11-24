@@ -2,9 +2,9 @@
 
 package main
 
-import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 
-// clientConfigs is nil in the default build: it starts from the sample,
-// which carries the example server's endpoints, and reads no .workshop
-// file, so a stray one cannot hide them.
-func clientConfigs() clientconfig.Source { return nil }
+// startWith is the sample in the default build: it starts with the example
+// server's endpoints, and reads no .workshop file, so a stray one cannot hide
+// them.
+const startWith = collection.StartWithSample

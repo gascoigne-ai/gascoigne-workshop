@@ -114,9 +114,8 @@ build:
 	go build -o bin/workshop ./cmd/workshop
 	go build -o bin/shot ./e2e/cmd/shot
 
-# The release build ships no example endpoints and opens the client config
-# (.workshop.yaml, .json or .toml in the config directory and the working
-# directory) instead.
+# The release build ships no example endpoints and starts with no collection
+# when none was open before.
 release:
 	go build -tags release -o bin/workshop-release ./cmd/workshop
 

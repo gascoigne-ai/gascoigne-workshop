@@ -69,6 +69,7 @@ type Start struct {
 	DrawEveryFrame   bool                      // build and draw every frame, even an idle one: a capture reads the frame it just drew
 	RetryDelay       time.Duration             // wait before a dropped connection reopens; 0 is two seconds
 	Sample           func() request.Collection // the collection shown without a workspace or client config; nil uses collection.GitHubSample
+	StartWith        collection.StartWith      // what opens when no workspace folder is given and none is remembered; the zero value is the sample
 }
 
 // FileDialog asks the desktop for a file name. The toolkit's

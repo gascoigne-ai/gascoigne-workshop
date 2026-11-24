@@ -75,6 +75,7 @@ type startOptions struct {
 	HostOS           string
 	WorkspaceDir     string
 	Sample           func() request.Collection
+	StartWith        collection.StartWith
 	Clients          clientconfig.Source
 	DefaultWorkspace string
 }
@@ -92,7 +93,7 @@ func newWindow(opts startOptions) (*Component, error) {
 		Start: Start{
 			SettingsPath: opts.SettingsPath, StatePath: opts.StatePath, ThemesDir: opts.ThemesDir, WorkspaceDir: opts.WorkspaceDir,
 			DefaultWorkspace: opts.DefaultWorkspace, HostOS: opts.HostOS, Welcome: opts.Welcome, WelcomeEvery: opts.WelcomeEvery,
-			ScanFonts: opts.ScanFonts, DrawEveryFrame: opts.DrawEveryFrame, RetryDelay: opts.RetryDelay, Sample: opts.Sample,
+			ScanFonts: opts.ScanFonts, DrawEveryFrame: opts.DrawEveryFrame, RetryDelay: opts.RetryDelay, Sample: opts.Sample, StartWith: opts.StartWith,
 		},
 	})
 }

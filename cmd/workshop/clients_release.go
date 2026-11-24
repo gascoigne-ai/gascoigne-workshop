@@ -2,14 +2,9 @@
 
 package main
 
-import (
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/adapter/clientfile"
-	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections/clientconfig"
-)
+import "github.com/gascoigne-ai/gascoigne-workshop/internal/feature/collections"
 
-// clientConfigs is the release build's source of collections and servers:
-// the .workshop file in the user config directory, overridden entry by
-// entry by the one in the working directory.
-func clientConfigs() clientconfig.Source {
-	return clientfile.Files{GlobalDir: clientfile.DefaultGlobalDir(), LocalDir: "."}
-}
+// startWith is nothing in the release build: it opens what the user opened
+// before, else no collection. It reads no .workshop file and ships no example
+// endpoints, so a first start is the empty "No collection is open" screen.
+const startWith = collection.StartWithNothing

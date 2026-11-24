@@ -36,8 +36,10 @@ collection is known by its folder. `App.cols` is a `collections.Library` (`colle
   focused collection: the active tab's, else the tree selection's, else the first (`Set.Focus`).
 - History and the sent log key a request by its collection's folder and its path, so equal paths in
   two collections stay apart.
-- **Start**: `-workspace DIR` alone, else the remembered set, else (release build) the client
-  config, else the built-in sample in memory. A folder that fails to load is left out, named in the
+- **Start**: `-workspace DIR` alone, else the remembered set, else what the build starts with
+  (`collection.StartWith`): the built-in sample in memory in the default build, nothing in a
+  release build (no collection, one blank tab, the sidebar's "No collection is open"; a remembered
+  entry without a folder is skipped). A folder that fails to load is left out, named in the
   status line and never overwritten.
 - **Remembered set**: every change of the set rewrites `settings.collections` (`{folder,
   environment}`, hidden, General). A remembered folder that failed to load stays in the list, so an
@@ -79,8 +81,8 @@ All importers are pure packages under `importers/`; the sidebar logic attaches t
   range makes the window build again before it paints (`Component.Tick`).
 
 ### Example server and client config
-The default build carries example endpoints and a release build reads client configs instead
-(the user's choice). `make example-server` runs `cmd/example-server`, one port per service on `127.0.0.1`
+The default build carries example endpoints and a release build starts with none (the user's
+choice). The client config parser and its file adapter are kept, but no build reads `.workshop` files now. `make example-server` runs `cmd/example-server`, one port per service on `127.0.0.1`
 (flags change host and ports; port 0 picks a free one):
 
 | Port | Service |
@@ -99,8 +101,8 @@ Builds:
   in its own directory (`storage`; why in its package doc), so a run from an IDE never touches the release
   build's data. Screenshot runs and golden scenes keep settings and state in memory.
 - Release build (`make release`, `-tags release`, installed by `make install`): no example server,
-  `Sample()` is empty, and with no workspace the App opens the client config's tree. An unreadable
-  config is named in the status line and the sample stays.
+  `Sample()` is empty, and with no workspace and nothing remembered it starts with no collection
+  (`StartWithNothing`) and reads no client config.
 
 Client config:
 

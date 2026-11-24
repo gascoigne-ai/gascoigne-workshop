@@ -597,3 +597,34 @@ func TestReopenReplacesTheWholeSet(t *testing.T) {
 		t.Errorf("show %+v, writes %d, saved %d", show, len(settings.remembers), len(saves.saved))
 	}
 }
+
+// A build that starts with nothing passes no start: the open set may stay
+// empty, as it does after the last collection is closed. Restore used to
+// call the start maker whatever the list held.
+func TestRestoreWithoutAStartMayOpenNothing(t *testing.T) {
+	tests := []struct {
+		name         string
+		wanted       []request.OpenCollection
+		wantOpen     []string
+		wantFailures int
+	}{
+		{"an empty list", nil, nil, 0},
+		{"only the unsaved entry", []request.OpenCollection{{Environment: "dev"}}, nil, 0},
+		{"an unreadable folder", []request.OpenCollection{{Folder: "/w/gone"}}, nil, 1},
+		{"a readable folder and the unsaved entry", []request.OpenCollection{{Folder: "/w/a"}, {Environment: "dev"}}, []string{"/w/a"}, 0},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			lib, store, _, _ := library()
+			store.stored("/w/a")
+			failures := lib.Restore(test.wanted, OriginRemembered, nil)
+			var open []string
+			for _, entry := range lib.Set().Entries {
+				open = append(open, entry.Dir)
+			}
+			if !reflect.DeepEqual(open, test.wantOpen) || len(failures) != test.wantFailures {
+				t.Errorf("open %v with %d failures, want %v with %d", open, len(failures), test.wantOpen, test.wantFailures)
+			}
+		})
+	}
+}
