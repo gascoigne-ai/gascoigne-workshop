@@ -2,7 +2,7 @@
 
 Adds to the shared `common/rules.md`, `common/commit-style.md` and `common/code-style.md`.
 
-- Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements, `github.com/BurntSushi/toml`, `github.com/gascoigne-ai/gascoigne-formal` (the `formal/` tests only; private, so `GOPRIVATE=github.com/gascoigne-ai/*` and ssh access), and `github.com/bufbuild/protocompile`, and the build tool `github.com/tc-hib/go-winres` (run by `release.yml` at `v0.3.3`; not a module requirement). REST uses `net/http`.
+- Approved deps: `github.com/hajimehoshi/ebiten/v2` (GPU window, input, 2D drawing, `text/v2`) `golang.org/x/image` (embedded Go fonts, already an Ebitengine requirement) and Ebitengine's other transitive requirements, and `google.golang.org/grpc` with `google.golang.org/protobuf` and their transitive requirements, `github.com/BurntSushi/toml`, and `github.com/bufbuild/protocompile`, and the build tool `github.com/tc-hib/go-winres` (run by `release.yml` at `v0.3.3`; not a module requirement). REST uses `net/http`.
 - cgo is allowed here (Ebitengine needs it for windowing on Linux). Tests for non-UI packages must still run without a display.
 - The look follows `.harness/style.md`; its Rules section is part of these rules.
 - Layers: the toolkit knows nothing of the app (`uitoolkit/CLAUDE.md`), `internal/` is laid out as base, features, ui and app (`internal/CLAUDE.md`). `internal/ui/format` and `internal/feature/send/adapter/protocol` stay free of UI.

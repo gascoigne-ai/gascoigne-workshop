@@ -5,7 +5,6 @@ go 1.27.4
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/bufbuild/protocompile v0.14.1
-	github.com/gascoigne-ai/gascoigne-formal v0.1.1
 	github.com/hajimehoshi/ebiten/v2 v2.10.5
 	golang.org/x/image v0.45.0
 	google.golang.org/grpc v1.85.0
