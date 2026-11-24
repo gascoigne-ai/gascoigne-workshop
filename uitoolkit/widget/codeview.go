@@ -474,6 +474,9 @@ func (v *CodeView) updatePointer(ctx *core.Ctx, rect core.Rect, geometry codeGeo
 func (v *CodeView) updateKeys(ctx *core.Ctx, geometry codeGeometry, sizes bars, layout wrapLayout) {
 	in := ctx.In
 	contentH := len(layout.rows) * geometry.lineH
+	if in.Escape {
+		v.HasSel = false
+	}
 	if in.SelectAll {
 		v.SelectLines(0, len(v.Lines)-1)
 	}

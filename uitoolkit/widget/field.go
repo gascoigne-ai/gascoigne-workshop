@@ -59,6 +59,9 @@ func (b *fieldB) Update(element *El, ctx *core.Ctx) {
 	if !f.Focused {
 		return
 	}
+	if in.Escape {
+		f.HasSel = false // focus stays: the window's Escape steps decide what else closes
+	}
 	changed := f.RunShortcuts(ctx)
 	typed := in.Typed
 	if in.Ctrl {

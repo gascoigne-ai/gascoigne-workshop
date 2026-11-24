@@ -179,7 +179,7 @@ func (a *TextArea) updatePointer(ctx *core.Ctx, rect core.Rect, geometry areaGeo
 func (a *TextArea) updateKeys(ctx *core.Ctx, rect core.Rect, geometry areaGeometry, sizes bars) (changed bool) {
 	in := ctx.In
 	if in.Escape {
-		a.Focused = false
+		a.Focused, a.HasSel = false, false
 		return false
 	}
 	changed = a.RunShortcuts(ctx)

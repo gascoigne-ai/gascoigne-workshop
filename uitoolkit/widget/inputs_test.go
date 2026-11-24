@@ -587,3 +587,26 @@ func TestEditorsSurviveZeroSizeAndHostileText(t *testing.T) {
 		t.Errorf("an edit left invalid UTF-8 in the text: %q", field.Text)
 	}
 }
+
+// Escape left the editor but kept its selection highlighted.
+func TestTextAreaEscapeClearsTheSelection(t *testing.T) {
+	a, c, root, _ := areaBox(t, "some text")
+	a.Focused = true
+	a.SelectAll()
+	c.In = core.Input{Escape: true}
+	Update(c, root)
+	if got := a.SelectedText(); got != "" {
+		t.Fatalf("Escape left %q selected", got)
+	}
+}
+
+// Escape in a field kept its selection highlighted.
+func TestFieldEscapeClearsTheSelection(t *testing.T) {
+	f, c, root, _ := focusedField(t, "some text", 200)
+	f.SelectAll()
+	c.In = core.Input{Escape: true}
+	Update(c, root)
+	if got := f.SelectedText(); got != "" {
+		t.Fatalf("Escape left %q selected", got)
+	}
+}

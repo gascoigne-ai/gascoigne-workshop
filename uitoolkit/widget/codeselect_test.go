@@ -183,3 +183,19 @@ func TestCodeViewShiftWordRightSkipsFoldedAndPunctuationOnlyLines(t *testing.T) 
 		t.Fatalf("caret at %+v, want %+v", v.selB, want)
 	}
 }
+
+// Escape did nothing in a focused view with a selection: the highlight
+// stayed until a click elsewhere.
+func TestCodeViewEscapeClearsTheSelection(t *testing.T) {
+	v, c, _, r := viewport(t)
+	v.Focused = true
+	v.SelectLines(0, 2)
+	if !v.Selected() {
+		t.Fatal("setup: nothing selected")
+	}
+	c.In = core.Input{Escape: true}
+	v.Update(c, r)
+	if v.Selected() {
+		t.Fatalf("Escape left %q selected", v.SelectedText())
+	}
+}
