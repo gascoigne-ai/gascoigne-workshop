@@ -18,8 +18,9 @@ var (
 	treeRequestTemplate = markup.Must("treerequest.vml", treerequestSource)
 )
 
-// View is the header (the chip that switches between the collection
-// tree and the log of sent requests, and the filter) above the one shown.
+// View is the header (the two chips that switch between the collection
+// tree and the log of sent requests, and the filter under them) above the
+// one shown.
 //
 // The tree builds only the rows in view plus one, so a drawn frame costs
 // what a screen of rows costs, not the whole tree. viewH is the height of
@@ -29,10 +30,6 @@ var (
 // paints. Rejected: reading the box height from the toolkit's scroll state,
 // which would change the toolkit for one list.
 func (c *Component) View(ctx *w.Ctx, viewH int) Node {
-	label, switchTo := "Collections", func() { c.showSent = true }
-	if c.showSent {
-		label, switchTo = "Sent", func() { c.showSent = false }
-	}
 	var sentList Node
 	var rows []Node
 	var pad treePad
@@ -44,23 +41,24 @@ func (c *Component) View(ctx *w.Ctx, viewH int) Node {
 	}
 	entries := len(c.deps.Collections.Set().Entries)
 	return sizes.Build(ctx, sidebarTemplate, markup.Scope{
-		"mode":           label,
-		"switchMode":     switchTo,
-		"collectionMenu": func(posX, posY int) { c.deps.Menus.Open(posX, posY, c.CollectionMenu()) },
-		"filter":         &c.filter,
-		"showSent":       c.showSent,
-		"showTree":       !c.showSent && entries > 0,
-		"noCollection":   !c.showSent && entries == 0,
-		"openFolder":     c.deps.Workspace.OpenFolder,
-		"newCollection":  c.deps.Workspace.NewCollection,
-		"sentList":       sentList,
-		"treeScroll":     &c.scroll,
-		"rows":           rows,
-		"spaceAbove":     pad.top > 0,
-		"padTop":         pad.top,
-		"spaceBelow":     pad.bottom > 0,
-		"padBottom":      pad.bottom,
-		"headerH":        sizes.HeaderH,
+		"showCollections": func() { c.showSent = false },
+		"showHistory":     func() { c.showSent = true },
+		"collectionMenu":  func(posX, posY int) { c.deps.Menus.Open(posX, posY, c.CollectionMenu()) },
+		"filter":          &c.filter,
+		"showSent":        c.showSent,
+		"collectionsMode": !c.showSent,
+		"showTree":        !c.showSent && entries > 0,
+		"noCollection":    !c.showSent && entries == 0,
+		"openFolder":      c.deps.Workspace.OpenFolder,
+		"newCollection":   c.deps.Workspace.NewCollection,
+		"sentList":        sentList,
+		"treeScroll":      &c.scroll,
+		"rows":            rows,
+		"spaceAbove":      pad.top > 0,
+		"padTop":          pad.top,
+		"spaceBelow":      pad.bottom > 0,
+		"padBottom":       pad.bottom,
+		"headerH":         sizes.HeaderH,
 	})
 }
 
@@ -192,7 +190,10 @@ func (c *Component) activateSelected(rows []collection.Row) {
 const (
 	sidebarSource = `<col>
   <row h="{{headerH}}" pad-x="{{gutter}}" gap="{{tightGap}}" bg="bg" border-b="border">
-    <button w="{{modeBtnW}}" h="{{rowH}}" on-click="switchMode" on-right-click="collectionMenu" tooltip="Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection">{{mode}}</button>
+    <segment-chip selected="{{collectionsMode}}" grow="1" h="{{rowH}}" on-click="showCollections" on-right-click="collectionMenu" tooltip="Right-click: new, open, rename, save, close, delete a collection">Collections</segment-chip>
+    <segment-chip selected="{{showSent}}" grow="1" h="{{rowH}}" on-click="showHistory" tooltip="The requests sent so far">History</segment-chip>
+  </row>
+  <row pad-x="{{gutter}}" pad-y="{{tightGap}}" bg="bg" border-b="border-soft">
     <field state="filter" h="{{rowH}}" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   </row>
   <slot if="sentList" name="sentList"/>

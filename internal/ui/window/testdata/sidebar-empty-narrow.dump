@@ -1,11 +1,14 @@
 flow rect=0,0,160,480
   flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,160,44
-    flow h=28 padL=10 padR=10 minW=96 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
-      textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
-    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=114,8,34,28
-  flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 bg=sunken rect=0,44,160,436
-    textB text="No collection is open" fg=muted rect=12,56,136,16
-    flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,80,136,28
-      textB text="Open collection folder..." grow=1 fg=chip-text ellipsis=true center=true rect=22,80,116,28
-    flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,116,136,28
-      textB text="New collection..." grow=1 fg=chip-text ellipsis=true center=true rect=22,116,116,28
+    flow h=28 padL=10 padR=10 grow=1 bg=accent control=primary tip=Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,65,28
+      textB text="Collections" grow=1 fg=accent-text ellipsis=true center=true rect=22,8,45,28
+    flow h=28 padL=10 padR=10 grow=1 bg=sunken control=button tip=The requests sent so far lighten=true onClick=true rect=83,8,65,28
+      textB text="History" grow=1 fg=chip-text ellipsis=true center=true rect=93,8,45,28
+  flow padL=12 padT=6 padR=12 padB=6 bg=bg borderB=border-soft rect=0,44,160,40
+    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=12,50,136,28
+  flow padL=12 padT=12 padR=12 padB=12 gap=8 grow=1 bg=sunken rect=0,84,160,396
+    textB text="No collection is open" fg=muted rect=12,96,136,16
+    flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,120,136,28
+      textB text="Open collection folder..." grow=1 fg=chip-text ellipsis=true center=true rect=22,120,116,28
+    flow h=28 padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=12,156,136,28
+      textB text="New collection..." grow=1 fg=chip-text ellipsis=true center=true rect=22,156,116,28

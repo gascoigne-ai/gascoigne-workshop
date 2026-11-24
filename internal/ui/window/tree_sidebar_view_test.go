@@ -76,20 +76,28 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 	}
 }
 
-// The chip in the sidebar's header switches between the tree and the log
-// of sent requests, and its label names what is shown.
-func TestTheSidebarChipSwitchesBetweenTreeAndSentLog(t *testing.T) {
+// The sidebar's header shows both modes, Collections and History, as a
+// segmented choice; one click reaches either, and clicking the lit one
+// changes nothing. It was one chip named after the mode shown, so the other
+// mode was not visible and a click only toggled.
+func TestTheSidebarSwitchShowsBothModesAndOneClickReachesEither(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	clickText(t, a, "Collections", 0)
-	if !a.side.ShowSent() {
-		t.Fatal("clicking Collections did not show the sent log")
-	}
-	clickText(t, a, "Sent", 0)
-	if a.side.ShowSent() {
-		t.Fatal("clicking Sent did not show the tree")
-	}
 	textCenter(t, a, "Collections")
+	textCenter(t, a, "History")
+	clickText(t, a, "History", 0)
+	if !a.side.ShowSent() {
+		t.Fatal("clicking History did not show the sent log")
+	}
+	clickText(t, a, "History", 0)
+	if !a.side.ShowSent() {
+		t.Fatal("clicking the lit History chip left the sent log")
+	}
+	clickText(t, a, "Collections", 0)
+	if a.side.ShowSent() {
+		t.Fatal("clicking Collections did not show the tree")
+	}
+	textCenter(t, a, "History")
 }
 
 // The part of a folder or request name the filter matched is drawn in the

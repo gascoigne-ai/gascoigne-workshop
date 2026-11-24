@@ -1,34 +1,37 @@
 flow rect=0,0,160,480
   flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,160,44
-    flow h=28 padL=10 padR=10 minW=96 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
-      textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
-    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=114,8,34,28
-  scrollB grow=1 bg=sunken clip=true rect=0,44,160,436
-    flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,44,160,28
-      flow w=3 h=14 bg=collection.0 rect=12,51,3,14
-      iconB w=12 icon=triangle-down rect=21,44,12,28
-      textB text="GitHub REST API" grow=1 bold=true ellipsis=true rect=39,44,121,28
-    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,72,160,28
-      iconB w=12 icon=triangle-right rect=28,72,12,28
-      textB text="User" grow=1 ellipsis=true rect=46,72,114,28
-    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,100,160,28
-      iconB w=12 icon=triangle-down rect=28,100,12,28
-      textB text="Repository" grow=1 ellipsis=true rect=46,100,114,28
-    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,128,160,28
-      textB text="GET" w=40 fg=method.GET small=true rect=50,136,40,14
-      textB text="Search Repos" grow=1 ellipsis=true rect=90,134,58,16
-    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,156,160,28
-      textB text="GET" w=40 fg=method.GET small=true rect=50,164,40,14
-      textB text="Repository Info" grow=1 ellipsis=true rect=90,162,58,16
-    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,184,160,28
-      textB text="GET" w=40 fg=method.GET small=true rect=50,192,40,14
-      textB text="Repository Tags" grow=1 ellipsis=true rect=90,190,58,16
-    flow h=28 padL=28 gap=6 bg=selected control=row onClick=true onRightClick=true onDragOver=true rect=0,212,160,28
-      iconB w=12 icon=triangle-down rect=28,212,12,28
-      textB text="Realtime" grow=1 ellipsis=true rect=46,212,114,28
-    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,240,160,28
-      textB text="WS" w=40 fg=muted small=true rect=50,248,40,14
-      textB text="Echo" grow=1 ellipsis=true rect=90,246,58,16
-    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,268,160,28
-      textB text="MCP" w=40 fg=muted small=true rect=50,276,40,14
-      textB text="List Tools" grow=1 ellipsis=true rect=90,274,58,16
+    flow h=28 padL=10 padR=10 grow=1 bg=accent control=primary tip=Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,65,28
+      textB text="Collections" grow=1 fg=accent-text ellipsis=true center=true rect=22,8,45,28
+    flow h=28 padL=10 padR=10 grow=1 bg=sunken control=button tip=The requests sent so far lighten=true onClick=true rect=83,8,65,28
+      textB text="History" grow=1 fg=chip-text ellipsis=true center=true rect=93,8,45,28
+  flow padL=12 padT=6 padR=12 padB=6 bg=bg borderB=border-soft rect=0,44,160,40
+    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=12,50,136,28
+  scrollB grow=1 bg=sunken clip=true rect=0,84,160,396
+    flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,84,160,28
+      flow w=3 h=14 bg=collection.0 rect=12,91,3,14
+      iconB w=12 icon=triangle-down rect=21,84,12,28
+      textB text="GitHub REST API" grow=1 bold=true ellipsis=true rect=39,84,121,28
+    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,112,160,28
+      iconB w=12 icon=triangle-right rect=28,112,12,28
+      textB text="User" grow=1 ellipsis=true rect=46,112,114,28
+    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,140,160,28
+      iconB w=12 icon=triangle-down rect=28,140,12,28
+      textB text="Repository" grow=1 ellipsis=true rect=46,140,114,28
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,168,160,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,176,40,14
+      textB text="Search Repos" grow=1 ellipsis=true rect=90,174,58,16
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,196,160,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,204,40,14
+      textB text="Repository Info" grow=1 ellipsis=true rect=90,202,58,16
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,224,160,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,232,40,14
+      textB text="Repository Tags" grow=1 ellipsis=true rect=90,230,58,16
+    flow h=28 padL=28 gap=6 bg=selected control=row onClick=true onRightClick=true onDragOver=true rect=0,252,160,28
+      iconB w=12 icon=triangle-down rect=28,252,12,28
+      textB text="Realtime" grow=1 ellipsis=true rect=46,252,114,28
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,280,160,28
+      textB text="WS" w=40 fg=muted small=true rect=50,288,40,14
+      textB text="Echo" grow=1 ellipsis=true rect=90,286,58,16
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,308,160,28
+      textB text="MCP" w=40 fg=muted small=true rect=50,316,40,14
+      textB text="List Tools" grow=1 ellipsis=true rect=90,314,58,16

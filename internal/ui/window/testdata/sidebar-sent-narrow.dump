@@ -1,7 +1,10 @@
 flow rect=0,0,160,480
   flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,160,44
-    flow h=28 padL=10 padR=10 minW=96 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
-      textB text="Sent" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
-    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=114,8,34,28
-  flow padL=12 padT=12 padR=12 padB=12 bg=sunken rect=0,44,160,40
-    textB text="Nothing sent yet" fg=muted rect=12,56,136,16
+    flow h=28 padL=10 padR=10 grow=1 bg=sunken control=button tip=Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,65,28
+      textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,45,28
+    flow h=28 padL=10 padR=10 grow=1 bg=accent control=primary tip=The requests sent so far lighten=true onClick=true rect=83,8,65,28
+      textB text="History" grow=1 fg=accent-text ellipsis=true center=true rect=93,8,45,28
+  flow padL=12 padT=6 padR=12 padB=6 bg=bg borderB=border-soft rect=0,44,160,40
+    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=12,50,136,28
+  flow padL=12 padT=12 padR=12 padB=12 bg=sunken rect=0,84,160,40
+    textB text="Nothing sent yet" fg=muted rect=12,96,136,16

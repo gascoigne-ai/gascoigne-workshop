@@ -3,32 +3,35 @@ stack rect=0,0,640,480
     splitB grow=1 rect=0,0,640,452
       flow rect=0,0,219,452
         flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,219,44
-          flow h=28 padL=10 padR=10 minW=96 bg=sunken control=button tip=Collections and sent requests. Right-click: new, open, rename, save, close, delete a collection shrink=true lighten=true onClick=true onRightClick=true rect=12,8,96,28
-            textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,76,28
-          fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=114,8,93,28
-        scrollB grow=1 bg=sunken clip=true rect=0,44,219,408
-          flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,44,219,28
-            flow w=3 h=14 bg=collection.0 rect=12,51,3,14
-            iconB w=12 icon=triangle-down rect=21,44,12,28
-            textB text="GitHub REST API" grow=1 bold=true ellipsis=true rect=39,44,180,28
-          flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,72,219,28
-            iconB w=12 icon=triangle-right rect=28,72,12,28
-            textB text="User" grow=1 ellipsis=true rect=46,72,173,28
-          flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,100,219,28
-            iconB w=12 icon=triangle-down rect=28,100,12,28
-            textB text="Repository" grow=1 ellipsis=true rect=46,100,173,28
-          flow h=28 padL=50 padR=12 bg=selected control=row alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,128,219,28
-            textB text="GET" w=40 fg=method.GET small=true rect=50,136,40,14
-            textB text="Search Repos" grow=1 ellipsis=true rect=90,134,117,16
-          flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,156,219,28
-            textB text="GET" w=40 fg=method.GET small=true rect=50,164,40,14
-            textB text="Repository Info" grow=1 ellipsis=true rect=90,162,117,16
-          flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,184,219,28
-            textB text="GET" w=40 fg=method.GET small=true rect=50,192,40,14
-            textB text="Repository Tags" grow=1 ellipsis=true rect=90,190,117,16
-          flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,212,219,28
-            iconB w=12 icon=triangle-right rect=28,212,12,28
-            textB text="Realtime" grow=1 ellipsis=true rect=46,212,173,28
+          flow h=28 padL=10 padR=10 grow=1 bg=accent control=primary tip=Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,94,28
+            textB text="Collections" grow=1 fg=accent-text ellipsis=true center=true rect=22,8,74,28
+          flow h=28 padL=10 padR=10 grow=1 bg=sunken control=button tip=The requests sent so far lighten=true onClick=true rect=112,8,95,28
+            textB text="History" grow=1 fg=chip-text ellipsis=true center=true rect=122,8,75,28
+        flow padL=12 padT=6 padR=12 padB=6 bg=bg borderB=border-soft rect=0,44,219,40
+          fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=12,50,195,28
+        scrollB grow=1 bg=sunken clip=true rect=0,84,219,368
+          flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,84,219,28
+            flow w=3 h=14 bg=collection.0 rect=12,91,3,14
+            iconB w=12 icon=triangle-down rect=21,84,12,28
+            textB text="GitHub REST API" grow=1 bold=true ellipsis=true rect=39,84,180,28
+          flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,112,219,28
+            iconB w=12 icon=triangle-right rect=28,112,12,28
+            textB text="User" grow=1 ellipsis=true rect=46,112,173,28
+          flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,140,219,28
+            iconB w=12 icon=triangle-down rect=28,140,12,28
+            textB text="Repository" grow=1 ellipsis=true rect=46,140,173,28
+          flow h=28 padL=50 padR=12 bg=selected control=row alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,168,219,28
+            textB text="GET" w=40 fg=method.GET small=true rect=50,176,40,14
+            textB text="Search Repos" grow=1 ellipsis=true rect=90,174,117,16
+          flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,196,219,28
+            textB text="GET" w=40 fg=method.GET small=true rect=50,204,40,14
+            textB text="Repository Info" grow=1 ellipsis=true rect=90,202,117,16
+          flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,224,219,28
+            textB text="GET" w=40 fg=method.GET small=true rect=50,232,40,14
+            textB text="Repository Tags" grow=1 ellipsis=true rect=90,230,117,16
+          flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,252,219,28
+            iconB w=12 icon=triangle-right rect=28,252,12,28
+            textB text="Realtime" grow=1 ellipsis=true rect=46,252,173,28
       flow grow=1 rect=220,0,420,452
         flow h=44 padL=12 padR=12 bg=hero control=hero rect=220,0,420,44
           textB text="GitHub REST API" minW=48 fg=hero-text bold=true ellipsis=true shrink=true rect=232,0,118,44
