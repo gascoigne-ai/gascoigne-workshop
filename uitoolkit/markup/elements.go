@@ -149,6 +149,15 @@ func glyph(parts elementParts) (view.Node, error) {
 	return widget.Icon(name, parts.opts...), nil
 }
 
+// segmentIconChip builds a SegmentIconChip from its icon and selected params.
+func segmentIconChip(parts elementParts) (view.Node, error) {
+	name := parts.args[0].(string)
+	if err := knownIcon(name); err != nil {
+		return nil, err
+	}
+	return widget.SegmentIconChip(name, parts.args[1].(bool), parts.opts...), nil
+}
+
 // iconButton builds an IconButton around the icon its icon param names.
 // The glyph grows so it fills the chip and sits centered in it, as every
 // hand-written copy of the tree had it.
@@ -272,26 +281,27 @@ func (spec elementSpec) paramNames() []string {
 // would color the column and not its texts. on-click on a check-row makes
 // the whole row the click target.
 var elements = map[string]elementSpec{
-	"row":            {build: container(view.Row)},
-	"col":            {build: container(view.Col)},
-	"stack":          {build: container(view.Stack)},
-	"spacer":         {build: optioned(view.Spacer), holds: holdsNothing},
-	"hrule":          {build: optioned(view.HRule), holds: holdsNothing},
-	"vrule":          {build: optioned(view.VRule), holds: holdsNothing},
-	"vrule-inset":    {build: args1(view.VRuleInset), holds: holdsNothing, params: []param{wholeParam("inset")}},
-	"text":           {build: labelled(view.Text), holds: holdsText},
-	"primary-button": {build: labelled(widget.PrimaryButton), holds: holdsText},
-	"link-button":    {build: labelled(widget.LinkButton), holds: holdsText},
-	"icon":           {build: glyph, holds: holdsNothing, params: []param{textParam("name")}},
-	"slot":           {build: slotNode, holds: holdsNothing, plain: true, params: []param{scoped[view.Node]("name")}},
-	"caption":        {build: labelled(view.Caption), holds: holdsText},
-	"lines":          {build: textArgs1(view.Lines), holds: holdsText, params: []param{tokenParam("color")}},
-	"note":           {build: textArgs1(widget.Note), holds: holdsText, params: []param{tokenParam("tone")}},
-	"button":         {build: labelled(widget.Button), holds: holdsText},
-	"segment-chip":   {build: textArgs1(widget.SegmentChip), holds: holdsText, params: []param{boolParam("selected")}},
-	"icon-button":    {build: iconButton, holds: holdsNothing, params: []param{textParam("icon")}},
-	"scroll":         {build: itemArgs1(widget.Scroll), params: []param{scopedState[widget.ScrollState]("state")}},
-	"hscroll":        {build: itemArgs1(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
+	"row":               {build: container(view.Row)},
+	"col":               {build: container(view.Col)},
+	"stack":             {build: container(view.Stack)},
+	"spacer":            {build: optioned(view.Spacer), holds: holdsNothing},
+	"hrule":             {build: optioned(view.HRule), holds: holdsNothing},
+	"vrule":             {build: optioned(view.VRule), holds: holdsNothing},
+	"vrule-inset":       {build: args1(view.VRuleInset), holds: holdsNothing, params: []param{wholeParam("inset")}},
+	"text":              {build: labelled(view.Text), holds: holdsText},
+	"primary-button":    {build: labelled(widget.PrimaryButton), holds: holdsText},
+	"link-button":       {build: labelled(widget.LinkButton), holds: holdsText},
+	"icon":              {build: glyph, holds: holdsNothing, params: []param{textParam("name")}},
+	"slot":              {build: slotNode, holds: holdsNothing, plain: true, params: []param{scoped[view.Node]("name")}},
+	"caption":           {build: labelled(view.Caption), holds: holdsText},
+	"lines":             {build: textArgs1(view.Lines), holds: holdsText, params: []param{tokenParam("color")}},
+	"note":              {build: textArgs1(widget.Note), holds: holdsText, params: []param{tokenParam("tone")}},
+	"button":            {build: labelled(widget.Button), holds: holdsText},
+	"segment-chip":      {build: textArgs1(widget.SegmentChip), holds: holdsText, params: []param{boolParam("selected")}},
+	"segment-icon-chip": {build: segmentIconChip, holds: holdsNothing, params: []param{textParam("icon"), boolParam("selected")}},
+	"icon-button":       {build: iconButton, holds: holdsNothing, params: []param{textParam("icon")}},
+	"scroll":            {build: itemArgs1(widget.Scroll), params: []param{scopedState[widget.ScrollState]("state")}},
+	"hscroll":           {build: itemArgs1(widget.HScroll), params: []param{scopedState[widget.ScrollState]("state")}},
 	"split": {build: itemArgs2(widget.Split), options: splitOptions,
 		params: []param{scopedState[widget.SplitState]("state"), realParam("default")}},
 	"toolbar": {build: container(widget.Toolbar)},

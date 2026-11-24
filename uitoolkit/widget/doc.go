@@ -8,7 +8,7 @@
 //
 // # Finding your way
 //
-//	Buttons    Button PrimaryButton LinkButton IconButton SegmentChip
+//	Buttons    Button PrimaryButton LinkButton IconButton SegmentChip SegmentIconChip
 //	Rows       ListRow FormRow CheckRow Note Toolbar
 //	Tabs       Tabs ScrollTabs TabBar ActiveTab   (state: TabItem)
 //	Menus      Menu OpenMenu CloseMenu MenuOpen PopupMenu PopupMenuLayer PopupMenuKeys NewMenu (a MenuState value) NextSelectable MenuWidth TextMenu   (state: MenuItem MenuState)

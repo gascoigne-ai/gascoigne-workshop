@@ -40,6 +40,7 @@ const (
 	ChooseBtnW   = 90  // the Choose... button of the file body
 	SchemaBtnW   = 104 // the schema buttons of the GraphQL pane
 	TimeoutW     = 80  // the timeout field of the request settings
+	ModeChipW    = 36  // one icon chip of the sidebar's mode switch
 	CompactChipW = 72  // the Compact chip of a response
 	PrettyChipW  = 56  // the Pretty chip of a response
 	RawChipW     = 44  // the Raw chip of a response
@@ -85,7 +86,7 @@ const (
 // fixedSizes are the widths above under the names templates use.
 var fixedSizes = map[string]any{
 	"wrapChipW": WrapChipW, "formatBtnW": FormatBtnW, "chooseBtnW": ChooseBtnW, "schemaBtnW": SchemaBtnW,
-	"timeoutW": TimeoutW, "compactChipW": CompactChipW, "prettyChipW": PrettyChipW,
+	"timeoutW": TimeoutW, "modeChipW": ModeChipW, "compactChipW": CompactChipW, "prettyChipW": PrettyChipW,
 	"rawChipW": RawChipW, "historyBtnW": HistoryBtnW, "saveBtnW": SaveBtnW, "countW": CountW,
 	"protocolChipW": ProtocolChipW, "methodChipW": MethodChipW, "streamChipW": StreamChipW,
 	"sendBtnMinW": SendBtnMinW, "connectMinW": ConnectMinW, "cancelBtnW": CancelBtnW, "grpcMethodW": GRPCMethodW,

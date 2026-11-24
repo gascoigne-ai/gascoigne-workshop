@@ -76,28 +76,30 @@ func TestTheSidebarLaysOutAsPinned(t *testing.T) {
 	}
 }
 
-// The sidebar's header shows both modes, Collections and History, as a
-// segmented choice; one click reaches either, and clicking the lit one
-// changes nothing. It was one chip named after the mode shown, so the other
-// mode was not visible and a click only toggled.
+// The sidebar's header shows both modes, Collections and History, as two icon
+// chips; one click reaches either, and clicking the lit one changes nothing.
+// It was one chip named after the mode shown, so the other mode was not
+// visible and a click only toggled.
 func TestTheSidebarSwitchShowsBothModesAndOneClickReachesEither(t *testing.T) {
 	a := testApp(t)
 	t.Cleanup(a.WaitWrites)
-	textCenter(t, a, "Collections")
-	textCenter(t, a, "History")
-	clickText(t, a, "History", 0)
+	for _, tip := range []string{"tip=Collections", "tip=History"} {
+		if len(dumpedLines(a, tip)) == 0 {
+			t.Fatalf("no chip with %q", tip)
+		}
+	}
+	clickDumped(t, a, "tip=History", 0)
 	if !a.side.ShowSent() {
 		t.Fatal("clicking History did not show the sent log")
 	}
-	clickText(t, a, "History", 0)
+	clickDumped(t, a, "tip=History", 0)
 	if !a.side.ShowSent() {
 		t.Fatal("clicking the lit History chip left the sent log")
 	}
-	clickText(t, a, "Collections", 0)
+	clickDumped(t, a, "tip=Collections", 0)
 	if a.side.ShowSent() {
 		t.Fatal("clicking Collections did not show the tree")
 	}
-	textCenter(t, a, "History")
 }
 
 // The part of a folder or request name the filter matched is drawn in the

@@ -156,7 +156,7 @@ func TestTheDrawnTreeMatchesAFreshBuildAcrossASession(t *testing.T) {
 	s.step("wheel over the tree", core.Input{X: 130, Y: 150, Wheel: -3})
 	s.step("wheel over the request", core.Input{X: 500, Y: 300, Wheel: -3})
 
-	s.click("focus the tree filter", 180, headerH+sidebarFilterH/2)
+	s.click("focus the tree filter", 180, headerH/2)
 	s.typeText("type in the tree filter", "rep")
 	s.step("right click the filter", core.Input{X: 180, Y: 22, RightClick: true}) // a menu opens
 	s.idle("menu open", 2)

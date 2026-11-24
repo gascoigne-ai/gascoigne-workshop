@@ -1,10 +1,21 @@
 flow rect=0,0,259,480
   flow h=44 padL=12 padR=12 gap=6 bg=bg borderB=border rect=0,0,259,44
-    flow h=28 padL=10 padR=10 grow=1 bg=sunken control=button tip=Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,114,28
-      textB text="Collections" grow=1 fg=chip-text ellipsis=true center=true rect=22,8,94,28
-    flow h=28 padL=10 padR=10 grow=1 bg=accent control=primary tip=The requests sent so far lighten=true onClick=true rect=132,8,115,28
-      textB text="History" grow=1 fg=accent-text ellipsis=true center=true rect=142,8,95,28
-  flow padL=12 padT=6 padR=12 padB=6 bg=bg borderB=border-soft rect=0,44,259,40
-    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=12,50,235,28
-  flow padL=12 padT=12 padR=12 padB=12 bg=sunken rect=0,84,259,40
-    textB text="Nothing sent yet" fg=muted rect=12,96,235,16
+    flow w=36 h=28 bg=accent control=primary tip=Collections. Right-click: new, open, rename, save, close, delete a collection lighten=true onClick=true onRightClick=true rect=12,8,36,28
+      iconB grow=1 fg=accent-text icon=folder rect=12,8,36,28
+    flow w=36 h=28 bg=sunken control=button tip=History: the requests sent so far lighten=true onClick=true rect=54,8,36,28
+      iconB grow=1 fg=chip-text icon=history rect=54,8,36,28
+    fieldB h=28 grow=1 bg=sunken control=field onRightClick=true rect=96,8,151,28
+  scrollB grow=1 bg=sunken clip=true rect=0,44,259,436
+    flow h=28 padL=12 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,44,259,28
+      flow w=3 h=14 bg=collection.0 rect=12,51,3,14
+      iconB w=12 icon=triangle-down rect=21,44,12,28
+      textB text="GitHub REST API" grow=1 bold=true ellipsis=true rect=39,44,220,28
+    flow h=28 padL=28 gap=6 control=row hoverBg=hover onClick=true onRightClick=true onDragOver=true rect=0,72,259,28
+      iconB w=12 icon=triangle-down rect=28,72,12,28
+      textB text="Repository" grow=1 ellipsis=true rect=46,72,213,28
+    flow h=28 padL=50 padR=12 control=row hoverBg=hover alignItems=5 onClick=true onRightClick=true onDragOver=true rect=0,100,259,28
+      textB text="GET" w=40 fg=method.GET small=true rect=50,109,40,14
+      flow grow=1 rect=90,104,157,16
+        textB text="Repository " rect=90,104,71,16
+        textB text="Tags" fg=accent-line rect=161,104,31,16
+        textB grow=1 ellipsis=true rect=192,104,55,16

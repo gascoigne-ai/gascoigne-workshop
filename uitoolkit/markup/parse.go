@@ -37,7 +37,7 @@
 //
 //	Layout      row col stack spacer hrule vrule vrule-inset
 //	Text        text caption icon lines note   font-source
-//	Buttons     button primary-button link-button icon-button segment-chip
+//	Buttons     button primary-button link-button icon-button segment-chip segment-icon-chip
 //	Rows        list-row form-row check-row
 //	Inputs      field (placeholder field-pad styled text-menu on-enter on-tab)
 //	            area (text-menu wrap) checkbox

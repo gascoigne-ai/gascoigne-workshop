@@ -464,11 +464,7 @@ const (
 	menuBtnY   = headerH / 2
 )
 
-// sidebarFilterH is the height of the filter row under the mode chips, where
-// the tree starts below.
-const sidebarFilterH = 40
-
-func treeRowY(index int) int { return headerH + sidebarFilterH + index*core.RowH + core.RowH/2 }
+func treeRowY(index int) int { return headerH + index*core.RowH + core.RowH/2 }
 
 // withAdapters gives opts the real history and font adapters, as main does.
 func withAdapters(opts startOptions) startOptions {

@@ -48,7 +48,7 @@ func snapshotApp(t *testing.T) (*Component, *time.Time, *ebiten.Image) {
 	a.now = func() time.Time { return clock }
 	scripted := scriptedFrames{t, a}
 	scripted.idle("start", 3)
-	scripted.click("focus the tree filter", 180, headerH+sidebarFilterH/2)
+	scripted.click("focus the tree filter", 180, headerH/2)
 	a.over.Settings.Show()
 	scripted.idle("dialog opens", 2)
 	screen := ebiten.NewImage(a.w, a.h)
@@ -238,7 +238,7 @@ func TestTheSnapshotMatchesTheBaseAcrossASession(t *testing.T) {
 	}
 
 	idle("start", 3)
-	clickAt("focus the tree filter", 180, headerH+sidebarFilterH/2)
+	clickAt("focus the tree filter", 180, headerH/2)
 	a.over.Settings.Show()
 	idle("dialog opens", 3)
 	dialog := settingsRect(t, a)

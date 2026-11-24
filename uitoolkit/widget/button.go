@@ -45,6 +45,16 @@ func SegmentChip(label string, selected bool, opts ...Option) *El {
 	return Button(label, opts...)
 }
 
+// SegmentIconChip is SegmentChip with the icon called name in place of the
+// label (template tag segment-icon-chip).
+func SegmentIconChip(name string, selected bool, opts ...Option) *El {
+	fill, control, color := core.Sunken, "button", core.ChipText
+	if selected {
+		fill, control, color = core.Accent, "primary", core.AccentText
+	}
+	return Row(With([]Item{Bg(fill), Control(control), Lighten(), Icon(name, Grow(1), Color(color))}, opts)...)
+}
+
 // IconButton is Button with an icon in place of the label.
 func IconButton(glyph *El, opts ...Option) *El {
 	return Row(With([]Item{Bg(core.Sunken), Control("icon-button"), Lighten(), glyph}, opts)...)

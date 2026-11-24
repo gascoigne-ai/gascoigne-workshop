@@ -18,9 +18,8 @@ var (
 	treeRequestTemplate = markup.Must("treerequest.vml", treerequestSource)
 )
 
-// View is the header (the two chips that switch between the collection
-// tree and the log of sent requests, and the filter under them) above the
-// one shown.
+// View is the header (the two icon chips that switch between the collection
+// tree and the log of sent requests, and the filter) above the one shown.
 //
 // The tree builds only the rows in view plus one, so a drawn frame costs
 // what a screen of rows costs, not the whole tree. viewH is the height of
@@ -190,10 +189,8 @@ func (c *Component) activateSelected(rows []collection.Row) {
 const (
 	sidebarSource = `<col>
   <row h="{{headerH}}" pad-x="{{gutter}}" gap="{{tightGap}}" bg="bg" border-b="border">
-    <segment-chip selected="{{collectionsMode}}" grow="1" h="{{rowH}}" on-click="showCollections" on-right-click="collectionMenu" tooltip="Right-click: new, open, rename, save, close, delete a collection">Collections</segment-chip>
-    <segment-chip selected="{{showSent}}" grow="1" h="{{rowH}}" on-click="showHistory" tooltip="The requests sent so far">History</segment-chip>
-  </row>
-  <row pad-x="{{gutter}}" pad-y="{{tightGap}}" bg="bg" border-b="border-soft">
+    <segment-icon-chip icon="folder" selected="{{collectionsMode}}" w="{{modeChipW}}" h="{{rowH}}" on-click="showCollections" on-right-click="collectionMenu" tooltip="Collections. Right-click: new, open, rename, save, close, delete a collection"/>
+    <segment-icon-chip icon="history" selected="{{showSent}}" w="{{modeChipW}}" h="{{rowH}}" on-click="showHistory" tooltip="History: the requests sent so far"/>
     <field state="filter" h="{{rowH}}" grow="1" bg="sunken" placeholder="Filter" text-menu="filter"/>
   </row>
   <slot if="sentList" name="sentList"/>

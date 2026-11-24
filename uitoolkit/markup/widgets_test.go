@@ -498,6 +498,21 @@ func TestIconButtonElementMatchesTheGoIconButton(t *testing.T) {
 	}
 }
 
+func TestSegmentIconChipElementMatchesTheGoSegmentIconChip(t *testing.T) {
+	pick := func() {}
+	for _, selected := range []bool{true, false} {
+		template := build(t, `
+			<row>
+			  <segment-icon-chip icon="history" selected="{{on}}" w="34" h="28" on-click="pick" tooltip="History"/>
+			</row>`, Scope{"on": selected, "pick": pick})
+		goView := view.Row(widget.SegmentIconChip("history", selected,
+			view.W(34), view.H(28), view.OnClick(pick), view.Tooltip("History")))
+		sameWidget(t, template, goView, 100, 30)
+	}
+	parseError(t, `<segment-icon-chip selected="true"/>`, "<segment-icon-chip> needs a icon")
+	parseError(t, `<segment-icon-chip icon="history" selected="true">x</segment-icon-chip>`, "text is only allowed")
+}
+
 func TestIconButtonNeedsAKnownIconAndHoldsNothing(t *testing.T) {
 	parseError(t, `<icon-button/>`, "<icon-button> needs a icon")
 	parseError(t, `<icon-button icon="search">Find</icon-button>`, "text is only allowed")

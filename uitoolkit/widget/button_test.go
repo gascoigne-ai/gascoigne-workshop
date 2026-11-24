@@ -118,6 +118,33 @@ func TestSegmentChipLightsOnlyTheSelectedOption(t *testing.T) {
 	}
 }
 
+// SegmentIconChip lights the selected option like SegmentChip, with the glyph
+// in the text color of that fill, and the glyph fills the chip so a click on
+// it lands.
+func TestSegmentIconChipLightsOnlyTheSelectedOption(t *testing.T) {
+	tests := []struct {
+		name     string
+		selected bool
+		control  string
+		glyph    string
+	}{
+		{"selected", true, "control=primary", "fg=accent-text"},
+		{"not selected", false, "control=button", "fg=chip-text"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			chip := SegmentIconChip("folder", test.selected, W(40), H(28), OnClick(func() {}))
+			hasProps(t, chip, test.control, "onClick=true")
+			Layout(testCtx(t), Row(chip), 300, 30)
+			glyph := chip.Children()[0]
+			hasProps(t, glyph, "icon=folder", test.glyph)
+			if glyph.Rect().W != 40 {
+				t.Errorf("the glyph is %dpx wide, want it to fill the 40px chip", glyph.Rect().W)
+			}
+		})
+	}
+}
+
 // A list row shows the selection with a fixed background and any other row
 // with a hover tint; the options of the caller (height, click) still apply.
 func TestListRowLooksSelectedOrHoverable(t *testing.T) {
