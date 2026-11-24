@@ -112,13 +112,19 @@ func open(list List, req *request.Request) List {
 	return list
 }
 
+// Blank is the request a tab shows when nothing else is open: the one left
+// after the last tab closes, and the start of a program with no collection.
+func Blank() *request.Request {
+	return &request.Request{Name: "New Request", Protocol: request.ProtocolREST, Method: "GET"}
+}
+
 func closeAt(list List, index int) List {
 	if !list.has(index) {
 		return list
 	}
 	list.Tabs = slices.Delete(list.Tabs, index, index+1)
 	if len(list.Tabs) == 0 {
-		list.Tabs = append(list.Tabs, New(&request.Request{Name: "New Request", Protocol: request.ProtocolREST, Method: "GET"}))
+		list.Tabs = append(list.Tabs, New(Blank()))
 	}
 	list.Active = AfterClose(list.Active, index, len(list.Tabs))
 	list.Drag = -1
