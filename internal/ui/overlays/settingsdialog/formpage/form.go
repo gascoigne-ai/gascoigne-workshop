@@ -133,9 +133,15 @@ func resetKey(host Host, edited *settings.Settings, key string) {
 	}
 }
 
-// chipRow is a row of chips sharing its width.
-func chipRow(ctx *w.Ctx, chips []chip) Node {
-	return chipsTemplate.MustBuild(markup.Scope{"chips": chips}, ctx.SizesScope())
+// chipRow is a row of chips. Under the title the chips share the row's width;
+// beside it each is as wide as its label, since an equal share cut the longer
+// labels ("Side by...") while the shorter ones had room to spare.
+func chipRow(ctx *w.Ctx, chips []chip, place form.Place) Node {
+	share := 1
+	if place == form.PlaceRight {
+		share = 0
+	}
+	return chipsTemplate.MustBuild(markup.Scope{"chips": chips, "share": share}, ctx.SizesScope())
 }
 
 // enumChips is a row of chips, one per allowed value; the current one is lit.
@@ -155,7 +161,7 @@ func (p *Page) enumChips(ctx *w.Ctx, host Host, field settings.Field, labels map
 		edit := setKey(host, field.Key, settings.Text(id))
 		chips = append(chips, choice(host, label, id == current, edit))
 	}
-	return chipRow(ctx, chips)
+	return chipRow(ctx, chips, form.PlaceOf(field))
 }
 
 func (p *Page) themeChips(ctx *w.Ctx, host Host) Node {
@@ -166,7 +172,7 @@ func (p *Page) themeChips(ctx *w.Ctx, host Host) Node {
 		edit := func(edited *settings.Settings) { edited.Theme = theme.ID }
 		chips = append(chips, choice(host, theme.Label, theme.ID == current, edit))
 	}
-	return chipRow(ctx, chips)
+	return chipRow(ctx, chips, form.PlaceBelow)
 }
 
 func (p *Page) scaleControl(ctx *w.Ctx, host Host) Node {
@@ -390,7 +396,7 @@ func (p *Page) ChooseFile(host Host, key string) { p.update(host, form.Choose{Ke
 // Templates, parsed once above.
 const (
 	chipsSource = `<row h="{{rowH}}" gap="{{tightGap}}">
-  <segment-chip for="chip in chips" selected="{{chip.Selected}}" grow="1" on-click="chip.Pick">{{chip.Label}}</segment-chip>
+  <segment-chip for="chip in chips" selected="{{chip.Selected}}" grow="{{share}}" on-click="chip.Pick">{{chip.Label}}</segment-chip>
 </row>
 `
 

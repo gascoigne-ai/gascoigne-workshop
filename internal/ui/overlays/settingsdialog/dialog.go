@@ -11,7 +11,6 @@ package settingsdialog
 
 import (
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings/prefs"
-	"path/filepath"
 	"strings"
 
 	"github.com/gascoigne-ai/gascoigne-workshop/internal/feature/settings"
@@ -159,7 +158,7 @@ func (d *SettingsDialog) View(ctx *w.Ctx, host Host) Node {
 		"close":    func() { host.Send(prefs.Close{}) },
 		"titleBar": d.titleBar(host),
 		"toolbar":  d.toolbar(ctx, host),
-		"titleRow": d.pageTitleRow(ctx, host, cur),
+		"titleRow": d.pageTitleRow(ctx, host),
 		"search":   &d.Search,
 		"searched": d.ResetScroll,
 		"raw":      d.Raw,
@@ -203,17 +202,13 @@ func (d *SettingsDialog) titleBar(host Host) Node {
 	})
 }
 
-// subtitle is what the title bar says besides the name: the page shown, or
-// the file in the raw view.
+// subtitle is what the title bar says besides the name: the file in the raw
+// view, which has no nav to say where the user is, and nothing in the form,
+// whose nav marks the page (naming it here and in a pill above the page said
+// the same thing three times).
 func (d *SettingsDialog) subtitle() string {
 	if d.Raw {
 		return "settings.json"
-	}
-	cur := d.pageID()
-	for _, p := range pages {
-		if p.id == cur {
-			return p.label
-		}
 	}
 	return ""
 }
@@ -228,28 +223,10 @@ func (d *SettingsDialog) toolbar(ctx *w.Ctx, host Host) Node {
 	return toolbarTemplate.MustBuild(markup.Scope{"save": save})
 }
 
-// settingsFile is the name of the file the settings live in, as the title
-// row shows it; the full path is its tooltip.
-const settingsFile = "settings.json"
-
-// pageTitleRow is the first row of the page: a pill with the page shown,
-// the file the settings live in, and the button that switches between the
-// form and the text of that file.
-func (d *SettingsDialog) pageTitleRow(ctx *w.Ctx, host Host, id string) Node {
-	label := ""
-	for _, entry := range pages {
-		if entry.id == id {
-			label = entry.label
-		}
-	}
-	file, path := settingsFile, host.SettingsPath()
-	if path != "" {
-		file = filepath.Base(path)
-	}
+// pageTitleRow is the first row of the page: the button that switches
+// between the form and the text of the settings file.
+func (d *SettingsDialog) pageTitleRow(ctx *w.Ctx, host Host) Node {
 	return titleRowTemplate.MustBuild(markup.Scope{
-		"label":    label,
-		"file":     file,
-		"path":     path,
 		"raw":      d.Raw,
 		"openRaw":  func() { d.OpenRaw(host) },
 		"closeRaw": d.CloseRaw,
@@ -334,7 +311,7 @@ const (
       <slot for="item in nav" name="item"/>
     </col>
     <col grow="1" border-l="border-soft">
-      <col pad-x="{{dialogPad}}" pad-t="{{dialogPad}}">
+      <col pad-x="{{dialogPad}}" pad-t="{{dialogPad}}" pad-b="{{looseGap}}" border-b="border">
         <slot name="titleRow"/>
       </col>
       <scroll state="scroll" grow="1" pad="{{dialogPad}}">
@@ -359,13 +336,9 @@ const (
 </dialog-toolbar>
 `
 
-	titlerowSource = `<!-- The first row of every page: which page and which file, and the switch
-     between the form and the text of the file. -->
+	titlerowSource = `<!-- The first row of every page: the switch between the form and the text of
+     the file. -->
 <row gap="{{looseGap}}" align-items="center">
-  <row h="{{rowH}}" pad-x="{{gutter}}" align-items="center" bg="accent-soft">
-    <text bold color="accent-line">{{label}}</text>
-  </row>
-  <text muted tooltip="{{path}}">{{file}}</text>
   <spacer/>
   <button if="!raw" w="{{editW}}" h="{{compactH}}" on-click="openRaw" tooltip="Edit settings.json as text">Edit in settings.json</button>
   <button if="raw" w="{{editW}}" h="{{compactH}}" on-click="closeRaw" tooltip="Back to the settings form">Back to the form</button>

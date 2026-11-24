@@ -3,8 +3,8 @@ stack rect=0,0,600,420
   resizableB w=520 h=340 floatMode=2 dismissMargin=4 bg=bg control=menu float=true modal=true focusScope=true shadow=true moved=true rect=40,40,520,340
     flow h=44 padL=16 padR=16 gap=8 bg=hero borderB=border control=hero roundCtl=menu roundCorners=3 alignItems=2 onDismiss=true dragHandle=true rect=40,40,520,44
       textB text="Settings" fg=hero-text bold=true rect=56,54,55,16
-      textB text="Colors" fg=hero-muted small=true ellipsis=true shrink=true rect=119,55,35,14
-      plain grow=1 rect=162,62,342,0
+      textB fg=hero-muted small=true ellipsis=true shrink=true rect=119,55,0,14
+      plain grow=1 rect=127,62,377,0
       flow w=32 h=24 control=row tip=Close (Esc) hoverBg=shadow onClick=true rect=512,50,32,24
         iconB grow=1 fg=hero-muted icon=cross rect=512,50,32,24
     flow h=40 padL=16 padR=16 gap=8 borderB=border-soft alignItems=2 rect=40,84,520,40
@@ -29,13 +29,10 @@ stack rect=0,0,600,420
         flow h=28 padL=12 padR=12 control=button hoverBg=hover alignItems=2 onClick=true rect=48,342,154,28
           textB text="System" grow=1 fg=muted rect=60,348,130,16
       flow grow=1 borderL=border-soft rect=210,124,350,256
-        flow padL=16 padT=16 padR=16 rect=210,124,350,44
-          flow gap=8 alignItems=2 rect=226,140,318,28
-            flow h=28 padL=12 padR=12 bg=accent-soft alignItems=2 rect=226,140,69,28
-              textB text="Colors" fg=accent-line bold=true rect=238,146,45,16
-            textB text="settings.json" fg=muted tip=/config/settings.json rect=303,146,79,16
-            plain grow=1
-            flow h=24 padL=10 padR=10 minW=150 bg=sunken control=button tip=Edit settings.json as text shrink=true lighten=true onClick=true rect=398,142,150,24
-              textB text="Edit in settings.json" grow=1 fg=chip-text ellipsis=true center=true rect=408,142,130,24
-        scrollB padL=16 padT=16 padR=16 padB=16 grow=1 clip=true rect=210,168,350,212
-          textB text="page colors" rect=226,184,318,16
+        flow padL=16 padT=16 padR=16 padB=8 borderB=border rect=210,124,350,48
+          flow gap=8 alignItems=2 rect=226,140,318,24
+            plain grow=1 rect=226,152,160,0
+            flow h=24 padL=10 padR=10 minW=150 bg=sunken control=button tip=Edit settings.json as text shrink=true lighten=true onClick=true rect=394,140,150,24
+              textB text="Edit in settings.json" grow=1 fg=chip-text ellipsis=true center=true rect=404,140,130,24
+        scrollB padL=16 padT=16 padR=16 padB=16 grow=1 clip=true rect=210,172,350,208
+          textB text="page colors" rect=226,188,318,16

@@ -74,12 +74,12 @@ flow rect=0,0,560,1400
           textB text="Corners" bold=true rect=0,468,54,16
         paragraphB text="How round controls are." rect=0,490,369,14
       flow h=28 gap=6 rect=377,469,183,28
-        flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=377,469,57,28
-          textB text="Square" grow=1 fg=chip-text ellipsis=true center=true rect=387,469,37,28
-        flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=440,469,57,28
-          textB text="Soft" grow=1 fg=accent-text ellipsis=true center=true rect=450,469,37,28
-        flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=503,469,57,28
-          textB text="Round" grow=1 fg=chip-text ellipsis=true center=true rect=513,469,37,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=377,469,65,28
+          textB text="Square" grow=1 fg=chip-text ellipsis=true center=true rect=387,469,45,28
+        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=448,469,45,28
+          textB text="Soft" grow=1 fg=accent-text ellipsis=true center=true rect=458,469,25,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=499,469,61,28
+          textB text="Round" grow=1 fg=chip-text ellipsis=true center=true rect=509,469,41,28
   flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,512,560,58
     flow gap=8 alignItems=2 rect=0,520,560,42
       flow grow=1 rect=0,520,520,42
@@ -94,10 +94,10 @@ flow rect=0,0,560,1400
           textB text="Contrast" bold=true rect=0,584,58,16
         paragraphB text="High strengthens the selection, find and accent colors." rect=0,606,431,14
       flow h=28 gap=6 rect=439,585,121,28
-        flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=439,585,57,28
-          textB text="Normal" grow=1 fg=accent-text ellipsis=true center=true rect=449,585,37,28
-        flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=502,585,58,28
-          textB text="High" grow=1 fg=chip-text ellipsis=true center=true rect=512,585,38,28
+        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=439,585,66,28
+          textB text="Normal" grow=1 fg=accent-text ellipsis=true center=true rect=449,585,46,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=511,585,49,28
+          textB text="High" grow=1 fg=chip-text ellipsis=true center=true rect=521,585,29,28
   flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,628,560,58
     flow gap=8 alignItems=2 rect=0,636,560,42
       flow grow=1 rect=0,636,378,42
@@ -105,10 +105,10 @@ flow rect=0,0,560,1400
           textB text="Request and response" bold=true rect=0,642,150,16
         paragraphB text="Place the request and response panes stacked or side by side." rect=0,664,378,14
       flow h=28 gap=6 rect=386,643,174,28
-        flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=386,643,84,28
-          textB text="Stacked" grow=1 fg=accent-text ellipsis=true center=true rect=396,643,64,28
-        flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=476,643,84,28
-          textB text="Side by side" grow=1 fg=chip-text ellipsis=true center=true rect=486,643,64,28
+        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=386,643,71,28
+          textB text="Stacked" grow=1 fg=accent-text ellipsis=true center=true rect=396,643,51,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=463,643,97,28
+          textB text="Side by side" grow=1 fg=chip-text ellipsis=true center=true rect=473,643,77,28
   flow padT=8 padB=8 gap=6 borderB=border-soft rect=0,686,560,58
     flow gap=8 alignItems=2 rect=0,694,560,42
       flow grow=1 rect=0,694,359,42
@@ -116,9 +116,9 @@ flow rect=0,0,560,1400
           textB text="Response view" bold=true rect=0,700,101,16
         paragraphB text="How a response body is shown when it arrives." rect=0,722,359,14
       flow h=28 gap=6 rect=367,701,193,28
-        flow padL=10 padR=10 grow=1 bg=accent control=primary lighten=true onClick=true rect=367,701,60,28
-          textB text="Compact" grow=1 fg=accent-text ellipsis=true center=true rect=377,701,40,28
-        flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=433,701,60,28
-          textB text="Pretty" grow=1 fg=chip-text ellipsis=true center=true rect=443,701,40,28
-        flow padL=10 padR=10 grow=1 bg=sunken control=button lighten=true onClick=true rect=499,701,61,28
-          textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=509,701,41,28
+        flow padL=10 padR=10 bg=accent control=primary lighten=true onClick=true rect=367,701,76,28
+          textB text="Compact" grow=1 fg=accent-text ellipsis=true center=true rect=377,701,56,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=449,701,57,28
+          textB text="Pretty" grow=1 fg=chip-text ellipsis=true center=true rect=459,701,37,28
+        flow padL=10 padR=10 bg=sunken control=button lighten=true onClick=true rect=512,701,48,28
+          textB text="Raw" grow=1 fg=chip-text ellipsis=true center=true rect=522,701,28,28

@@ -256,3 +256,18 @@ func TestARefusalNoteShowsUnderTheRow(t *testing.T) {
 		t.Fatalf("the note at y=%d is not under the title row", note[0].Rect().Y)
 	}
 }
+
+// The chips of a short choice sat beside the title in a share of the row
+// too small for them, so their labels were cut ("Squ...", "Side by...").
+// Each chip is as wide as its label when the row has room.
+func TestTheChipsBesideATitleShowTheirWholeLabel(t *testing.T) {
+	labels := []string{"Square", "Soft", "Round", "Normal", "High", "Stacked", "Side by side", "Compact", "Pretty", "Raw"}
+	driver := newFormDriver(t, "Appearance")
+	root := rowPage(t, driver, 560)
+	for _, label := range labels {
+		text := firstOf(t, root, `text="`+label+`"`)
+		if need := driver.ctx.Width(driver.ctx.F.UI, label); text.Rect().W < need {
+			t.Errorf("chip %q is %dpx wide, its label needs %d", label, text.Rect().W, need)
+		}
+	}
+}

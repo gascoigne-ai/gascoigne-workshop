@@ -9,22 +9,37 @@ import (
 	. "github.com/gascoigne-ai/gascoigne-workshop/uitoolkit/widget"
 )
 
-// The page title row names the page and the file; the file shows by its
-// base name, the full path is a tooltip only.
-func TestThePageTitleRowShowsThePageAndTheFileName(t *testing.T) {
+// The page title row holds the Edit button; the settings file is never shown
+// as text, by its path or its name.
+func TestThePageTitleRowShowsOnlyTheEditButton(t *testing.T) {
 	driver := newFrameDriver(t)
 	driver.dialog.Cat = "appearance"
 	dump := Dump(driver.root())
 	path := driver.host.path
-	if !strings.Contains(dump, `text="settings.json"`) {
-		t.Fatalf("no file name in the title row:\n%s", dump)
-	}
 	if strings.Contains(dump, `text="`+path+`"`) || strings.Contains(dump, `text="`+filepath.Dir(path)) {
 		t.Fatalf("the full path is shown as text:\n%s", dump)
 	}
 	if !strings.Contains(dump, `text="Edit in settings.json"`) {
 		t.Fatalf("no Edit in settings.json button:\n%s", dump)
 	}
+}
+
+// The title row stays still above the scrolling settings; a line under it
+// shows where the fixed part ends and the scrolled one starts, so rows
+// that scroll under it do not look like part of it.
+func TestALineSeparatesTheTitleRowFromTheScrollingPage(t *testing.T) {
+	driver := newFrameDriver(t)
+	driver.dialog.Cat = "appearance"
+	root := driver.root()
+	button := firstOf(driver, root, `text="Edit in settings.json"`).Rect()
+	scrolled := firstOf(driver, root, "scrollB").Rect()
+	for _, line := range findAll(root, "borderB=border") {
+		rect := line.Rect()
+		if rect.Y <= button.Y && rect.Y+rect.H > button.Y && rect.Y+rect.H <= scrolled.Y+1 {
+			return
+		}
+	}
+	t.Fatalf("no bottom border on the area holding the button (%v) above the page (%v):\n%s", button, scrolled, Dump(root))
 }
 
 // Every page gets the title row, tables included.
@@ -89,4 +104,13 @@ func TestThePageOfAFormCategoryIsTheHostsForm(t *testing.T) {
 	if dump := Dump(driver.root()); !strings.Contains(dump, `text="form Requests proxy"`) {
 		t.Fatalf("the form of Requests with the search text is not the page:\n%s", dump)
 	}
+}
+
+func firstOf(driver *frameDriver, root *El, parts ...string) *El {
+	driver.t.Helper()
+	found := findAll(root, parts...)
+	if len(found) == 0 {
+		driver.t.Fatalf("nothing matches %q:\n%s", parts, Dump(root))
+	}
+	return found[0]
 }

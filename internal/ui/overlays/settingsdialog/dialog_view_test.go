@@ -348,3 +348,35 @@ func TestTheDialogAndItsPageAreBoundToTheirState(t *testing.T) {
 		}
 	}
 }
+
+// The page name was drawn three times: in the title bar, in the nav and in a
+// pill above the page. The nav, which marks the page, is the one place left.
+func TestThePageNameIsShownOnlyInTheNav(t *testing.T) {
+	driver := newFrameDriver(t)
+	root := driver.root()
+	if got := len(findAll(root, `text="Appearance"`)); got != 1 {
+		t.Fatalf("%d texts %q, want the nav's only:\n%s", got, "Appearance", Dump(root))
+	}
+}
+
+// The raw view still names its file in the title bar, which has no nav to
+// say where the user is.
+func TestTheRawViewNamesItsFileInTheTitleBar(t *testing.T) {
+	driver := newFrameDriver(t)
+	driver.clickOn(`text="Edit in settings.json"`)
+	root := driver.root()
+	if len(findAll(root, `text="settings.json"`)) == 0 {
+		t.Fatalf("no title bar subtitle in the raw view:\n%s", Dump(root))
+	}
+}
+
+// The form's first row named the settings file beside the page, which said
+// nothing the "Edit in settings.json" button does not. Only the button
+// names it in the form.
+func TestTheFormDoesNotNameTheSettingsFileApartFromItsButton(t *testing.T) {
+	driver := newFrameDriver(t)
+	root := driver.root()
+	if found := findAll(root, `text="settings.json"`); len(found) != 0 {
+		t.Fatalf("%d texts %q in the form:\n%s", len(found), "settings.json", Dump(root))
+	}
+}
